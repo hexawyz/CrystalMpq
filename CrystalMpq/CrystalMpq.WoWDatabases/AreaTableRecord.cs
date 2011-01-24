@@ -28,7 +28,7 @@ namespace CrystalMpq.WoWDatabases
 		public int ZoneMusic;
 		public int ZoneIntroMusic;
 		public int AreaLevel;
-		[Localized] public string Name;
+		public string Name;
 		public int FactionGroup;
 		public int Unknown2;
 		public int Unknown3;
@@ -36,6 +36,10 @@ namespace CrystalMpq.WoWDatabases
 		public int Unknown5;
 		public float Unknown6;
 		public float Unknown7;
-		public int Unknown8;
+		public int Unknown8; // 0
+		public int Flags2;
+		public int Unknown9; // 0
+		public int Unknown10;
+		public int Unknown11;
 	}
 }

@@ -54,10 +54,11 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
-    <Reference Include="System.XML" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AreaTableRecord.cs" />
+    <Compile Include="PhaseRecord.cs" />
     <Compile Include="DungeonMapRecord.cs" />
     <Compile Include="MapRecord.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

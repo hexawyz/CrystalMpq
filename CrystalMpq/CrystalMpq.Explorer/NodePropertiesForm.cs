@@ -87,7 +87,7 @@ namespace CrystalMpq.Explorer
 
 				singleUnitCheckBox.Checked = ((mpqFile.Flags & MpqFileFlags.SingleBlock) != 0);
 
-				if ((mpqFile.Flags & MpqFileFlags.DCLCompressed) != 0)
+				if ((mpqFile.Flags & MpqFileFlags.DclCompressed) != 0)
 				{
 					dclCompressedRadioButton.Checked = true;
 					multiCompressedRadioButton.Checked = false;

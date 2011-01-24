@@ -20,7 +20,7 @@ namespace CrystalMpq.Utility
 {
 	public sealed class LanguagePack
 	{
-		static readonly string[] expectedArchiveNames = new string[] {
+		static readonly string[] expectedArchiveNamesOld = new string[] {
 			"backup",
 			"base",
 			"locale",
@@ -32,8 +32,21 @@ namespace CrystalMpq.Utility
 			"patch"
 		};
 
+		static readonly string[] expectedArchiveNamesCataclysm = new string[] {
+			"backup",
+			"base",
+			"locale",
+			"speech"
+		};
+
+		static readonly string[] expectedExpansionArchiveNames = new string[] {
+			"locale",
+			"speech"
+		};
+
 		static readonly string firstArchive = "{0}-{1}.MPQ";
 		static readonly string otherArchive = "{0}-{1}-{2}.MPQ";
+		static readonly string expansionArchive = "expansion{0}-{1}-{2}.MPQ";
 
 		static readonly Dictionary<string, int> localeFieldIndexDictionary = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase) {
 			{ "enUS", 0 },
@@ -66,35 +79,65 @@ namespace CrystalMpq.Utility
 				this.localeFieldIndex = -1;
 			this.dataPath = _Path.Combine(wowInstallation.DataPath, wowCultureId);
 
-			FindArchives();
+			if ((archiveArray = wowInstallation.InstallationKind == InstallationKind.Cataclysmic ?
+				FindArchives(this.dataPath, this.wowCultureId) :
+				FindArchivesOld(this.dataPath, this.wowCultureId)) == null)
+				throw new FileNotFoundException();
+			archiveCollection = new ReadOnlyCollection<string>(archiveArray);
 		}
 
 		#region Archive Detection Functions
 
-		private void FindArchives()
+		private static string[] FindArchives(string dataPath, string wowCultureId)
 		{
 			List<string> archiveList = new List<string>();
 
-			foreach (string expectedArchiveName in expectedArchiveNames)
+			foreach (string expectedArchiveName in expectedArchiveNamesCataclysm)
 			{
-				string archive = null;
+				string archiveName = string.Format(CultureInfo.InvariantCulture, firstArchive, expectedArchiveName, wowCultureId);
+				if (File.Exists(_Path.Combine(dataPath, archiveName))) archiveList.Add(archiveName);
+				else return null;
+			}
+
+			for (int i = 1; ; i++)
+			{
+				foreach (string expectedArchiveName in expectedExpansionArchiveNames)
+				{
+					string archiveName = string.Format(CultureInfo.InvariantCulture, expansionArchive, i, expectedArchiveName, wowCultureId);
+					if (File.Exists(_Path.Combine(dataPath, archiveName))) archiveList.Add(archiveName);
+					else if (i <= 3) return null; // There are at least 3 expansion archives for cataclysm…
+					else
+					{
+						archiveList.Reverse();
+						return archiveList.ToArray();
+					}
+				}
+			}
+		}
+
+		private static string[] FindArchivesOld(string dataPath, string wowCultureId)
+		{
+			List<string> archiveList = new List<string>();
+
+			foreach (string expectedArchiveName in expectedArchiveNamesOld)
+			{
+				string archiveName = null;
 				int i = 0;
 
 				do
 				{
 					if (i++ != 0)
 					{
-						archiveList.Add(archive);
-						archive = string.Format(CultureInfo.InvariantCulture, otherArchive, expectedArchiveName, wowCultureId, i);
+						archiveList.Add(archiveName);
+						archiveName = string.Format(CultureInfo.InvariantCulture, otherArchive, expectedArchiveName, wowCultureId, i);
 					}
 					else
-						archive = string.Format(CultureInfo.InvariantCulture, firstArchive, expectedArchiveName, wowCultureId);
-				} while (File.Exists(_Path.Combine(dataPath, archive)));
+						archiveName = string.Format(CultureInfo.InvariantCulture, firstArchive, expectedArchiveName, wowCultureId);
+				} while (File.Exists(_Path.Combine(dataPath, archiveName)));
 			}
 
 			archiveList.Reverse();
-			archiveArray = archiveList.ToArray();
-			archiveCollection = new ReadOnlyCollection<string>(archiveArray);
+			return archiveList.ToArray();
 		}
 
 		#endregion
@@ -103,6 +146,7 @@ namespace CrystalMpq.Utility
 		public CultureInfo Culture { get { return culture; } }
 		public string Path { get { return dataPath; } }
 		public ReadOnlyCollection<string> Archives { get { return archiveCollection; } }
+		[Obsolete("Localized DBC fields now share the same index for every language. This field has no more use starting with Cataclysm.")]
 		public int DatabaseFieldIndex { get { return localeFieldIndex; } }
 
 		public override string ToString() { return culture.DisplayName; }

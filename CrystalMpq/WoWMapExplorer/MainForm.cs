@@ -146,6 +146,7 @@ namespace WoWMapExplorer
 		Brush zoneInformationBrush;
 		Pen zoneInformationPen;
 		Font zoneInformationFont;
+		Brush zoneErrorBrush;
 		const int zoneInformationFontHeight = 40;
 		List<IntPtr> fontPointerList;
 		// World Map Size: 1002x668
@@ -177,12 +178,14 @@ namespace WoWMapExplorer
 		public MainForm(WoWInstallation wowInstallation, LanguagePack languagePack)
 		{
 			InitializeComponent();
-			//
+			// Initialize WoW file system
 			this.wowInstallation = wowInstallation;
 			this.languagePack = languagePack;
 			// Create resources for drawing text
 			zoneInformationBrush = Brushes.White;
 			zoneInformationPen = new Pen(Color.Black, 5);
+			// Get and create resources for error…
+			zoneErrorBrush = Brushes.Red;
 			// Creates the bitmap
 			mapBitmap = new Bitmap(1002, 668, PixelFormat.Format32bppRgb);
 			Size = new Size(this.Width - renderPanel.ClientSize.Width + 1002, this.Height - renderPanel.ClientSize.Height + 668);
@@ -299,24 +302,11 @@ namespace WoWMapExplorer
 		private BLPTexture LoadTexture(string filename)
 		{
 			MpqFile file = mpqFileSystem.FindFile(filename);
-			Stream stream = null;
-			BLPTexture texture;
 
-			if (file == null)
-				return null;
-			try
-			{
-				stream = file.Open();
-				texture = new BLPTexture(stream, false);
-				stream.Close();
-				return texture;
-			}
-			catch
-			{
-				if (stream != null)
-					stream.Close();
-				return null;
-			}
+			if (file == null) throw new FileNotFoundException();
+
+			using (var stream = file.Open())
+				return new BLPTexture(stream, false);
 		}
 
 		private ZoneMap LoadZoneMap(string filename)
@@ -465,71 +455,59 @@ namespace WoWMapExplorer
 
 		private void UpdateMap()
 		{
-			Graphics g = Graphics.FromImage(mapBitmap);
-			string path = @"Interface\WorldMap\";
-			string map = "";
-			BLPTexture texture;
-
-			zoneInformationText = "";
-			overlays = null;
-			if (currentContinent == -1)
-				map = @"Cosmic";
-			else if (currentContinent == 0)
-				map = @"World";
-			else if (currentZone == -1)
-				map = ((Continent)continentToolStripComboBox.SelectedItem).DataName;
-			else
-				map = zones[currentZone].DataName;
-			for (int i = 0; i < 3; i++)
-				for (int j = 0; j < 4; j++)
-				{
-					texture = LoadTexture(String.Format(CultureInfo.InvariantCulture, @"{0}{1}\{1}{2}.blp", path, map, 4 * i + j + 1));
-					g.DrawImageUnscaled(texture.FirstMipMap, 256 * j, 256 * i, 256, 256);
-					texture.Dispose();
-				}
-			if (currentContinent > 0 && currentZone >= 0)
+			using (var g = Graphics.FromImage(mapBitmap))
 			{
-				overlays = zones[currentZone].Overlays;
+				string path = @"Interface\WorldMap\";
+				string map = "";
 
-				foreach (Overlay overlay in overlays)
-				{
-					int x = overlay.Bounds.X,
-						y = overlay.Bounds.Y,
-						width = overlay.Bounds.Width,
-						height = overlay.Bounds.Height,
-						rowCount, colCount,
-						textureCount;
+				zoneInformationText = "";
+				overlays = null;
 
-					if (height > 256)
-						rowCount = (height + 255) / 256;
-					else
-						rowCount = 1;
-					if (width > 256)
-						colCount = (width + 255) / 256;
-					else
-						colCount = 1;
+				if (currentContinent == -1) map = @"Cosmic";
+				else if (currentContinent == 0) map = @"World";
+				else if (currentZone == -1) map = ((Continent)continentToolStripComboBox.SelectedItem).DataName;
+				else map = zones[currentZone].DataName;
 
-					textureCount = rowCount * colCount;
-
-					for (int i = 0; i < textureCount; i++)
-					{
-						texture = LoadTexture(String.Format(CultureInfo.InvariantCulture, @"{0}{1}\{2}{3}.blp", path, map, overlay.DataName, i + 1));
-						if (texture != null)
+				for (int i = 0; i < 3; i++)
+					for (int j = 0; j < 4; j++)
+						try
 						{
-							g.DrawImageUnscaled(texture.FirstMipMap, x + 256 * (i % colCount), y + 256 * (i / colCount));
-							texture.Dispose();
+							using (var texture = LoadTexture(String.Format(CultureInfo.InvariantCulture, @"{0}{1}\{1}{2}.blp", path, map, 4 * i + j + 1)))
+								g.DrawImageUnscaled(texture.FirstMipMap, 256 * j, 256 * i, 256, 256);
 						}
+						catch { g.FillRectangle(zoneErrorBrush, 256 * j, 256 * i, 256, 256); }
+
+				if (currentContinent > 0 && currentZone >= 0)
+				{
+					overlays = zones[currentZone].Overlays;
+
+					foreach (Overlay overlay in overlays)
+					{
+						int x = overlay.Bounds.X,
+							y = overlay.Bounds.Y,
+							width = overlay.Bounds.Width,
+							height = overlay.Bounds.Height,
+							rowCount = height > 256 ? (height + 255) / 256 : 1,
+							colCount = width > 256 ? (width + 255) / 256 : 1,
+							textureCount = rowCount * colCount;
+
+						for (int i = 0; i < textureCount; i++)
+							try
+							{
+								using (var texture = LoadTexture(String.Format(CultureInfo.InvariantCulture, @"{0}{1}\{2}{3}.blp", path, map, overlay.DataName, i + 1)))
+									g.DrawImageUnscaled(texture.FirstMipMap, x + 256 * (i % colCount), y + 256 * (i / colCount));
+							}
+							catch { }
 					}
 				}
+				//else if (currentContinent == -1)
+				//{
+				//    if (outlandHighlighted)
+				//        g.DrawImageUnscaled(outlandHighlightBitmap, 23, 35);
+				//    else if (azerothHighlighted)
+				//        g.DrawImageUnscaled(azerothHighlightBitmap, 103, 11);
+				//}
 			}
-			//else if (currentContinent == -1)
-			//{
-			//    if (outlandHighlighted)
-			//        g.DrawImageUnscaled(outlandHighlightBitmap, 23, 35);
-			//    else if (azerothHighlighted)
-			//        g.DrawImageUnscaled(azerothHighlightBitmap, 103, 11);
-			//}
-			g.Dispose();
 		}
 
 		private void renderPanel_Paint(object sender, PaintEventArgs e)
@@ -559,10 +537,6 @@ namespace WoWMapExplorer
 					e.Graphics.DrawImageUnscaled(outlandHighlightBitmap, 23, 35);
 				if (azerothHighlighted)
 					e.Graphics.DrawImageUnscaled(azerothHighlightBitmap, 103, 11);
-#if DEBUG
-				e.Graphics.DrawRectangle(Pens.Red, 115, 90, 320, 320);
-				e.Graphics.DrawRectangle(Pens.Red, 593, 255, 366, 366);
-#endif
 			}
 		}
 

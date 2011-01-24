@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CultureNotSupportedException.cs" />
+    <Compile Include="InstallationKind.cs" />
     <Compile Include="LanguagePack.cs" />
     <Compile Include="MpqFileSystem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

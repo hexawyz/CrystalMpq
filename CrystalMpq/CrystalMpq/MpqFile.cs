@@ -20,12 +20,16 @@ namespace CrystalMpq
 	{
 		private MpqArchive owner;
 		private MpqHashTable.HashEntry hashEntry;
-		private string fileName;
-		private uint offset, compressedSize, uncompressedSize, flags, seed;
+		private string name;
+		private long offset;
+		uint compressedSize;
+		uint uncompressedSize;
+		MpqFileFlags flags;
+		uint seed;
 		private int index;
 		private bool listed, open;
 
-		internal MpqFile(MpqArchive owner, int index, uint offset, uint compressedSize, uint uncompressedSize, uint flags)
+		internal MpqFile(MpqArchive owner, int index, long offset, uint compressedSize, uint uncompressedSize, uint flags)
 		{
 			if (owner == null)
 				throw new ArgumentNullException("owner");
@@ -34,126 +38,82 @@ namespace CrystalMpq
 			this.offset = offset;
 			this.compressedSize = compressedSize;
 			this.uncompressedSize = uncompressedSize;
-			this.flags = flags;
-			this.fileName = "";
+			this.flags = unchecked((MpqFileFlags)flags);
+			this.name = "";
 			this.seed = 0;
 			this.listed = false;
 			this.open = false;
 		}
 
-		internal void BindHashTableEntry(MpqHashTable.HashEntry hashEntry)
+		internal void BindHashTableEntry(MpqHashTable.HashEntry hashEntry) { this.hashEntry = hashEntry; }
+
+		/// <summary>Called internally when the name has been detected.</summary>
+		/// <param name="name">Detected filename.</param>
+		/// <param name="cache">If set to <c>true</c>, remember the filename.</param>
+		/// <param name="listed">If set to <c>true</c>, the name was detected from the listfile.</param>
+		/// <remarks>Right now, the method will only update the seed when needed.</remarks>
+		internal void OnNameDetected(string name, bool cache = false, bool listed = false)
 		{
-			this.hashEntry = hashEntry;
+			if (!string.IsNullOrEmpty(this.name)) return;
+
+			// TODO: Improve the name caching mechanism (Global hash table for MPQ archives ?)
+			if (cache || (flags & MpqFileFlags.Encrypted) != 0)
+				this.seed = ComputeSeed(name);
+			if (cache)
+			{
+				this.name = name;
+				this.listed = listed;
+			}
 		}
 
-		internal void AssignFileName(string fileName, bool listed)
+		private static uint ComputeSeed(string filename)
 		{
-			this.fileName = fileName;
-			// Calculate the seed based on the file name and not the full path
+			// Calculate the seed based on the file name and not the full path.
 			// I really don't know why but it worked with the full path for a lot of files...
 			// But now it's fixed at least
-			int index = fileName.LastIndexOf('\\');
-			if (index != -1)
-				fileName = fileName.Substring(index + 1);
-			this.seed = Encryption.Hash(fileName, 0x300);
-			this.listed = listed;
+			int index = filename.LastIndexOf('\\');
+			return Encryption.Hash(index >= 0 ? filename.Substring(index + 1) : filename, 0x300);
 		}
 
-		/// <summary>
-		/// Gets the archive to whom this file belongs
-		/// </summary>
-		public MpqArchive Archive
-		{
-			get
-			{
-				return owner;
-			}
-		}
+		/// <summary>Gets the archive to whom this file belongs.</summary>
+		public MpqArchive Archive { get { return owner; } }
 
-		/// <summary>
-		/// Gets the filename for this file, or null if the filename is unknown.
-		/// </summary>
-		public string FileName
-		{
-			get
-			{
-				return fileName;
-			}
-		}
+		/// <summary>Gets the filename for this file, or null if the filename is unknown.</summary>
+		public string FileName { get { return name; } }
 
-		/// <summary>
-		/// Gets the offset of this file in the archive
-		/// </summary>
-		public long Offset
-		{
-			get
-			{
-				return offset;
-			}
-		}
+		/// <summary>Gets the offset of this file in the archive.</summary>
+		public long Offset { get { return offset; } }
 
-		/// <summary>
-		/// Gets the size of this file
-		/// </summary>
-		public long Size
-		{
-			get
-			{
-				return uncompressedSize;
-			}
-		}
+		/// <summary>Gets the size of this file.</summary>
+		public long Size { get { return uncompressedSize; } }
 
-		/// <summary>
-		/// Gets the compressed size of this file
-		/// </summary>
-		/// <remarks>If the file is not compressed, CompressedSize will return the same value than Size</remarks>
-		public long CompressedSize
-		{
-			get
-			{
-				return compressedSize;
-			}
-		}
+		/// <summary>Gets the compressed size of this file.</summary>
+		/// <remarks>If the file is not compressed, CompressedSize will return the same value than Size.</remarks>
+		public long CompressedSize {get { return compressedSize; } }
 
-		/// <summary>
-		/// Gets the flags that apply to this file
-		/// </summary>
-		public MpqFileFlags Flags
-		{
-			get
-			{
-				return (MpqFileFlags)flags;
-			}
-		}
+		/// <summary>Gets the flags that apply to this file.</summary>
+		public MpqFileFlags Flags { get { return flags; } }
 
-		/// <summary>
-		/// Gets the LCID associated with this file
-		/// </summary>
-		public int LCID
-		{
-			get
-			{
-				return hashEntry.Locale;
-			}
-		}
+		/// <summary>Gets a value indicating whether this file is encrypted.</summary>
+		/// <value><c>true</c> if this file is encrypted; otherwise, <c>false</c>.</value>
+		public bool IsEncrypted { get { return (flags & MpqFileFlags.Encrypted) != 0; } }
 
-		/// <summary>
-		/// Gets the index of the file in the collection
-		/// </summary>
-		/// <remarks>
-		/// In the current impelmentation, this index is also the index of the file in the archive's block table
-		/// </remarks>
-		public int Index
-		{
-			get
-			{
-				return index;
-			}
-		}
+		/// <summary>Gets a value indicating whether this file is compressed.</summary>
+		/// <value><c>true</c> if this file is compressed; otherwise, <c>false</c>.</value>
+		public bool IsCompressed { get { return (flags & MpqFileFlags.Compressed) != 0; } }
 
-		/// <summary>
-		/// Gets a value indicating wether this file is compressed
-		/// </summary>
+		/// <summary>Gets a value indicating whether this file is a patch.</summary>
+		/// <value><c>true</c> if this file is a patch; otherwise, <c>false</c>.</value>
+		public bool IsPatch { get { return (flags & MpqFileFlags.Patch) != 0; } }
+
+		/// <summary>Gets the LCID associated with this file.</summary>
+		public int LCID { get { return hashEntry.Locale; } }
+
+		/// <summary>Gets the index of the file in the collection.</summary>
+		/// <remarks>In the current impelmentation, this index is also the index of the file in the archive's block table.</remarks>
+		public int Index { get { return index; } }
+
+		/// <summary>Gets a value indicating wether this file is compressed.</summary>
 		public bool Compressed
 		{
 			get
@@ -165,43 +125,22 @@ namespace CrystalMpq
 			}
 		}
 
-		internal uint Seed
-		{
-			get
-			{
-				return seed;
-			}
-		}
+		internal uint Seed { get { return seed; } }
 
-		/// <summary>
-		/// Gets a value indicating wether the file was found in the list file of the archive
-		/// </summary>
-		/// <remarks>
-		/// This can only be true if the list file was parsed
-		/// </remarks>
-		public bool Listed
-		{
-			get
-			{
-				return listed;
-			}
-		}
+		/// <summary>Gets a value indicating wether the file was found in the list file of the archive.</summary>
+		/// <remarks>This can only be true if the list file was parsed.</remarks>
+		public bool Listed { get { return listed; } }
 
-		/// <summary>
-		/// Opens the file for reading
-		/// </summary>
-		/// <returns>Returns a Stream object which can be used to read data in the file</returns>
+		/// <summary>Opens the file for reading.</summary>
+		/// <returns>Returns a Stream object which can be used to read data in the file.</returns>
 		/// <remarks>Files can only be opened once, so don't forget to close the stream after you've used it.</remarks>
 		public MpqFileStream Open()
 		{
-			MpqFileStream stream;
-			
 			// TODO: make thread-safe ?
 
-			if (open)
-				throw new IOException("File is already open");
+			if (open) throw new IOException("File is already open.");
 
-			stream = new MpqFileStream(this);
+			var stream = new MpqFileStream(this);
 			open = true;
 
 			return stream;
@@ -209,8 +148,7 @@ namespace CrystalMpq
 
 		internal void Close()
 		{
-			if (!open)
-				throw new IOException("Trying to close an unopened file");
+			if (!open) throw new IOException("Trying to close an unopened file.");
 			open = false;
 		}
 	}

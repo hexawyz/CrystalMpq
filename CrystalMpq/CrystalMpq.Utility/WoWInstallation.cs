@@ -15,7 +15,7 @@ using System.Globalization;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Microsoft.Win32;
-using _Path = System.IO.Path;
+using IOPath = System.IO.Path;
 
 namespace CrystalMpq.Utility
 {
@@ -118,57 +118,55 @@ namespace CrystalMpq.Utility
 
 		#endregion
 
-		/// <summary>
-		/// Array of expected archive names.
-		/// </summary>
-		/// <remarks>Those names are highly related with the version of WoW supported.</remarks>
-		static readonly string[] expectedArchiveNames = new string[] {
+		/// <summary>Array of expected archive names.</summary>
+		/// <remarks>
+		/// Those names are highly related with the version of WoW supported.
+		/// Archives listed here are for the old WoW instalaltion type. (Pre-Cataclysm)
+		/// </remarks>
+		static readonly string[] expectedArchiveNamesOld = new string[] {
 			"common",
 			"expansion",
 			"lichking",
 			"patch"
 		};
+		/// <summary>Array of expected archive names.</summary>
+		/// <remarks>
+		/// Those names are highly related with the version of WoW supported.
+		/// Archives listes here are the new cataclysm archives.
+		/// 
+		/// </remarks>
+		static readonly string[] expectedArchiveNamesCataclysm = new string[] {
+			"sound",
+			"art",
+			"world",
+		};
 
-		/// <summary>
-		/// Format of the default archive filename.
-		/// </summary>
+		/// <summary>Format of the default archive filename.</summary>
 		static readonly string firstArchive = "{0}.MPQ";
-		/// <summary>
-		/// Format of the filename for supplementary archives.
-		/// </summary>
+		/// <summary>Format of the filename for supplementary archives.</summary>
 		static readonly string otherArchive = "{0}-{1}.MPQ";
+		/// <summary>Format of the filename for expansion archives.</summary>
+		static readonly string expansionArchive = "expansion{0}.MPQ";
 
-		/// <summary>
-		/// Path to the instalaltion.
-		/// </summary>
+		/// <summary>Path to the instalaltion.</summary>
 		string wowPath;
-		/// <summary>
-		/// Path to the data associated with the instalaltion.
-		/// </summary>
+		/// <summary>Path to the data associated with the instalaltion.</summary>
 		string dataPath;
-		/// <summary>
-		/// Array of archives associated with the instalaltion.
-		/// </summary>
+		/// <summary>Array of archives associated with the instalaltion.</summary>
 		/// <remarks>The archives are detected based on their filename, during the instantiation of the class.</remarks>
 		string[] archiveArray;
-		/// <summary>
-		/// Collection of archives associated with the instalaltion.
-		/// </summary>
+		/// <summary>Collection of archives associated with the instalaltion.</summary>
 		/// <remarks>This is a wrapper around <seealso cref="F:archiveArray"/>.</remarks>
 		ReadOnlyCollection<string> archiveCollection;
-		/// <summary>
-		/// Array of <see cref="LanguagePack"/> associated with the installation. 
-		/// </summary>
+		/// <summary>Array of <see cref="LanguagePack"/> associated with the installation.</summary>
 		LanguagePack[] languagePackArray;
-		/// <summary>
-		/// Collection of <see cref="LanguagePack"/> associated with the installation. 
-		/// </summary>
+		/// <summary>Collection of <see cref="LanguagePack"/> associated with the installation.</summary>
 		/// <remarks>This is a wrapper around <seealso cref="F:languagePackArray"/>.</remarks>
 		LanguagePackCollection languagePackCollection;
+		/// <summary>Value representing the instllation kind.</summary>
+		InstallationKind installationKind;
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="WoWInstallation"/> class.
-		/// </summary>
+		/// <summary>Initializes a new instance of the <see cref="WoWInstallation"/> class.</summary>
 		/// <param name="path">The path.</param>
 		private WoWInstallation(string path)
 		{
@@ -178,13 +176,18 @@ namespace CrystalMpq.Utility
 			if (!Directory.Exists(this.dataPath = System.IO.Path.Combine(path, "Data")))
 				throw new DirectoryNotFoundException();
 
-			FindArchives();
+			if ((archiveArray = FindArchives(this.dataPath)) != null)
+				installationKind = InstallationKind.Cataclysmic;
+			else if ((archiveArray = FindArchivesOld(this.dataPath)) != null)
+				installationKind = InstallationKind.Classic;
+			else throw new FileNotFoundException();
+
+			archiveCollection = new ReadOnlyCollection<string>(archiveArray);
+
 			FindLanguagePacks();
 		}
 
-		/// <summary>
-		/// Tries to locate the standard WoW installation.
-		/// </summary>
+		/// <summary>Tries to locate the standard WoW installation.</summary>
 		/// <returns>A <see cref="WoWInstallation"/> instance representing the standard WoW installation, if found.</returns>
 		public static WoWInstallation Find()
 		{
@@ -195,14 +198,16 @@ namespace CrystalMpq.Utility
 			{
 				if (Environment.OSVersion.Platform == PlatformID.Win32NT)
 				{
-					if ((wowKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Blizzard Entertainment\World of Warcraft")) != null
-						|| (wowKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node\Blizzard Entertainment\World of Warcraft")) != null)
+					if ((wowKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Blizzard Entertainment\World of Warcraft") ??
+							Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node\Blizzard Entertainment\World of Warcraft")) != null)
 						path = (string)wowKey.GetValue("InstallPath");
+					else
+						throw new FileNotFoundException();
 				}
 				else if (Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix)
 					path = @"/Applications/World of Warcraft";
 				else
-					throw new Exception("Automatic WoW Installation Discovery Unsupported for your platform.");
+					throw new PlatformNotSupportedException("Automatic WoW Installation Discovery Unsupported for your platform.");
 			}
 			finally
 			{
@@ -214,38 +219,59 @@ namespace CrystalMpq.Utility
 
 		#region Archive Detection Functions
 
-		/// <summary>
-		/// Finds the archives associated with this <see cref="WoWInstallation"/>.
-		/// </summary>
-		private void FindArchives()
+		/// <summary>Finds the archives associated with this <see cref="WoWInstallation"/>.</summary>
+		/// <remarks>This implementation will find archives for the new Cataclysm instlaltions, not the old ones.</remarks>
+		private static string[] FindArchives(string dataPath)
 		{
 			List<string> archiveList = new List<string>();
 
-			foreach (string expectedArchiveName in expectedArchiveNames)
+			foreach (string expectedArchiveName in expectedArchiveNamesCataclysm)
 			{
-				string archive = null;
+				string archiveName = string.Format(CultureInfo.InvariantCulture, firstArchive, expectedArchiveName);
+				if (File.Exists(IOPath.Combine(dataPath, archiveName))) archiveList.Add(archiveName);
+				else return null;
+			}
+
+			for (int i = 1; ; i++)
+			{
+				string archiveName = string.Format(CultureInfo.InvariantCulture, expansionArchive, i);
+				if (File.Exists(IOPath.Combine(dataPath, archiveName))) archiveList.Add(archiveName);
+				else if (i <= 3) return null; // There are at least 3 expansion archives for cataclysm…
+				else break;
+			}
+
+			archiveList.Reverse();
+			return archiveList.ToArray();
+		}
+		
+		/// <summary>Finds the archives associated with this <see cref="WoWInstallation"/>.</summary>
+		/// <remarks>This implementation will find archives for the old pre-Cataclysm WoW installations.</remarks>
+		private static string[] FindArchivesOld(string dataPath)
+		{
+			List<string> archiveList = new List<string>();
+
+			foreach (string expectedArchiveName in expectedArchiveNamesOld)
+			{
+				string archiveName = null;
 				int i = 0;
 
 				do
 				{
 					if (i++ != 0)
 					{
-						archiveList.Add(archive);
-						archive = string.Format(CultureInfo.InvariantCulture, otherArchive, expectedArchiveName, i);
+						archiveList.Add(archiveName);
+						archiveName = string.Format(CultureInfo.InvariantCulture, otherArchive, expectedArchiveName, i);
 					}
 					else
-						archive = string.Format(CultureInfo.InvariantCulture, firstArchive, expectedArchiveName);
-				} while (File.Exists(_Path.Combine(dataPath, archive)));
+						archiveName = string.Format(CultureInfo.InvariantCulture, firstArchive, expectedArchiveName);
+				} while (File.Exists(IOPath.Combine(dataPath, archiveName)));
 			}
 
 			archiveList.Reverse();
-			archiveArray = archiveList.ToArray();
-			archiveCollection = new ReadOnlyCollection<string>(archiveArray);
+			return archiveList.ToArray();
 		}
 
-		/// <summary>
-		/// Finds the <see cref="LanguagePack"/>s associated with this <see cref="WoWInstallation"/>.
-		/// </summary>
+		/// <summary>Finds the <see cref="LanguagePack"/>s associated with this <see cref="WoWInstallation"/>.</summary>
 		/// <remarks>Each <see cref="LanguagePack"/> itself contains another list of archives.</remarks>
 		private void FindLanguagePacks()
 		{
@@ -253,7 +279,7 @@ namespace CrystalMpq.Utility
 
 			foreach (string directoryPath in Directory.GetDirectories(dataPath))
 			{
-				string directoryName = _Path.GetFileName(directoryPath);
+				string directoryName = IOPath.GetFileName(directoryPath);
 
 				if (directoryName != null && directoryName.Length == 4)
 				{
@@ -276,9 +302,7 @@ namespace CrystalMpq.Utility
 
 		#endregion
 
-		/// <summary>
-		/// Creates a MpqFileSystem using the specified language pack.
-		/// </summary>
+		/// <summary>Creates a MpqFileSystem using the specified language pack.</summary>
 		/// <param name="languagePack">The language pack.</param>
 		/// <param name="parseListFiles">if set to <c>true</c> the list files will be parsed.</param>
 		/// <returns>The newly created MpqFileSystem.</returns>
@@ -287,9 +311,7 @@ namespace CrystalMpq.Utility
 			return CreateFileSystem(languagePack, true, parseListFiles);
 		}
 
-		/// <summary>
-		/// Creates a MpqFileSystem using the specified language pack.
-		/// </summary>
+		/// <summary>Creates a MpqFileSystem using the specified language pack.</summary>
 		/// <param name="languagePack">The language pack.</param>
 		/// <param name="enforceCultureCheck">if set to <c>true</c> the culture checks will be enforced.</param>
 		/// <param name="parseListFiles">if set to <c>true</c> the list files will be parsed.</param>
@@ -302,35 +324,33 @@ namespace CrystalMpq.Utility
 				throw new ArgumentNullException("languagePack");
 			if (languagePack.WoWInstallation != this)
 				throw new ArgumentException();
-			if (enforceCultureCheck && languagePack.DatabaseFieldIndex < 0)
+#pragma warning disable 618
+			if (enforceCultureCheck && installationKind == Utility.InstallationKind.Classic && languagePack.DatabaseFieldIndex < 0)
+#pragma warning restore 618
 				throw new CultureNotSupportedException(languagePack.Culture);
 
 			mpqFileSystem = new MpqFileSystem();
 
 			foreach (string archive in languagePack.Archives)
-				mpqFileSystem.Archives.Add(new MpqArchive(_Path.Combine(languagePack.Path, archive), parseListFiles));
+				mpqFileSystem.Archives.Add(new MpqArchive(IOPath.Combine(languagePack.Path, archive), parseListFiles));
 
 			foreach (string archive in archiveArray)
-				mpqFileSystem.Archives.Add(new MpqArchive(_Path.Combine(dataPath, archive), parseListFiles));
+				mpqFileSystem.Archives.Add(new MpqArchive(IOPath.Combine(dataPath, archive), parseListFiles));
 
 			return mpqFileSystem;
 		}
 
-		/// <summary>
-		/// Gets the path of this WoW installation.
-		/// </summary>
+		/// <summary>Gets the path of this WoW installation.</summary>
 		public string Path { get { return wowPath; } }
-		/// <summary>
-		/// Gets the path to the data associated with the installation.
-		/// </summary>
+		/// <summary>Gets the path to the data associated with the installation.</summary>
 		public string DataPath { get { return dataPath; } }
-		/// <summary>
-		/// Gets a collection of language packs associated with the installation.
-		/// </summary>
+		/// <summary>Gets a collection of language packs associated with the installation.</summary>
 		public LanguagePackCollection LanguagePacks { get { return languagePackCollection; } }
-		/// <summary>
-		/// Gets a collection of string containing the names of the archives detected as part of the installation.
-		/// </summary>
+		/// <summary>Gets a collection of string containing the names of the archives detected as part of the installation.</summary>
 		public ReadOnlyCollection<string> Archives { get { return archiveCollection; } }
+		/// <summary>Gets a value representing the installation kind. </summary>
+		/// <remarks>This value is useful to differenciate classic installations from newer installations (Cataclysm or newer).</remarks>
+		/// <value>The kind of the installation.</value>
+		public InstallationKind InstallationKind { get { return installationKind; } }
 	}
 }
