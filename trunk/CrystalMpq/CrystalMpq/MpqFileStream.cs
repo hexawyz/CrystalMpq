@@ -18,11 +18,9 @@ namespace CrystalMpq
 {
 	public sealed class MpqFileStream : Stream
 	{
-		MpqArchive archive;
 		MpqFile file;
 		int index, last;
 		int position, currentBlock, readBufferOffset;
-		MpqFileFlags flags;
 		byte[] blockBuffer, compressedBuffer;
 		uint[] /*decodeBuffer, */fileHeader;
 		uint seed;
@@ -33,61 +31,54 @@ namespace CrystalMpq
 			int blockCount;
 			uint length;
 
-			if (file == null)
-				throw new ArgumentNullException("owner");
-			archive = file.Archive;
+			if (file.IsPatch)
+				throw new NotSupportedException("Patch files will be supported in a later revision");
 			this.file = file;
 			this.index = file.Index;
 			length = (uint)file.Size;
-			this.last = (int)(length % archive.BlockSize);
+			this.last = (int)(length % file.Archive.BlockSize);
 			this.position = 0;
 			this.currentBlock = -1;
 			this.readBufferOffset = 0;
-			this.flags = file.Flags;
-			//this.readBuffer = new byte[archive.BlockSize];
-			//this.decompressionBuffer = new byte[archive.BlockSize];
-			//this.decodeBuffer = new uint[archive.BlockSize / 4];
-			if ((this.flags & MpqFileFlags.SingleBlock) != 0)
+
+			if (this.singleUnit = (file.Flags & MpqFileFlags.SingleBlock) != 0)
 			{
 #if DEBUG
 				System.Diagnostics.Debug.WriteLine("Single block files are not fully supported yet...");
 #endif
-				this.singleUnit = true;
 				this.blockBuffer = new byte[file.Size];
 				this.compressedBuffer = new byte[file.CompressedSize];
 			}
 			else
 			{
-				this.singleUnit = false;
-				this.blockBuffer = new byte[archive.BlockSize];
-				this.compressedBuffer = new byte[archive.BlockSize];
+				this.blockBuffer = new byte[file.Archive.BlockSize];
+				this.compressedBuffer = new byte[file.Archive.BlockSize];
 			}
-			if ((this.flags & MpqFileFlags.Encrypted) != 0)
+
+			if (file.IsEncrypted)
 			{
-				if (file.Seed == 0)
-					throw new SeedNotFoundException(index);
-				else
-					seed = file.Seed;
+				if (file.Seed == 0) throw new SeedNotFoundException(index);
+				else seed = file.Seed;
+
+				if ((file.Flags & MpqFileFlags.PositionEncrypted) != 0)
+					seed = (seed + (uint)file.Offset) ^ (uint)length;
 			}
-			else
-				seed = 0;
-			if ((this.flags & MpqFileFlags.PositionEncrypted) != 0)
-				seed = (seed + (uint)file.Offset) ^ (uint)length;
+			
 			if (this.singleUnit)
 			{
 				fileHeader = new uint[] { 0, (uint)file.CompressedSize };
 				last = (int)file.Size;
 			}
-			else if ((this.flags & MpqFileFlags.Compressed) != 0)
-				archive.GetPackedFileHeader(index, seed, out fileHeader);
+			else if (file.IsCompressed)
+				file.Archive.GetPackedFileHeader(index, seed, out fileHeader);
 			else // Uncompressed files
 			{
-				blockCount = (int)((length + archive.BlockSize - 1) / archive.BlockSize) + 1;
+				blockCount = (int)((length + file.Archive.BlockSize - 1) / file.Archive.BlockSize) + 1;
 				fileHeader = new uint[blockCount];
 				fileHeader[0] = 0;
 				for (int i = 1; i < blockCount; i++)
 				{
-					fileHeader[i] = fileHeader[i - 1] + (uint)archive.BlockSize;
+					fileHeader[i] = fileHeader[i - 1] + (uint)file.Archive.BlockSize;
 					if (fileHeader[i] > length)
 						fileHeader[i] = (uint)length;
 				}
@@ -125,44 +116,15 @@ namespace CrystalMpq
 
 		public override long Length { get { return file.Size; } }
 
-		public override int Read(byte[] buffer, int offset, int count)
-		{
-			int i, blockSize;
+		public MpqFile File { get { return file; } }
 
-			if (position < 0)
-				return 0;
-			//for (i = 0; i < count; i++, offset++, readBufferOffset++, position++)
-			//{
-			//    if (readBufferOffset >= 0x1000)
-			//        UpdateBuffer();
-			//    if (position >= Length)
-			//        break;
-			//    buffer[offset] = readBuffer[readBufferOffset];
-			//}
+		public unsafe override int Read(byte[] buffer, int offset, int count)
+		{
 			if (offset + count > buffer.Length)
 				throw new IndexOutOfRangeException();
-			blockSize = archive.BlockSize;
-			unsafe
-			{
-				fixed (byte* pBuffer = buffer, pReadBuffer = blockBuffer)
-				{
-					byte* pOutput = pBuffer + offset,
-						pInput = pReadBuffer + readBufferOffset;
 
-					for (i = 0; i < count; i++, readBufferOffset++, position++)
-					{
-						if (readBufferOffset >= blockSize)
-						{
-							UpdateBuffer();
-							pInput = pReadBuffer + readBufferOffset;
-						}
-						if (position >= Length)
-							break;
-						*pOutput++ = *pInput++;
-					}
-				}
-			}
-			return i;
+			fixed (byte* bufferPointer = buffer)
+				return Read(bufferPointer, offset, count);
 		}
 
 		[CLSCompliant(false)]
@@ -170,9 +132,8 @@ namespace CrystalMpq
 		{
 			int i, blockSize;
 
-			if (position < 0)
-				return 0;
-			blockSize = archive.BlockSize;
+			if (position < 0) return 0;
+			blockSize = file.Archive.BlockSize;
 			fixed (byte* pReadBuffer = blockBuffer)
 			{
 				byte* pOutput = buffer + offset,
@@ -193,10 +154,7 @@ namespace CrystalMpq
 			return i;
 		}
 
-		public override void Write(byte[] buffer, int offset, int count)
-		{
-			throw new NotSupportedException();
-		}
+		public override void Write(byte[] buffer, int offset, int count) { throw new NotSupportedException(); }
 
 		public override long Seek(long offset, SeekOrigin origin)
 		{
@@ -223,6 +181,7 @@ namespace CrystalMpq
 		public override void Close()
 		{
 			base.Close();
+
 			if (!closed)
 			{
 				file.Close();
@@ -232,8 +191,6 @@ namespace CrystalMpq
 
 		private void UpdateBuffer()
 		{
-			int tmp;
-
 			if (position < 0 || position >= Length)
 				return;
 			// Handle single-block files
@@ -248,13 +205,14 @@ namespace CrystalMpq
 			}
 			else // Normal files
 			{
-				tmp = position / archive.BlockSize;
-				if (currentBlock != tmp)
+				int newBlock = position / file.Archive.BlockSize;
+
+				if (currentBlock != newBlock)
 				{
-					ReadBlock(tmp);
-					currentBlock = tmp;
+					ReadBlock(newBlock);
+					currentBlock = newBlock;
 				}
-				readBufferOffset = position % archive.BlockSize;
+				readBufferOffset = position % file.Archive.BlockSize;
 			}
 		}
 
@@ -267,7 +225,7 @@ namespace CrystalMpq
 			if (block >= fileHeader.Length - 1)
 				throw new Exception("Invalid block access");
 			length = (int)(fileHeader[block + 1] - fileHeader[block]);
-			compressed = !(length == archive.BlockSize || (length == last && block == fileHeader.Length - 2));
+			compressed = !(length == file.Archive.BlockSize || (length == last && block == fileHeader.Length - 2));
 #if DEBUG && VERBOSE
 			Debug.WriteLine("Reading block 0x" + block.ToString("X4") + " (Compressed length: 0x" + length.ToString("X4") + ") of file \"" + file.FileName + "\".");
 #endif
@@ -276,14 +234,11 @@ namespace CrystalMpq
 			else
 				buffer = compressedBuffer;
 			file.Archive.ReadBlock(buffer, 0, file.Offset + fileHeader[block], length);
-			if ((flags & MpqFileFlags.Encrypted) != 0)
+			if (file.IsEncrypted)
 			{
 #if DEBUG && VERBOSE
 				Debug.WriteLine("Block is encrypted");
 #endif
-				//Buffer.BlockCopy(readBuffer, 0, decodeBuffer, 0, length);
-				//unchecked { Encryption.Decrypt(decodeBuffer, seed + (uint)block, length / 4); }
-				//Buffer.BlockCopy(decodeBuffer, 0, readBuffer, 0, length);
 				// If last bytes don't fit in an uint, then they won't be encrypted/decrypted
 				// Therefore we just leave "length" here as a parameter and bits 0..1 will be cut
 				unchecked { Encryption.Decrypt(buffer, seed + (uint)block, length); }
@@ -306,13 +261,10 @@ namespace CrystalMpq
 #endif
 				return;
 			}
-			else if ((flags & MpqFileFlags.DCLCompressed) != 0)
+			else if ((file.Flags & MpqFileFlags.DclCompressed) != 0)
 				Compression.DecompressBlock(compressedBuffer, length, blockBuffer, false);
-			else if ((flags & MpqFileFlags.MultiCompressed) != 0)
+			else if ((file.Flags & MpqFileFlags.MultiCompressed) != 0)
 				Compression.DecompressBlock(compressedBuffer, length, blockBuffer, true);
-			//temp = readBuffer;
-			//readBuffer = decompressionBuffer;
-			//decompressionBuffer = temp;
 		}
 	}
 }

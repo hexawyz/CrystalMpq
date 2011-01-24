@@ -12,6 +12,7 @@ using System;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 
 namespace CrystalMpq
@@ -22,27 +23,25 @@ namespace CrystalMpq
 	/// </summary>
 	public sealed class MpqArchive
 	{
-		#region MPQFileCollection Class
+		#region MpqFileCollection Class
 
 		/// <summary>
-		/// Represents a collection of MPQFile in a MPQArchive
+		/// Represents a collection of MpqFile in a MpqArchive
 		/// </summary>
-		public class MPQFileCollection : IEnumerable<MpqFile>
+		public class MpqFileCollection : IEnumerable<MpqFile>
 		{
 			private MpqArchive owner;
 
-			internal MPQFileCollection(MpqArchive owner)
+			internal MpqFileCollection(MpqArchive owner)
 			{
 				if (owner == null)
 					throw new ArgumentNullException("owner");
 				this.owner = owner;
 			}
 
-			/// <summary>
-			/// Gets a file from the collection
-			/// </summary>
-			/// <param name="index">Index of the desired MPQFile item</param>
-			/// <returns>Returns the MPQFile at the specified index</returns>
+			/// <summary> Gets a file from the collection.</summary>
+			/// <param name="index">Index of the desired <see cref="MpqFile"/> item.</param>
+			/// <returns>Returns the <see cref="MpqFile"/> at the specified index.</returns>
 			public MpqFile this[int index]
 			{
 				get
@@ -53,28 +52,15 @@ namespace CrystalMpq
 				}
 			}
 
-			/// <summary>
-			/// Gets the number of MPQFile items in the collection
-			/// </summary>
-			public long Count
-			{
-				get
-				{
-					return owner.files.Length;
-				}
-			}
+			/// <summary>Gets the number of <see cref="MpqFile"/> items in the collection.</summary>
+			public long Count { get { return owner.files.Length; } }
 
 			#region IEnumerable Implementation
 
-			IEnumerator IEnumerable.GetEnumerator()
-			{
-				return owner.files.GetEnumerator();
-			}
+			IEnumerator IEnumerable.GetEnumerator() { return owner.files.GetEnumerator(); }
 
-			/// <summary>
-			/// 
-			/// </summary>
-			/// <returns>Returns an enumerator for the current collection</returns>
+			/// <summary> Gets an enumerator for the collection. </summary>
+			/// <returns>Returns an enumerator for the current collection.</returns>
 			public IEnumerator<MpqFile> GetEnumerator()
 			{
 				for (int i = 0; i < owner.files.Length; i++)
@@ -86,28 +72,25 @@ namespace CrystalMpq
 
 		#endregion
 
-		#region Static fields
-		private static uint hashTableHash;
-		private static uint blockTableHash;
-		private const uint mpqSignature = 0x1A51504D;
-		
-		static MpqArchive()
-		{
-			hashTableHash = Encryption.Hash("(hash table)", 0x300);
-			blockTableHash = Encryption.Hash("(block table)", 0x300);
-		}
+		#region Static Fields
+
+		internal static readonly uint HashTableHash = Encryption.Hash("(hash table)", 0x300);
+		internal static readonly uint BlockTableHash = Encryption.Hash("(block table)", 0x300);
+		internal const uint MpqSignature = 0x1A51504D;
+		internal const uint MpqUserDataSignature = 0x1B51504D;
+
 		#endregion
 
 		private string filename;
 		private BinaryReader reader;
 		private long archiveOffset;
 		private long archiveSize;
-		private int headerSize;
+		private long headerSize;
 		private int blockSize;
 		private MpqFormat archiveFormat;
 		private MpqHashTable hashTable;
 		private MpqFile[] files;
-		private MPQFileCollection fileCollection;
+		private MpqFileCollection fileCollection;
 		private MpqFile listFile;
 		private bool listFileParsed;
 		private object syncRoot;
@@ -117,7 +100,7 @@ namespace CrystalMpq
 		private MpqArchive()
 		{
 			syncRoot = new object();
-			fileCollection = new MPQFileCollection(this);
+			fileCollection = new MpqFileCollection(this);
 			listFileParsed = false;
 		}
 
@@ -153,9 +136,7 @@ namespace CrystalMpq
 		/// </remarks>
 		/// <param name="stream">Stream containing MPQ Archive</param>
 		public MpqArchive(Stream stream)
-			: this(stream, true)
-		{
-		}
+			: this(stream, true) { }
 
 		/// <summary>
 		/// Initialize a new instance of the class MPQArchive
@@ -166,81 +147,154 @@ namespace CrystalMpq
 			: this()
 		{
 			OpenInternal(stream, parseListFile);
-			this.filename = "";
+			var fileStream = stream as FileStream;
+			this.filename = fileStream != null ? fileStream.Name : "";
 		}
 
 		#endregion
 
 		private void OpenInternal(Stream stream, bool parseListFile)
 		{
-			// MPQ offsets actually use no more than 48 bits, then we don't need to use UInt64
-			long hashTableOffset, blockTableOffset, extendedBlockTableOffset;
+			// MPQ offsets can be 32 bits, 48 bits or 64 bits depending on the MPQ version used…
+			long hashTableOffset, hashTableCompressedSize;
+			long blockTableOffset, blockTableCompressedSize;
+			long extendedBlockTableOffset, extendedBlockTableCompressedSize;
+			long enhancedHashTableOffset, enhancedHashTableCompressedSize;
+			long enhancedBlockTableOffset, enhancedBlockTableCompressedSize;
 			int hashTableSize, blockTableSize;
-			uint[] buffer;
+			uint rawChunkSize;
 
-			archiveOffset = stream.Position;
-			reader = new BinaryReader(stream);
-			if (reader.ReadUInt32() != mpqSignature)
-				throw new ArchiveInvalidException();
-			headerSize = reader.ReadInt32();
-			archiveSize = reader.ReadUInt32();
-			// MPQ format detection
-			switch (reader.ReadUInt16()) // Read MPQ format
+			// We use a lot of "long" and "int" variables here, but data is likely stored as ulong and uint…
+			// So better test for overflow… Who knows what might happen in the future… ;)
+			// The "safe" pattern is to read as unsigned and cast to signed where oferflow is possible.
+			checked
 			{
-				case 0: // Original MPQ format
-					archiveFormat = MpqFormat.Original;
-					if (headerSize != 0x20)
-						throw new Exception();
-					break;
-				case 1: // Extended MPQ format
-					archiveFormat = MpqFormat.Extended;
-					if (headerSize != 0x2C)
-						throw new Exception();
-					break;
-				default:
-					throw new Exception();
-			}
-			blockSize = 0x200 << reader.ReadUInt16(); // Calculate block size
-			hashTableOffset = reader.ReadUInt32(); // Get Hash Table Offset
-			blockTableOffset = reader.ReadUInt32(); // Get Block Table Offset
-			hashTableSize = reader.ReadInt32(); // Get Hash Table Size
-			blockTableSize = reader.ReadInt32(); // Get Block Table Size
-			// Process additional values for "Burning Crusade" MPQ format
-			if (archiveFormat == MpqFormat.Extended)
-			{
-				ushort hashTableOffsetHigh, blockTableOffsetHigh;
+				archiveOffset = stream.Position;
+				reader = new BinaryReader(stream);
+				if (reader.ReadUInt32() != MpqSignature)
+					throw new ArchiveInvalidException();
+				headerSize = reader.ReadUInt32();
+				archiveSize = reader.ReadUInt32();
+				// MPQ format detection
+				// Unknown MPQ version will raise an error… This seems like a safe idea.
+				switch (reader.ReadUInt16()) // Read MPQ format
+				{
+					case 0: // Original MPQ format
+						archiveFormat = MpqFormat.Original;
+						if (headerSize < 0x20) throw new ArchiveCorruptException();
+						break;
+					case 1: // Extended MPQ format (WoW Burning Crusade)
+						archiveFormat = MpqFormat.BurningCrusade;
+						if (headerSize < 0x2C) throw new ArchiveCorruptException();
+						break;
+					case 2: // Enhanced MPQ format (Take 1)
+						archiveFormat = MpqFormat.CataclysmFirst;
+						// Header may not contain any additional field than BC extended MPQ format.
+						// However, if additional fields are present, the header should be at least 68 bytes long.
+						if (headerSize < 0x2C || (headerSize > 0x2C && headerSize < 0x44))
+							throw new ArchiveCorruptException();
+						break;
+					case 3: // Enhanced MPQ format (Take 2)
+						archiveFormat = MpqFormat.CataclysmSecond;
+						if (headerSize < 0xD0) throw new ArchiveCorruptException();
+						break;
+					default:
+						throw new InvalidMpqVersionException();
+				}
+				blockSize = 0x200 << reader.ReadUInt16(); // Calculate block size
+				hashTableOffset = reader.ReadUInt32(); // Get Hash Table Offset
+				blockTableOffset = reader.ReadUInt32(); // Get Block Table Offset
+				hashTableSize = (int)reader.ReadUInt32(); // Get Hash Table Size
+				blockTableSize = (int)reader.ReadUInt32(); // Get Block Table Size
 
-				// Read extended information
-				extendedBlockTableOffset = reader.ReadInt64();
-				hashTableOffsetHigh = reader.ReadUInt16();
-				blockTableOffsetHigh = reader.ReadUInt16();
-				// Modify offsets accordingly
-				hashTableOffset |= (long)hashTableOffsetHigh << 32;
-				blockTableOffset |= (long)blockTableOffsetHigh << 32;
+				// Assign the compressed size for the various tables.
+				// Since compression was non-existant with V1 & V2, we know the compressed size is the uncompressed size.
+				// If the compressed size is different as specified in V4, this will be overwritten later.
+				hashTableCompressedSize = 4 * sizeof(uint) * hashTableSize;
+				blockTableCompressedSize = 4 * sizeof(uint) * blockTableSize;
+
+				// Process additional values for "Burning Crusade" MPQ format
+				if (archiveFormat >= MpqFormat.BurningCrusade)
+				{
+					ushort hashTableOffsetHigh, blockTableOffsetHigh;
+
+					// Read extended information
+					extendedBlockTableOffset = (long)reader.ReadUInt64();
+					hashTableOffsetHigh = reader.ReadUInt16();
+					blockTableOffsetHigh = reader.ReadUInt16();
+					// Modify offsets accordingly
+					hashTableOffset |= (long)hashTableOffsetHigh << 32;
+					blockTableOffset |= (long)blockTableOffsetHigh << 32;
+
+					// Handle MPQ version 3 (Cataclysm First)
+					if (archiveFormat >= MpqFormat.CataclysmFirst && headerSize >= 0x44)
+					{
+						archiveSize = (long)reader.ReadUInt64();
+						enhancedBlockTableOffset = (long)reader.ReadUInt64();
+						enhancedHashTableOffset = (long)reader.ReadUInt64();
+
+						if (archiveFormat >= MpqFormat.CataclysmSecond)
+						{
+							hashTableCompressedSize = (long)reader.ReadUInt64();
+							blockTableCompressedSize = (long)reader.ReadUInt64();
+							extendedBlockTableCompressedSize = (long)reader.ReadUInt64();
+							enhancedHashTableCompressedSize = (long)reader.ReadUInt64();
+							enhancedBlockTableCompressedSize = (long)reader.ReadUInt64();
+
+							rawChunkSize = reader.ReadUInt32();
+						}
+						else
+						{
+							// TODO: Compute the uncompresed size for the new enhanced tables of version 3… (Will have to check how to do that…)
+							extendedBlockTableCompressedSize = extendedBlockTableOffset > 0 ? sizeof(ushort) * blockTableSize : 0;
+						}
+					}
+					else
+					{
+#if DEBUG
+						long oldArchiveSize = archiveSize;
+#endif
+						// Compute 64 bit archive size (Not sure whether this is actually needed, but just in case)
+						if (extendedBlockTableOffset > hashTableOffset && extendedBlockTableOffset > blockTableOffset)
+							archiveSize = extendedBlockTableOffset + sizeof(ushort) * blockTableSize;
+						else if (blockTableOffset > hashTableOffset)
+							archiveSize = blockTableOffset + 4 * sizeof(uint) * blockTableSize;
+						else
+							archiveSize = hashTableOffset + 4 * sizeof(uint) * hashTableSize;
+#if DEBUG
+						Debug.Assert(oldArchiveSize >= archiveSize);
+#endif
+					}
+				}
+				else
+				{
+					extendedBlockTableOffset = 0;
+					extendedBlockTableCompressedSize = 0;
+				}
+
+				if (!CheckOffset((uint)headerSize)
+					|| !CheckOffset(hashTableOffset) || !CheckOffset(blockTableOffset)
+					|| hashTableSize < 0 || blockTableSize < 0 || hashTableSize < blockTableSize)
+					throw new ArchiveCorruptException();
 			}
-			if (!CheckOffset((uint)headerSize)
-				|| !CheckOffset(hashTableOffset) || !CheckOffset(blockTableOffset)
-				|| hashTableSize < 0 || blockTableSize < 0 || hashTableSize < blockTableSize)
-				throw new ArchiveCorruptException();
+
 			// Read Tables
-			buffer = new uint[4 * Math.Max(hashTableSize, blockTableSize)]; // Initialize read buffer
-			hashTable = new MpqHashTable(hashTableSize); // Initialize Hash Table
-			reader.BaseStream.Seek(archiveOffset + hashTableOffset, SeekOrigin.Begin);
-			Buffer.BlockCopy(reader.ReadBytes(16 * hashTableSize), 0, buffer, 0, 16 * hashTableSize);
-			Encryption.Decrypt(buffer, hashTableHash); // Decode Hash Table
-			for (int i = 0; i < hashTableSize; i++) // Fill MPQHashTable object
-				hashTable.SetEntry(i, buffer[4 * i], buffer[4 * i + 1], (int)buffer[4 * i + 2], (int)buffer[4 * i + 3]);
+			var buffer = new byte[4 * sizeof(uint) * Math.Max(hashTableSize, blockTableSize)]; // Shared read buffer
+
+			// Read Hash Table
+			hashTable = ReadHashTable(buffer, hashTableSize, hashTableOffset, hashTableCompressedSize);
+#if ENFORCE_SAFETY
 			if (!hashTable.CheckIntegrity(blockTableSize)) // Check HashTable Integrity (Could be too restrictive, correct if needed)
 				throw new ArchiveCorruptException();
-			reader.BaseStream.Seek(archiveOffset + blockTableOffset, SeekOrigin.Begin);
-			Buffer.BlockCopy(reader.ReadBytes(16 * blockTableSize), 0, buffer, 0, 16 * blockTableSize); 
-			Encryption.Decrypt(buffer, blockTableHash); // Decrypt Block Table
-			files = new MpqFile[blockTableSize]; // Initialize array
-			for (int i = 0; i < blockTableSize; i++) // Fill array
-				files[i] = new MpqFile(this, i, buffer[4 * i], buffer[4 * i + 1], buffer[4 * i + 2], buffer[4 * i + 3]);
+#endif
+
+			// Read Block Table
+			files = ReadBlockTable(buffer, blockTableSize, blockTableOffset, blockTableCompressedSize);
 			foreach (MpqHashTable.HashEntry entry in hashTable) // Bind hash table entries to block table entries
-				if (entry.Valid && entry.Block >= 0 && entry.Block < blockTableSize)
+				if (entry.IsValid && entry.Block >= 0 && entry.Block < blockTableSize)
 					files[entry.Block].BindHashTableEntry(entry);
+
+			// When possible, find and parse List File…
 			TryFilename("(listfile)");
 			listFile = FindFile("(listfile)", 0);
 			if (listFile == null)
@@ -249,28 +303,54 @@ namespace CrystalMpq
 				ParseListFile();
 		}
 
-		private bool CheckOffset(long offset)
+		private bool CheckOffset(long offset) { return offset >= 0 && offset < archiveSize; }
+
+		private MpqHashTable ReadHashTable(byte[] buffer, int tableLength, long offset, long dataLength)
 		{
-			if (offset < archiveSize)
-				return true;
-			else
-				return false;
+			// Stream.Read only takes an int length for now, and it is unlikely that the hash table will exceed 2GB.
+			// But like always, who knows what might happen in the future… Better check for overflow and crash nicely ! ;)
+			int dataLength2 = checked((int)dataLength);
+
+			reader.BaseStream.Seek(archiveOffset + offset, SeekOrigin.Begin);
+			if (reader.Read(buffer, 0, dataLength2) != dataLength)
+				throw new EndOfStreamException();
+
+			var hashTable = MpqHashTable.FromData(buffer, dataLength2, tableLength);
+
+			return hashTable;
 		}
 
-		/// <summary>
-		/// Gets a value that indicate wether the current archive possesses a listfile.
-		/// </summary>
+		private unsafe MpqFile[] ReadBlockTable(byte[] buffer, int tableLength, long offset, long dataLength)
+		{
+			// Stream.Read only takes an int length for now, and it is unlikely that the hash table will exceed 2GB.
+			// But like always, who knows what might happen in the future… Better check for overflow and crash nicely ! ;)
+			int dataLength2 = checked((int)dataLength);
+
+			reader.BaseStream.Seek(archiveOffset + offset, SeekOrigin.Begin);
+			if (reader.Read(buffer, 0, dataLength2) != dataLength)
+				throw new EndOfStreamException();
+
+			fixed (byte* bufferPointer = buffer)
+			{
+				uint* blockTableDataPointer = (uint*)bufferPointer;
+
+				// One table entry is 4 [u]int…
+				Encryption.Decrypt(bufferPointer, MpqArchive.BlockTableHash, 4 * tableLength);
+
+				var files = new MpqFile[tableLength];
+				for (int i = 0; i < tableLength; i++)
+					files[i] = new MpqFile(this, i, *blockTableDataPointer++, *blockTableDataPointer++, *blockTableDataPointer++, *blockTableDataPointer++);
+
+				return files;
+			}
+		}
+
+		/// <summary>Gets a value that indicate wether the current archive possesses a listfile.</summary>
 		/// <remarks>
 		/// Having a listfile is not required for an archive to be readable.
 		/// But you have to know the filenames if you want to read the files inside.
 		/// </remarks>
-		public bool HasListFile
-		{
-			get
-			{
-				return listFile != null;
-			}
-		}
+		public bool HasListFile { get { return listFile != null; } }
 
 		/// <summary>
 		/// Instructs the MPQArchive object to parse the list file associated with the archive if it had not already been done.
@@ -282,33 +362,38 @@ namespace CrystalMpq
 		/// </remarks>
 		public void ParseListFile()
 		{
-			Stream listFileStream;
-			StreamReader listFileReader;
-			string line;
+			if (listFileParsed) return;
 
-			if (!listFileParsed)
+			using (var listFileReader = new StreamReader(listFile.Open()))
 			{
-				listFileStream = listFile.Open();
-				listFileReader = new StreamReader(listFileStream);
+				string line;
+
 				while ((line = listFileReader.ReadLine()) != null)
-				{
-					//System.Diagnostics.Debug.WriteLine(line);
-					TryFilenameInternal(line);
-				}
-				listFileReader.Close();
+					TryFilename(line, true);
 				listFileParsed = true;
 			}
 		}
 
-		private void TryFilenameInternal(string filename)
+		/// <summary>
+		/// Instructs the MPQArchive object to associate the given filename with files in the archive.
+		/// If there are files who respond to this filename, it will be associated to them.
+		/// Otherwise, nothing will happen.
+		/// </summary>
+		/// <remarks>This function may be useful when you don't have a listfile for a given MPQ archive or when you just want to find some hidden file.</remarks>
+		/// <param name="filename">The filename you want to try</param>
+		/// <param name="listed">If set to <c>true</c>, the name was found in the listfile.</param>
+		private void TryFilename(string filename, bool listed)
 		{
 			int[] blocks = hashTable.FindMulti(filename);
-			
-			for (int i = 0; i < blocks.Length; i++)
-				files[blocks[i]].AssignFileName(filename, true);
+
 #if DEBUG
-			if (blocks.Length == 0)
-				System.Diagnostics.Debug.WriteLine("File \"" + filename + "\" not found in archive.");
+			if (listed) Debug.Assert(blocks.Length > 0);
+#endif
+
+			for (int i = 0; i < blocks.Length; i++)
+				files[blocks[i]].OnNameDetected(filename, true, listed);
+#if DEBUG
+			if (blocks.Length == 0) Debug.WriteLine("File \"" + filename + "\" not found in archive.");
 #endif
 		}
 
@@ -317,84 +402,67 @@ namespace CrystalMpq
 		/// If there are files who respond to this filename, it will be associated to them.
 		/// Otherwise, nothing will happen.
 		/// </summary>
-		/// <remarks>
-		/// This function may be useful when you don't have a listfile for a given MPQ archive or when you just want to find some hidden file.
-		/// </remarks>
+		/// <remarks>This function may be useful when you don't have a listfile for a given MPQ archive or when you just want to find some hidden file.</remarks>
 		/// <param name="filename">The filename you want to try</param>
-		public void TryFilename(string filename)
-		{
-			int[] blocks = hashTable.FindMulti(filename);
-			
-			for (int i = 0; i < blocks.Length; i++)
-				files[blocks[i]].AssignFileName(filename, false);
-		}
+		public void TryFilename(string filename) { TryFilename(filename, false); }
 
-		/// <summary>
-		/// Find files in archive
-		/// </summary>
+		/// <summary>Find files in archive.</summary>
 		/// <remarks>
-		/// This function will return all MPQFile matching the given filename
-		/// There might be more than one MPQFile because of localization
+		/// This function will return all MPQFile matching the given filename.
+		/// There might be more than one MPQFile because of localization.
 		/// </remarks>
-		/// <param name="filename">Filename of the files</param>
-		/// <returns>Returns an array of MPQFile, containing 0 or more MPQFile</returns>
+		/// <param name="filename">Filename of the files.</param>
+		/// <returns>Returns an array of MPQFile, containing 0 or more MPQFile.</returns>
 		public MpqFile[] FindFiles(string filename)
 		{
 			int[] blocks = hashTable.FindMulti(filename);
 			MpqFile[] files = new MpqFile[blocks.Length];
-			
+
 			for (int i = 0; i < blocks.Length; i++)
-				files[i] = this.files[blocks[i]];
+				(files[i] = this.files[blocks[i]]).OnNameDetected(filename);
 			return files;
 		}
 
-		/// <summary>
-		/// Find one file in archive
-		/// </summary>
-		/// <remarks>
-		/// This function will only return the first result found
-		/// </remarks>
-		/// <param name="filename">Filename of the file to find</param>
-		/// <returns>Returns an MPQFile object if file is found, or null otherwise</returns>
+		/// <summary>Find one file in archive.</summary>
+		/// <remarks>This function will only return the first result found.</remarks>
+		/// <param name="filename">Filename of the file to find.</param>
+		/// <returns>Returns an MPQFile object if file is found, or null otherwise.</returns>
 		public MpqFile FindFile(string filename)
 		{
 			int block = hashTable.Find(filename);
 
-			if (block == -1)
-				return null;
-			else
-				return files[block];
+			if (block >= 0)
+			{
+				var file = files[block];
+				
+				file.OnNameDetected(filename);
+				return file;
+			}
+			else return null;
 		}
 
-		/// <summary>
-		/// Find one file in archive, based on lcid
-		/// </summary>
-		/// <param name="filename">Filename of the file to find</param>
-		/// <param name="lcid">LCID of file to find</param>
-		/// <returns>Returns an MPQFile object if file is found, or null otherwise</returns>
+		/// <summary>Find one file in archive, based on LCID.</summary>
+		/// <param name="filename">Filename of the file to find.</param>
+		/// <param name="lcid">LCID of file to find.</param>
+		/// <returns>Returns an MPQFile object if file is found, or null otherwise.</returns>
 		public MpqFile FindFile(string filename, int lcid)
 		{
-			int block;
+			int block = hashTable.Find(filename, lcid);
 
-			block = hashTable.Find(filename, lcid);
+			if (block >= 0)
+			{
+				var file = files[block];
 
-			if (block == -1)
-				return null;
-			else
-				return files[block];
+				file.OnNameDetected(filename);
+				return file;
+			}
+			else return null;
 		}
 
-		/// <summary>
-		/// Sets the preferred culture to use when searching files in the archive.
-		/// </summary>
-		/// <remarks>
-		/// It might happen that a given file exists for different culture in the same MPQ archive, but it is more likely that your MPQ archive is already localized itself...
-		/// </remarks>
+		/// <summary>Sets the preferred culture to use when searching files in the archive.</summary>
+		/// <remarks>It might happen that a given file exists for different culture in the same MPQ archive, but it is more likely that your MPQ archive is already localized itself…</remarks>
 		/// <param name="lcid">The LCID for the desired culture</param>
-		public void SetPreferredCulture(int lcid)
-		{
-			hashTable.SetPreferredCulture(lcid);
-		}
+		public void SetPreferredCulture(int lcid) { hashTable.SetPreferredCulture(lcid); }
 
 		// To recode and move...
 		internal uint FindFileHash(int index)
@@ -477,49 +545,17 @@ namespace CrystalMpq
 				unchecked { Encryption.Decrypt(header, hash - 1); }
 		}
 
-		/// <summary>
-		/// Gets the size of blocks in the archive.
-		/// </summary>
-		public int BlockSize
-		{
-			get
-			{
-				return blockSize;
-			}
-		}
+		/// <summary>Gets the size of blocks in the archive.</summary>
+		public int BlockSize { get { return blockSize; } }
 
-		/// <summary>
-		/// Gets a collection containing reference to all the files in the archive.
-		/// </summary>
-		public MPQFileCollection Files
-		{
-			get
-			{
-				return fileCollection;
-			}
-		}
+		/// <summary>Gets a collection containing reference to all the files in the archive.</summary>
+		public MpqFileCollection Files { get { return fileCollection; } }
 
-		/// <summary>
-		/// Gets the size of the MPQ archive
-		/// </summary>
-		public long FileSize
-		{
-			get
-			{
-				return archiveSize;
-			}
-		}
+		/// <summary>Gets the size of the MPQ archive.</summary>
+		public long FileSize { get { return archiveSize; } }
 
-		/// <summary>
-		/// Gets a flag indicating the format of the archive
-		/// </summary>
-		public MpqFormat Format
-		{
-			get
-			{
-				return archiveFormat;
-			}
-		}
+		/// <summary>Gets a flag indicating the format of the archive.</summary>
+		public MpqFormat Format { get { return archiveFormat; } }
 	}
 }
 

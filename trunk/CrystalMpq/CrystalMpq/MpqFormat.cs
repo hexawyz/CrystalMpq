@@ -19,16 +19,16 @@ namespace CrystalMpq
 	/// </summary>
 	public enum MpqFormat
 	{
-		/// <summary>
-		/// The archive follows the original MPQ format
-		/// </summary>
+		/// <summary>Original MPQ format.</summary>
 		Original = 0,
-		/// <summary>
-		/// The archive is an extended MPQ archive
-		/// </summary>
-		/// <remarks>
-		/// These archives can exceed the file size of 2 Gb, and possesses additionnal parameters for the files included
-		/// </remarks>
-		Extended = 1
+		/// <summary>Extended MPQ format introduced with WoW - Brurning Crusade.</summary>
+		/// <remarks>These archives can exceed the file size of 2 Gb, and possesses additionnal attributes for the contained files.</remarks>
+		BurningCrusade = 1,
+		/// <summary>Enhanced MPQ format introduced with WoW - Cataclysm.</summary>
+		/// <remarks>These archives can provide increased performance via the new hash table format.</remarks>
+		CataclysmFirst = 2,
+		/// <summary>Enhanced MPQ format introduced with WoW - Cataclysm.</summary>
+		/// <remarks>These archives build upon the previous format, providing more reliability and a potentially reduced file size.</remarks>
+		CataclysmSecond = 3
 	}
 }

@@ -13,15 +13,13 @@ using System;
 namespace CrystalMpq
 {
 	/// <summary>
-	/// 
+	/// Exception thrown when a non-existant block is referenced.
 	/// </summary>
-	public sealed class InvalidFileReference : MpqException
+	public sealed class InvalidFileReferenceException : MpqException
 	{
 		/// <summary>
-		/// 
+		/// Initializes a new instance of the <see cref="InvalidFileReferenceException"/> class.
 		/// </summary>
-		internal InvalidFileReference() : base("Referrence to a file (block) that doesn't exist")
-		{
-		}
+		internal InvalidFileReferenceException() : base("Referrence to a file (block) that doesn't exist") { }
 	}
 }

@@ -351,7 +351,7 @@ namespace CrystalMpq.Explorer
 				foreach (MpqFile file in archive.Files)
 				{
 #if EXPERIMENTAL
-					if (file.FileName != null && file.FileName.Length > 0 && (file.Flags & MpqFileFlags.PatchDeleted) == 0)
+					if (file.FileName != null && file.FileName.Length > 0 && (file.Flags & MpqFileFlags.Deleted) == 0)
 #else
 					if (file.FileName != null && file.FileName.Length > 0)
 #endif
@@ -408,7 +408,7 @@ namespace CrystalMpq.Explorer
 								else
 								{
 									//currentNode.Nodes.Add(newNode);
-									((List<TreeNode>)currentNode.Tag).Add(newNode);
+									(currentNode.Tag as List<TreeNode>).Add(newNode);
 								}
 
 								nodeDictionnary.Add(assembledPath, newNode);

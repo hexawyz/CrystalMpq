@@ -15,19 +15,10 @@ using CrystalMpq.WoWFile;
 namespace CrystalMpq.WoWDatabases
 {
 	[StructLayout(LayoutKind.Sequential)]
-	public struct WorldMapAreaRecord
+	public struct PhaseRecord
 	{
-		[Id] public int Id;
-		public int Map;
-		public int Area;
-		public string DataName;
-		public float BoxRight;
-		public float BoxLeft;
-		public float BoxBottom;
-		public float BoxTop;
-		public int VirtualMap;
-		public int Unknown1;
-		public int ParentId; // Used to reference dungeon maps
-		public int Unknown2;
+		/* 000 */ [Id] public int Id;
+		/* 001 */ public string Name;
+		/* 002 */ public int Flags;
 	}
 }
