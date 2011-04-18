@@ -174,8 +174,8 @@ namespace CrystalMpq.Explorer.BaseViewers
 			this.listView.UseCompatibleStateImageBehavior = false;
 			this.listView.View = System.Windows.Forms.View.Details;
 			this.listView.VirtualMode = true;
-			this.listView.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listView_RetrieveVirtualItem);
 			this.listView.CacheVirtualItems += new System.Windows.Forms.CacheVirtualItemsEventHandler(this.listView_CacheVirtualItems);
+			this.listView.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listView_RetrieveVirtualItem);
 			// 
 			// ClientDatabaseViewer
 			// 

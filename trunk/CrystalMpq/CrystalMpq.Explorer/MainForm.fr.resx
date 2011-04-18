@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -117,103 +117,93 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="okButton.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Bottom, Right</value>
-  </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="okButton.Location" type="System.Drawing.Point, System.Drawing">
-    <value>257, 349</value>
+  <data name="fileToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>54, 20</value>
   </data>
-  <data name="okButton.Size" type="System.Drawing.Size, System.Drawing">
-    <value>75, 23</value>
+  <data name="fileToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Fichier</value>
   </data>
-  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="okButton.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
+  <data name="openToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>166, 22</value>
   </data>
-  <data name="okButton.Text" xml:space="preserve">
-    <value>&amp;OK</value>
+  <data name="openToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Ouvrir…</value>
   </data>
-  <data name="&gt;&gt;okButton.Name" xml:space="preserve">
-    <value>okButton</value>
+  <data name="openCollectionToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>166, 22</value>
   </data>
-  <data name="&gt;&gt;okButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="openCollectionToolStripMenuItem.Text" xml:space="preserve">
+    <value>O&amp;uvrir collection</value>
   </data>
-  <data name="&gt;&gt;okButton.Parent" xml:space="preserve">
-    <value>$this</value>
+  <data name="wowFileSystemToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>252, 22</value>
   </data>
-  <data name="&gt;&gt;okButton.ZOrder" xml:space="preserve">
-    <value>2</value>
+  <data name="wowFileSystemToolStripMenuItem.Text" xml:space="preserve">
+    <value>Système de fichiers WoW</value>
   </data>
-  <data name="cancelButton.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Bottom, Right</value>
+  <data name="selectFileSystemToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>252, 22</value>
   </data>
-  <data name="cancelButton.Location" type="System.Drawing.Point, System.Drawing">
-    <value>338, 349</value>
+  <data name="selectFileSystemToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Choisir…</value>
   </data>
-  <data name="cancelButton.Size" type="System.Drawing.Size, System.Drawing">
-    <value>75, 23</value>
+  <data name="saveAsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>166, 22</value>
   </data>
-  <data name="cancelButton.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+  <data name="saveAsToolStripMenuItem.Text" xml:space="preserve">
+    <value>Enregistrer &amp;sous…</value>
   </data>
-  <data name="cancelButton.Text" xml:space="preserve">
-    <value>&amp;Cancel</value>
+  <data name="propertiesToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>166, 22</value>
   </data>
-  <data name="&gt;&gt;cancelButton.Name" xml:space="preserve">
-    <value>cancelButton</value>
+  <data name="propertiesToolStripMenuItem1.Text" xml:space="preserve">
+    <value>&amp;Propriétés…</value>
   </data>
-  <data name="&gt;&gt;cancelButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="toolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>163, 6</value>
   </data>
-  <data name="&gt;&gt;cancelButton.Parent" xml:space="preserve">
-    <value>$this</value>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="exitToolStripMenuItem.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
+    <value>Ctrl+Q</value>
   </data>
-  <data name="&gt;&gt;cancelButton.ZOrder" xml:space="preserve">
-    <value>1</value>
+  <data name="exitToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>166, 22</value>
   </data>
-  <data name="propertyGrid.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Bottom, Left, Right</value>
+  <data name="exitToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Quitter</value>
   </data>
-  <data name="propertyGrid.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 12</value>
+  <data name="toolsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>50, 20</value>
   </data>
-  <data name="propertyGrid.Size" type="System.Drawing.Size, System.Drawing">
-    <value>401, 331</value>
+  <data name="toolsToolStripMenuItem.Text" xml:space="preserve">
+    <value>Ou&amp;tils</value>
   </data>
-  <data name="propertyGrid.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
+  <data name="optionsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>125, 22</value>
   </data>
-  <data name="&gt;&gt;propertyGrid.Name" xml:space="preserve">
-    <value>propertyGrid</value>
+  <data name="openToolStripButton.Text" xml:space="preserve">
+    <value>&amp;Ouvrir…</value>
   </data>
-  <data name="&gt;&gt;propertyGrid.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PropertyGrid, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="saveAsToolStripButton.Text" xml:space="preserve">
+    <value>Enregistrer &amp;sous…</value>
   </data>
-  <data name="&gt;&gt;propertyGrid.Parent" xml:space="preserve">
-    <value>$this</value>
+  <data name="propertiesToolStripButton.Text" xml:space="preserve">
+    <value>&amp;Propriétés…</value>
   </data>
-  <data name="&gt;&gt;propertyGrid.ZOrder" xml:space="preserve">
-    <value>0</value>
+  <data name="fileContextMenuStrip.Size" type="System.Drawing.Size, System.Drawing">
+    <value>137, 48</value>
   </data>
-  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>True</value>
-  </metadata>
-  <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
-    <value>6, 13</value>
+  <data name="extractToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>136, 22</value>
   </data>
-  <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>425, 384</value>
+  <data name="extractToolStripMenuItem.Text" xml:space="preserve">
+    <value>E&amp;xtraire…</value>
   </data>
-  <data name="$this.Text" xml:space="preserve">
-    <value>Options…</value>
+  <data name="propertiesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>136, 22</value>
   </data>
-  <data name="&gt;&gt;$this.Name" xml:space="preserve">
-    <value>OptionsForm</value>
-  </data>
-  <data name="&gt;&gt;$this.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Form, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="propertiesToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Propriétés…</value>
   </data>
 </root>

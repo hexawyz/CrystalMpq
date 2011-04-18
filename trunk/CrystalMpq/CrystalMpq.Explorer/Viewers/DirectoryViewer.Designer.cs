@@ -38,22 +38,11 @@ namespace CrystalMpq.Explorer.Viewers
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.listView = new CrystalMpq.Explorer.DoubleBufferedListView();
 			this.menuStrip = new System.Windows.Forms.MenuStrip();
 			this.mainToolStrip = new System.Windows.Forms.ToolStrip();
 			this.statusStrip = new System.Windows.Forms.StatusStrip();
+			this.listView = new CrystalMpq.Explorer.DoubleBufferedListView();
 			this.SuspendLayout();
-			// 
-			// listView
-			// 
-			this.listView.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.listView.Location = new System.Drawing.Point(0, 0);
-			this.listView.MultiSelect = false;
-			this.listView.Name = "listView";
-			this.listView.Size = new System.Drawing.Size(150, 150);
-			this.listView.TabIndex = 0;
-			this.listView.UseCompatibleStateImageBehavior = false;
-			this.listView.ItemActivate += new System.EventHandler(this.listView_ItemActivate);
 			// 
 			// menuStrip
 			// 
@@ -79,12 +68,27 @@ namespace CrystalMpq.Explorer.Viewers
 			this.statusStrip.TabIndex = 3;
 			this.statusStrip.Visible = false;
 			// 
+			// listView
+			// 
+			this.listView.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.listView.Location = new System.Drawing.Point(0, 0);
+			this.listView.MultiSelect = false;
+			this.listView.Name = "listView";
+			this.listView.Size = new System.Drawing.Size(150, 150);
+			this.listView.TabIndex = 0;
+			this.listView.UseCompatibleStateImageBehavior = false;
+			this.listView.VirtualMode = true;
+			this.listView.CacheVirtualItems += new System.Windows.Forms.CacheVirtualItemsEventHandler(this.listView_CacheVirtualItems);
+			this.listView.ItemActivate += new System.EventHandler(this.listView_ItemActivate);
+			this.listView.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listView_RetrieveVirtualItem);
+			this.listView.SearchForVirtualItem += new System.Windows.Forms.SearchForVirtualItemEventHandler(this.listView_SearchForVirtualItem);
+			// 
 			// DirectoryViewer
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.Controls.Add(this.statusStrip);
 			this.Controls.Add(this.mainToolStrip);
+			this.Controls.Add(this.statusStrip);
 			this.Controls.Add(this.listView);
 			this.Controls.Add(this.menuStrip);
 			this.Name = "DirectoryViewer";

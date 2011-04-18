@@ -117,6 +117,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="App.ico" />
+    <Content Include="Viewers\SearchItemOld.txt" />
     <None Include="find.png" />
     <None Include="exclamation.png" />
     <None Include="file icons\folder-closed.ico" />
@@ -137,9 +138,23 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="EncodingConverter.cs" />
+    <Compile Include="ExtractionProgressionDialog.cs" />
+    <Compile Include="ExtractionProgressionForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ExtractionProgressionForm.Designer.cs">
+      <DependentUpon>ExtractionProgressionForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="LocalizedCategoryAttribute.cs" />
     <Compile Include="LocalizedDescriptionAttribute.cs" />
     <Compile Include="LocalizedDisplayNameAttribute.cs" />
+    <Compile Include="ExtractionSettingsDialog.cs" />
+    <Compile Include="ExtractionSettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ExtractionSettingsForm.Designer.cs">
+      <DependentUpon>ExtractionSettingsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="OptionsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -206,13 +221,25 @@
     <Compile Include="Viewers\TextViewerSettings.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="MainForm.fr-FR.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>MainForm.cs</DependentUpon>
+    <EmbeddedResource Include="ExtractionProgressionForm.fr.resx">
+      <DependentUpon>ExtractionProgressionForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="NodePropertiesForm.fr-FR.resx">
+    <EmbeddedResource Include="ExtractionProgressionForm.resx">
+      <DependentUpon>ExtractionProgressionForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MainForm.fr.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ExtractionSettingsForm.fr.resx">
+      <DependentUpon>ExtractionSettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ExtractionSettingsForm.resx">
+      <DependentUpon>ExtractionSettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NodePropertiesForm.fr.resx">
       <DependentUpon>NodePropertiesForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="OptionsForm.fr.resx">
       <DependentUpon>OptionsForm.cs</DependentUpon>

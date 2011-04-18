@@ -17,48 +17,24 @@ namespace CrystalMpq.Utility
 	{
 		LanguagePackPickerForm languagePackPickerForm;
 
-		public LanguagePackDialog()
-		{
-			languagePackPickerForm = new LanguagePackPickerForm();
-		}
+		public LanguagePackDialog() { languagePackPickerForm = new LanguagePackPickerForm(); }
 
 		public WoWInstallation WoWInstallation
 		{
-			get
-			{
-				return languagePackPickerForm.WoWInstallation;
-			}
-			set
-			{
-				languagePackPickerForm.WoWInstallation = value;
-			}
+			get { return languagePackPickerForm.WoWInstallation; }
+			set { languagePackPickerForm.WoWInstallation = value; }
 		}
 
 		public LanguagePack LanguagePack
 		{
-			get
-			{
-				return languagePackPickerForm.SelectedLanguagePack;
-			}
-			set
-			{
-				languagePackPickerForm.SelectedLanguagePack = value;
-			}
+			get { return languagePackPickerForm.SelectedLanguagePack; }
+			set { languagePackPickerForm.SelectedLanguagePack = value; }
 		}
 
-		public DialogResult ShowDialog()
-		{
-			return languagePackPickerForm.ShowDialog();
-		}
+		public DialogResult ShowDialog() { return languagePackPickerForm.ShowDialog(); }
 
-		public DialogResult ShowDialog(IWin32Window owner)
-		{
-			return languagePackPickerForm.ShowDialog(owner);
-		}
+		public DialogResult ShowDialog(IWin32Window owner) { return languagePackPickerForm.ShowDialog(owner); }
 
-		public void Dispose()
-		{
-			languagePackPickerForm.Dispose();
-		}
+		public void Dispose() { languagePackPickerForm.Dispose(); }
 	}
 }

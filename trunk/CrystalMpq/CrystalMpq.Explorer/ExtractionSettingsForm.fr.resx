@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -118,37 +118,37 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="notCompressedRadioButton.Size" type="System.Drawing.Size, System.Drawing">
-    <value>62, 17</value>
+  <data name="destinationLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>131, 13</value>
   </data>
-  <data name="notCompressedRadioButton.Text" xml:space="preserve">
-    <value>Aucune</value>
+  <data name="destinationLabel.Text" xml:space="preserve">
+    <value>Répertoire de destination :</value>
   </data>
-  <data name="label1.Text" xml:space="preserve">
-    <value>Taille réelle: </value>
+  <data name="destinationTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>149, 14</value>
   </data>
-  <data name="label2.Text" xml:space="preserve">
-    <value>Taille compressé:</value>
+  <data name="destinationTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>202, 20</value>
   </data>
-  <data name="singleUnitCheckBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>82, 17</value>
+  <data name="overwriteCheckBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>114, 17</value>
   </data>
-  <data name="singleUnitCheckBox.Text" xml:space="preserve">
-    <value>Bloc unique</value>
+  <data name="overwriteCheckBox.Text" xml:space="preserve">
+    <value>É&amp;craser les fichiers</value>
   </data>
-  <data name="encryptedCheckBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>56, 17</value>
+  <data name="recurseCheckBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>151, 17</value>
   </data>
-  <data name="encryptedCheckBox.Text" xml:space="preserve">
-    <value>Crypté</value>
+  <data name="recurseCheckBox.Text" xml:space="preserve">
+    <value>&amp;Inclure les sous-répertoires</value>
   </data>
-  <data name="adjustedKeyCheckBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>78, 17</value>
+  <data name="browseButton.Text" xml:space="preserve">
+    <value>&amp;Parcourir…</value>
   </data>
-  <data name="adjustedKeyCheckBox.Text" xml:space="preserve">
-    <value>Clé ajustée</value>
+  <data name="cancelButton.Text" xml:space="preserve">
+    <value>&amp;Annuler</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>Propriétés...</value>
+    <value>Extraire les éléments…</value>
   </data>
 </root>
