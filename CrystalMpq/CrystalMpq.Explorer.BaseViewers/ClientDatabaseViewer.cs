@@ -281,7 +281,7 @@ namespace CrystalMpq.Explorer.BaseViewers
 
 		private void exportToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (saveFileDialog.ShowDialog() == DialogResult.OK)
+			if (saveFileDialog.ShowDialog(Host) == DialogResult.OK)
 			{
 				// It seems Excel will only accept ANSI or UTF16-LE, and we need to have unicode support
 				using (var writer = new StreamWriter(saveFileDialog.FileName, false, new UnicodeEncoding(false, false)))

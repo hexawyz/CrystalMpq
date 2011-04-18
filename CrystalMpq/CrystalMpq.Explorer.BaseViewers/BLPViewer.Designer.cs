@@ -13,14 +13,14 @@ namespace CrystalMpq.Explorer.BaseViewers
 	partial class BLPViewer
 	{
 		/// <summary> 
-		/// Variable n�cessaire au concepteur.
+		/// Variable nécessaire au concepteur.
 		/// </summary>
 		private System.ComponentModel.IContainer components = null;
 
 		/// <summary> 
-		/// Nettoyage des ressources utilis�es.
+		/// Nettoyage des ressources utilisées.
 		/// </summary>
-		/// <param name="disposing">true si les ressources manag�es doivent �tre supprim�es�; sinon, false.</param>
+		/// <param name="disposing">true si les ressources managées doivent être supprimées ; sinon, false.</param>
 		protected override void Dispose(bool disposing)
 		{
 			if (disposing && (components != null))
@@ -30,11 +30,11 @@ namespace CrystalMpq.Explorer.BaseViewers
 			base.Dispose(disposing);
 		}
 
-		#region Code g�n�r� par le Concepteur de composants
+		#region Code généré par le Concepteur de composants
 
 		/// <summary> 
-		/// M�thode requise pour la prise en charge du concepteur - ne modifiez pas 
-		/// le contenu de cette m�thode avec l'�diteur de code.
+		/// Méthode requise pour la prise en charge du concepteur - ne modifiez pas 
+		/// le contenu de cette méthode avec l'éditeur de code.
 		/// </summary>
 		private void InitializeComponent()
 		{

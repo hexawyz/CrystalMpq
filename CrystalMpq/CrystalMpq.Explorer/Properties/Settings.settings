@@ -38,5 +38,14 @@
     <Setting Name="PluginsDirectory" Type="System.String" Scope="User">
       <Value Profile="(Default)">Plugins</Value>
     </Setting>
+    <Setting Name="ExtractionDirectory" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ExtractionOverwriteFiles" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ExtractionRecurse" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

@@ -108,7 +108,7 @@ namespace CrystalMpq.Explorer.BaseViewers
 
 		private void exportToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (saveFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+			if (saveFileDialog.ShowDialog(Host) == System.Windows.Forms.DialogResult.OK)
 			{
 				switch (saveFileDialog.FilterIndex)
 				{

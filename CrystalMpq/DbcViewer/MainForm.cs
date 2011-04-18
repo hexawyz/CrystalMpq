@@ -61,7 +61,7 @@ namespace DbcViewer
 
 		private void openToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (openFileDialog.ShowDialog() == DialogResult.OK)
+			if (openFileDialog.ShowDialog(this) == DialogResult.OK)
 			{
 				Stream fileStream = null;
 				RawClientDatabase database;

@@ -24,17 +24,18 @@ using CrystalMpq.Explorer.Extensibility;
 using CrystalMpq.Explorer.Properties;
 using CrystalMpq.Explorer.Viewers;
 using CrystalMpq.Utility;
+using System.Threading;
 #endregion
 
 namespace CrystalMpq.Explorer
 {
-	sealed partial class MainForm : Form
+	internal sealed partial class MainForm : Form
 	{
 		#region PluginHost Class
 
 		private sealed class PluginHost : IHost
 		{
-			MainForm mainForm;
+			private MainForm mainForm;
 
 			public PluginHost(MainForm mainForm) { this.mainForm = mainForm; }
 
@@ -49,36 +50,41 @@ namespace CrystalMpq.Explorer
 				}
 			}
 
-			public Color ViewerBackColor { get { return Properties.Settings.Default.ViewerBackColor; } }
+			public Color ViewerBackColor { get { return Settings.Default.ViewerBackColor; } }
 
-			public void StatusMessage(string text)
-			{
-				mainForm.statusStrip.Text = text;
-			}
+			public void StatusMessage(string text) { mainForm.statusStrip.Text = text; }
 
 			public IntPtr Handle { get { return mainForm.Handle; } }
 		}
 
 		#endregion
 
-		PluginHost pluginsHost;
-		MpqFileSystem fileSystem;
-		Dictionary<string, TreeNode> nodeDictionnary;
-		List<TreeNode> temporaryNodeList;
-		Dictionary<string, FileViewer> fileViewerAssociations, fileViewers;
-		FileViewer currentViewer;
-		DirectoryViewer directoryViewer;
-		NodePropertiesForm nodePropertiesForm;
-		LanguagePackDialog languagePackDialog;
-		OptionsForm optionsForm;
+		private PluginHost pluginsHost;
+		private MpqFileSystem fileSystem;
+		private Dictionary<string, TreeNode> nodeDictionnary;
+		private List<TreeNode> temporaryNodeList;
+		private Dictionary<string, FileViewer> fileViewerAssociations, fileViewers;
+		private FileViewer currentViewer;
+		private DirectoryViewer directoryViewer;
+		private NodePropertiesForm nodePropertiesForm;
+		private LanguagePackDialog languagePackDialog;
+		private ExtractionSettingsDialog extractionSettingsDialog;
+		private ExtractionProgressionDialog extractionProgressionDialog;
+		private OptionsForm optionsForm;
+		private Stack<TreeNode> extractionStack;
 
 		public MainForm()
 		{
 			pluginsHost = new PluginHost(this);
 			InitializeComponent();
-			Text = Properties.Resources.AppTitle;
+			Text = Resources.AppTitle;
 			fileSystem = new MpqFileSystem();
 			languagePackDialog = new LanguagePackDialog();
+			extractionSettingsDialog = new ExtractionSettingsDialog();
+			extractionSettingsDialog.DestinationDirectory = Settings.Default.ExtractionDirectory;
+			extractionSettingsDialog.Recurse = Settings.Default.ExtractionRecurse;
+			extractionSettingsDialog.OverwriteFiles = Settings.Default.ExtractionOverwriteFiles;
+			extractionProgressionDialog = new ExtractionProgressionDialog();
 			nodePropertiesForm = new NodePropertiesForm(this);
 			nodeDictionnary = new Dictionary<string, TreeNode>();
 			temporaryNodeList = new List<TreeNode>();
@@ -220,9 +226,9 @@ namespace CrystalMpq.Explorer
 
 		private void LoadIcons()
 		{
-			AddIcons(Properties.Resources.UnknownFileIcon);
-			AddIcons(Properties.Resources.ClosedFolderIcon);
-			AddIcons(Properties.Resources.OpenFolderIcon);
+			AddIcons(Resources.UnknownFileIcon);
+			AddIcons(Resources.ClosedFolderIcon);
+			AddIcons(Resources.OpenFolderIcon);
 		}
 
 		private void Merge(ToolStrip source, ToolStrip target)
@@ -262,17 +268,17 @@ namespace CrystalMpq.Explorer
 		private void SetTitle(string fileName)
 		{
 			if (string.IsNullOrEmpty(fileName))
-				Text = Properties.Resources.AppTitle;
+				Text = Resources.AppTitle;
 			else
-				Text = Properties.Resources.AppTitle + " - " + fileName;
+				Text = Resources.AppTitle + " - " + fileName;
 		}
 
 		private void ErrorDialog(string message)
 		{
-			MessageBox.Show(this, message, Properties.Resources.ErrorDialogTitle, MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+			MessageBox.Show(this, message, Resources.ErrorDialogTitle, MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
 		}
 
-		private void OpenArchive(string fileName)
+		private void OpenArchive(string filename)
 		{
 			ClearView();
 
@@ -285,9 +291,9 @@ namespace CrystalMpq.Explorer
 				archive = new MPQArchive(strm, true);
 #else
 				fileSystem.Archives.Clear();
-				fileSystem.Archives.Add(new MpqArchive(fileName));
+				fileSystem.Archives.Add(new MpqArchive(filename));
 #endif
-				SetTitle(fileName);
+				SetTitle(filename);
 				FillTreeView();
 			}
 			catch (Exception e)
@@ -298,6 +304,8 @@ namespace CrystalMpq.Explorer
 
 		private void OpenWoWFileSystem()
 		{
+			UseWaitCursor = true;
+			Application.DoEvents();
 			try
 			{
 				WoWInstallation wowInstallation = WoWInstallation.Find();
@@ -317,10 +325,8 @@ namespace CrystalMpq.Explorer
 				SetTitle(wowInstallation.Path);
 				FillTreeView();
 			}
-			catch (Exception e)
-			{
-				ErrorDialog(e.Message);
-			}
+			catch (Exception e) { ErrorDialog(e.Message); }
+			finally { UseWaitCursor = false; }
 		}
 
 		#region Tree View Filling
@@ -378,7 +384,7 @@ namespace CrystalMpq.Explorer
 								// This code is for detecting case differences between the two names
 								if (nodeText[0] != part[0] || nodeText[1] != part[1])
 								{
-									// If we detect difference, we try to choose the best one, which probably is not the one ALL IN CAPS
+									// If we detect a difference, we try to choose the best one, which probably is not the one ALL IN CAPS
 									if (nodeText[1] == char.ToUpperInvariant(nodeText[1])) // If second character is capitalized, assume the name is capitalized
 										newNode.Text = part;
 								}
@@ -420,8 +426,13 @@ namespace CrystalMpq.Explorer
 			}
 			// Sort top-level nodes alphabetically before adding them to the treeview
 			SortNodeList(nodeList);
-			// Add all the nodes in a single pass, evoiding any bottlenecks caused by repeated Win32 interop
+
+			Application.DoEvents();
+			// Add all the nodes in a single pass, avoiding any bottlenecks caused by repeated Win32 interop
+			treeView.BeginUpdate();
 			treeView.Nodes.AddRange(nodeList.ToArray());
+			treeView.EndUpdate();
+			Application.DoEvents();
 			// Garbage collection after this memory-intensive operation
 			GC.Collect();
 		}
@@ -454,9 +465,7 @@ namespace CrystalMpq.Explorer
 
 		#endregion
 
-		private void ViewFile(MpqFile file)
-		{
-		}
+		#region File Extractions
 
 		internal void InteractiveExtractFile(MpqFile file)
 		{
@@ -468,48 +477,225 @@ namespace CrystalMpq.Explorer
 			else
 				saveFileDialog.Filter = ext.ToUpperInvariant() + " Files (*" + ext.ToLowerInvariant() + ")|*" + ext.ToLowerInvariant();
 			saveFileDialog.FileName = fileName;
-			if (saveFileDialog.ShowDialog() == DialogResult.OK)
+			if (saveFileDialog.ShowDialog(this) == DialogResult.OK)
+			{
+				saveFileDialog.InitialDirectory = Path.GetDirectoryName(saveFileDialog.FileName);
 				ExtractFile(file, saveFileDialog.FileName);
+			}
 		}
 
 		internal void ExtractFile(MpqFile file, string fileName)
 		{
-			Stream inputStream = null, outputStream = null;
 			byte[] buffer;
 
 			try
 			{
-				inputStream = file.Open();
-				outputStream = File.OpenWrite(fileName);
-
-				buffer = new byte[4096];
-
-				int length;
-				do
+				using (var inputStream = file.Open())
+				using (var outputStream = File.OpenWrite(fileName))
 				{
-					length = inputStream.Read(buffer, 0, 4096);
-					outputStream.Write(buffer, 0, length);
+					buffer = new byte[4096];
+
+					int length;
+					do
+					{
+						length = inputStream.Read(buffer, 0, 4096);
+						outputStream.Write(buffer, 0, length);
+					}
+					while (length == 4096);
 				}
-				while (length == 4096);
 			}
-			catch
+			catch (Exception ex) { ErrorDialog(ex.Message); }
+		}
+
+		private void InteractiveExtractNodes(TreeNode[] nodes)
+		{
+			extractionSettingsDialog.AllowRecurse = true;
+
+			if (extractionSettingsDialog.ShowDialog(this) != DialogResult.OK) return;
+
+			// Save the settings now…
+			Settings.Default.ExtractionDirectory = extractionSettingsDialog.DestinationDirectory;
+			Settings.Default.ExtractionRecurse = extractionSettingsDialog.Recurse;
+			Settings.Default.ExtractionOverwriteFiles = extractionSettingsDialog.OverwriteFiles;
+
+			Settings.Default.Save();
+
+			var directoryInfo = new DirectoryInfo(extractionSettingsDialog.DestinationDirectory);
+			ulong totalSize = 0;
+			int totalFileCount = 0;
+
+			// Initialize the stack.
+			extractionStack = extractionStack ?? new Stack<TreeNode>();
+			extractionStack.Clear();
+
+			// Proceed to a tree walk for each requested node, in order to compute total file count and total size
 			{
+				foreach (var node in nodes)
+				{
+					var currentNode = node;
+					do
+					{
+						if (currentNode.Nodes.Count > 0 && (extractionSettingsDialog.Recurse || extractionStack.Count == 0))
+						{
+							extractionStack.Push(currentNode);
+							currentNode = currentNode.FirstNode;
+						}
+						else
+						{
+							var file = currentNode.Tag as MpqFile;
+
+							if (file != null)
+							{
+								totalSize += unchecked((ulong)file.Size);
+								checked { totalFileCount++; } // Maybe this will fail someday, but I don't think the current Win32 ListView can handle more than 2^31 nodes…
+							}
+
+							while (currentNode == null || (currentNode != node && (currentNode = currentNode.NextNode) == null) && extractionStack.Count > 0)
+								if ((currentNode = extractionStack.Pop()) != node)
+									currentNode = currentNode.NextNode;
+						}
+					} while (currentNode != node);
+				}
 			}
-			finally
-			{
-				if (inputStream != null)
-					inputStream.Close();
-				if (outputStream != null)
-					outputStream.Close();
-			}
+
+			// TODO: Make something a little better…
+			if (totalFileCount == 0) return;
+
+			// Initialize the extraction progress dialog
+			extractionProgressionDialog.TotalSize = totalSize;
+			extractionProgressionDialog.ProcessedSize = 0;
+
+			extractionProgressionDialog.TotalFileCount = totalFileCount;
+			extractionProgressionDialog.ProcessedFileCount = 0;
+
+			extractionProgressionDialog.CurrentFileName = null;
+
+			// Proceed to a tree walk for each requested node, but this time for doing real work
+			// The extraction will be done on a separate thread, with progress displayed by the modal dialog
+			extractionProgressionDialog.ShowDialog
+			(
+				this,
+				(dialog, state) =>
+				{
+					var buffer = new byte[4096];
+					int extractedFileCount = 0;
+
+					foreach (var node in nodes)
+					{
+						string directoryPhysicalPath = directoryInfo.FullName;
+						var currentNode = node;
+						do
+						{
+							if (currentNode.Nodes.Count > 0 && (extractionSettingsDialog.Recurse || extractionStack.Count == 0))
+							{
+								// Store the relative path into the tag, which should be null for directories…
+								currentNode.Tag = directoryPhysicalPath;
+								directoryPhysicalPath = Path.Combine(directoryPhysicalPath, currentNode.Text);
+
+								if (!Directory.Exists(directoryPhysicalPath))
+									try { Directory.CreateDirectory(directoryPhysicalPath); }
+									catch (Exception ex)
+									{
+										dialog.ErrorDialog(ex.Message);
+										return;
+									}
+
+								extractionStack.Push(currentNode);
+								currentNode = currentNode.FirstNode;
+							}
+							else
+							{
+								var file = currentNode.Tag as MpqFile;
+
+								if (file != null)
+								{
+									string filePhysicalPath = Path.Combine(directoryPhysicalPath, currentNode.Text);
+									bool canExtract = false;
+
+									dialog.UpdateFileInformation(extractedFileCount + 1, file.FileName);
+
+									if (extractionSettingsDialog.OverwriteFiles || !File.Exists(filePhysicalPath)) canExtract = true;
+									else
+									{
+										switch (dialog.AskForOverwrite(currentNode.Text, directoryPhysicalPath, unchecked((ulong)file.Size)))
+										{
+											case DialogResult.Yes: canExtract = true; break;
+											case DialogResult.No: canExtract = false; break;
+											case DialogResult.Cancel: return;
+										}
+									}
+
+									if (canExtract)
+									{
+										try
+										{
+											using (var inputStream = file.Open())
+											using (var outputStream = File.OpenWrite(filePhysicalPath))
+											{
+												int byteCounter = 0;
+												int length;
+
+												do
+												{
+													length = inputStream.Read(buffer, 0, 4096);
+													outputStream.Write(buffer, 0, length);
+													if ((byteCounter += length) >= 0x100000)
+													{
+														dialog.ProcessedSize += 0x100000UL;
+														byteCounter -= 0x100000;
+													}
+												}
+												while (length == 4096);
+
+												if (byteCounter > 0) dialog.ProcessedSize += unchecked((ulong)byteCounter);
+												extractedFileCount++;
+											}
+										}
+										catch (Exception ex)
+										{
+											ErrorDialog(ex.Message);
+											return;
+										}
+									}
+									else
+									{
+										dialog.TotalSize = totalSize -= unchecked((ulong)file.Size);
+										dialog.TotalFileCount = totalFileCount--;
+									}
+								}
+
+								while (currentNode == null || (currentNode != node && (currentNode = currentNode.NextNode) == null) && extractionStack.Count > 0)
+								{
+									currentNode = extractionStack.Pop();
+									directoryPhysicalPath = currentNode.Tag as string;
+									currentNode.Tag = null; // Clean the tag when no longer needed
+
+									if (currentNode != node)
+										currentNode = currentNode.NextNode;
+								}
+							}
+						} while (currentNode != node);
+					}
+				}
+			);
+		}
+
+		#endregion
+
+		protected override void OnClosed(EventArgs e)
+		{
+			// Just in case we forgot to save the settings before…
+			Settings.Default.Save();
+			base.OnClosed(e);
 		}
 
 		#region File Menu Actions
 
 		private void openToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (openFileDialog.ShowDialog() == DialogResult.OK)
+			if (openFileDialog.ShowDialog(this) == DialogResult.OK)
 			{
+				openFileDialog.InitialDirectory = Path.GetDirectoryName(openFileDialog.FileName);
 				OpenArchive(openFileDialog.FileName);
 			}
 		}
@@ -521,8 +707,12 @@ namespace CrystalMpq.Explorer
 
 		private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (treeView.SelectedNode.Tag is MpqFile)
-				InteractiveExtractFile((MpqFile)treeView.SelectedNode.Tag);
+			var file = treeView.SelectedNode.Tag as MpqFile;
+
+			if (file != null)
+				InteractiveExtractFile(file);
+			else
+				InteractiveExtractNodes(new[] { treeView.SelectedNode });
 		}
 
 		private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -545,10 +735,10 @@ namespace CrystalMpq.Explorer
 
 		private void fileContextMenuStrip_Opening(object sender, CancelEventArgs e)
 		{
-			if (treeView.SelectedNode == null || treeView.SelectedNode.Tag == null)
-				extractToolStripMenuItem.Enabled = false;
-			else
-				extractToolStripMenuItem.Enabled = true;
+			//if (treeView.SelectedNode == null || treeView.SelectedNode.Tag == null)
+			//    extractToolStripMenuItem.Enabled = false;
+			//else
+			//    extractToolStripMenuItem.Enabled = true;
 		}
 
 		private void propertiesToolStripMenuItem_Click(object sender, EventArgs e)
@@ -584,8 +774,8 @@ namespace CrystalMpq.Explorer
 
 				SetViewer(directoryViewer);
 
-				saveAsToolStripMenuItem.Enabled = false;
-				saveAsToolStripButton.Enabled = false;
+				//saveAsToolStripMenuItem.Enabled = false;
+				//saveAsToolStripButton.Enabled = false;
 
 				fileNameToolStripStatusLabel.Text = "";
 			}
@@ -594,8 +784,8 @@ namespace CrystalMpq.Explorer
 				string ext = Path.GetExtension(file.FileName).ToLowerInvariant();
 				FileViewer fileViewer;
 
-				saveAsToolStripMenuItem.Enabled = true;
-				saveAsToolStripButton.Enabled = true;
+				//saveAsToolStripMenuItem.Enabled = true;
+				//saveAsToolStripButton.Enabled = true;
 				if (fileViewerAssociations.TryGetValue(ext, out fileViewer))
 				{
 					try

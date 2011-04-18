@@ -16,18 +16,24 @@ using System.Globalization;
 
 namespace CrystalMpq.Explorer
 {
-	class Program
+	internal static class Program
 	{
-		internal static string FormatFileSize(long size)
+		internal static string FormatFileSize(long size) { return FormatFileSize(checked((ulong)size)); }
+
+		internal static string FormatFileSize(ulong size)
 		{
 			CultureInfo currentCulture = Properties.Resources.Culture;
 			double currentValue = size;
-			string[] formatStrings = new string[] {
+			string[] formatStrings = new string[]
+			{
 				Properties.Resources.UnitBytesFormat,
 				Properties.Resources.UnitKiloByteFormat,
 				Properties.Resources.UnitMegaByteFormat,
 				Properties.Resources.UnitGigaByteFormat,
-				Properties.Resources.UnitTeraByteFormat };
+				Properties.Resources.UnitTeraByteFormat,
+				Properties.Resources.UnitPetaByteFormat,
+				Properties.Resources.UnitExaByteFormat
+			};
 			int formatIndex = 0;
 
 			// Special case
@@ -44,20 +50,8 @@ namespace CrystalMpq.Explorer
 		}
 
 		[STAThread]
-		static void Main(string[] args)
+		private static void Main(string[] args)
 		{
-			////MPQArchive archive = new MPQArchive("C:\\Program Files\\Warcraft III\\war3x.mpq");
-			//MPQArchive archive = new MPQArchive("C:\\Program Files\\World of Warcraft\\Data\\patch.MPQ");
-			////MPQArchive archive = new MPQArchive("C:\\Program Files\\Diablo II\\d2data.mpq");
-			////MPQArchive archive = new MPQArchive("C:\\Program Files\\Diablo II\\Patch_D2.mpq");
-
-			//StreamReader reader;
-			//Console.WriteLine("The archive contains {0} files", archive.Files.Count);
-			//foreach (MPQFile file in archive.Files)
-			//    Console.WriteLine(file.Filename);
-			////reader = new StreamReader(archive.FindFile("Styles.css").Open());
-			////Console.WriteLine(reader.ReadToEnd());
-
 			PluginManager.LoadPluginAssemblies();
 
 			Application.EnableVisualStyles();

@@ -123,12 +123,24 @@
   <data name="CannotFindMoreMessage" xml:space="preserve">
     <value>Cannot find another occurence of the text.</value>
   </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="ClosedFolderIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\file icons\folder-closed.ico;System.Drawing.Icon, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="CopyToolbarIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\copy.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DirectoryCreationDialogMessage" xml:space="preserve">
+    <value>The directory "{0}" does not exists. Attempt to create it ?</value>
+  </data>
+  <data name="DirectoryCreationDialogTitle" xml:space="preserve">
+    <value>The specified directory does not exist</value>
+  </data>
+  <data name="DirectoryCreationErrorDialogMessage" xml:space="preserve">
+    <value>The directory "{0}" could not be created.</value>
+  </data>
+  <data name="DirectoryCreationErrorDialogTitle" xml:space="preserve">
+    <value>Error creating the directory</value>
   </data>
   <data name="ErrorDialogTitle" xml:space="preserve">
     <value>Error</value>
@@ -139,8 +151,27 @@
   <data name="ExportToolbarIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\export.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="ExtractionFileMessage" xml:space="preserve">
+    <value>Extracting file {0} of {1}:
+{2}</value>
+  </data>
+  <data name="ExtractionStatusMessage" xml:space="preserve">
+    <value>{0} of {1} done.</value>
+  </data>
   <data name="FindToolbarIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\find.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="InvalidDirectoryErrorDialogTitle" xml:space="preserve">
+    <value>Invalid directory</value>
+  </data>
+  <data name="InvalidDirectoryNameErrorDialogMessage" xml:space="preserve">
+    <value>The specified directory name contains invalid characters, such as ", &lt;, &gt; or |.</value>
+  </data>
+  <data name="InvalidDirectoryNullErrorDialogMessage" xml:space="preserve">
+    <value>The directory name is empty.</value>
+  </data>
+  <data name="InvalidDirectoryPathTooLongErrorDialogMessage" xml:space="preserve">
+    <value>The directory name is too long.</value>
   </data>
   <data name="NotFoundMessage" xml:space="preserve">
     <value>Text not found.</value>
@@ -150,6 +181,12 @@
   </data>
   <data name="OpenToolbarIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\open.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="OverwriteFileDialogMessage" xml:space="preserve">
+    <value>A file with the name "{0}" already exists in the directory "{1}". Do you want to overwrite it ?</value>
+  </data>
+  <data name="OverwriteFileDialogTitle" xml:space="preserve">
+    <value>Overwrite file</value>
   </data>
   <data name="PropertiesToolbarIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\properties.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -202,6 +239,9 @@
   <data name="UnitBytesFormat" xml:space="preserve">
     <value>{0:0.##} bytes</value>
   </data>
+  <data name="UnitExaByteFormat" xml:space="preserve">
+    <value>{0:0.##} EB</value>
+  </data>
   <data name="UnitGigaByteFormat" xml:space="preserve">
     <value>{0:0.##} GB</value>
   </data>
@@ -210,6 +250,9 @@
   </data>
   <data name="UnitMegaByteFormat" xml:space="preserve">
     <value>{0:0.##} MB</value>
+  </data>
+  <data name="UnitPetaByteFormat" xml:space="preserve">
+    <value>{0:0.##} PB</value>
   </data>
   <data name="UnitTeraByteFormat" xml:space="preserve">
     <value>{0:0.##} TB</value>
