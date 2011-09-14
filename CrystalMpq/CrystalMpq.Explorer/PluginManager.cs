@@ -18,14 +18,13 @@ using CrystalMpq.Explorer.Properties;
 
 namespace CrystalMpq.Explorer
 {
-	sealed class PluginManager
+	// TODO: Make a better plugin loading exception mechanism
+	// TODO: Migrate to MEF ?
+	internal sealed class PluginManager
 	{
-		static List<Assembly> assemblyList;
+		private static List<Assembly> assemblyList;
 
-		static PluginManager()
-		{
-			assemblyList = new List<Assembly>();
-		}
+		static PluginManager() { assemblyList = new List<Assembly>(); }
 
 		public static void LoadPluginAssemblies()
 		{
@@ -39,54 +38,40 @@ namespace CrystalMpq.Explorer
 
 		public static T[] LoadPlugins<T>(Type[] parameterTypes, object[] parameters)
 		{
-			Type[] assemblyTypes;
-			List<T> loadedPlugins;
-
-			loadedPlugins = new List<T>();
+			var loadedPlugins = new List<T>();
 
 			for (int i = 0; i < assemblyList.Count; i++)
 			{
-				assemblyTypes = assemblyList[i].GetExportedTypes();
+				var assemblyTypes = assemblyList[i].GetExportedTypes();
 
 				for (int j = 0; j < assemblyTypes.Length; j++)
 				{
-					Type type = assemblyTypes[j];
+					var type = assemblyTypes[j];
 
-					if (typeof(T).IsAssignableFrom(type))
+					try
 					{
-						ConstructorInfo constructor = type.GetConstructor(parameterTypes);
+						if (typeof(T).IsAssignableFrom(type))
+						{
+							var constructor = type.GetConstructor(parameterTypes);
 
-						if (constructor != null)
-							try { loadedPlugins.Add((T)constructor.Invoke(parameters)); }
-							catch { }
+							if (constructor != null)
+								try { loadedPlugins.Add((T)constructor.Invoke(parameters)); }
+								catch { }
+						}
 					}
+					catch (TypeLoadException) { }
 				}
 			}
 
 			return loadedPlugins.ToArray();
 		}
 
-		static bool LoadDirectoryAssemblies(string directory)
+		private static void LoadDirectoryAssemblies(string directory)
 		{
-			string[] assemblyFiles;
-
-			try
-			{
-				assemblyFiles = Directory.GetFiles(directory, "*.dll", SearchOption.TopDirectoryOnly);
-
-				for (int i = 0; i < assemblyFiles.Length; i++)
-					assemblyList.Add(LoadPluginAssembly(assemblyFiles[i]));
-				return true;
-			}
-			catch
-			{
-				return false;
-			}
+			foreach (var assemblyFile in Directory.GetFiles(directory, "*.dll", SearchOption.TopDirectoryOnly))
+				assemblyList.Add(LoadPluginAssembly(assemblyFile));
 		}
 
-		static Assembly LoadPluginAssembly(string filename)
-		{
-			return Assembly.LoadFrom(filename);
-		}
+		private static Assembly LoadPluginAssembly(string filename) { return Assembly.LoadFrom(filename); }
 	}
 }

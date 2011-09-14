@@ -16,9 +16,9 @@ using CrystalMpq.Explorer.Extensibility;
 
 namespace CrystalMpq.Explorer.Viewers
 {
-	sealed class BitmapViewer : FileViewer
+	internal sealed class BitmapViewer : FileViewer
 	{
-		Bitmap bitmap;
+		private Bitmap bitmap;
 
 		public BitmapViewer(IHost host)
 			: base(host)

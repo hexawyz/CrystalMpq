@@ -186,6 +186,9 @@
     <Compile Include="Viewers\FindTextForm.Designer.cs">
       <DependentUpon>FindTextForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Viewers\FontViewer.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Viewers\HexadecimalViewer.cs">
       <SubType>UserControl</SubType>
     </Compile>

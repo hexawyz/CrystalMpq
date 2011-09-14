@@ -11,10 +11,12 @@
 using System;
 using System.Runtime.InteropServices;
 using CrystalMpq.WoWFile;
+using System.Diagnostics;
 
 namespace CrystalMpq.WoWDatabases
 {
 	[StructLayout(LayoutKind.Sequential)]
+	[DebuggerDisplay("AreaTableRecord: Id={Id}, Name={Name}")]
 	public struct AreaTableRecord
 	{
 		[Id] public int Id;

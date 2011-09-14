@@ -27,6 +27,7 @@ using System.IO;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
+using System.Collections.ObjectModel;
 #endregion
 
 namespace WoWMapExplorer
@@ -35,100 +36,89 @@ namespace WoWMapExplorer
 	{
 		#region Map Information Structures
 
-		class Continent
+		private class Continent
 		{
-			int id;
-			int mapId;
-			string name;
-			string dataName;
-			RectangleF bounds;
-			List<Zone> zones;
-			ZoneMap zoneMap;
-
-			public Continent(int id, int mapId, RectangleF bounds, string name, string dataName)
+			public Continent(int id, int mapId, RectangleF bounds, string name, string dataName, Zone[] zones, ZoneMap zoneMap)
 			{
-				this.id = id;
-				this.mapId = mapId;
-				this.name = name;
-				this.bounds = bounds;
-				this.dataName = dataName;
-				this.zones = new List<Zone>();
-
+				Id = id;
+				MapId = mapId;
+				Name = name;
+				Bounds = bounds;
+				DataName = dataName;
+				Zones = new ReadOnlyCollection<Zone>(zones);
+				ZoneMap = zoneMap;
 			}
 
-			public int Id { get { return id; } set { id = value; } }
-			public int MapId { get { return mapId; } set { mapId = value; } }
-			public string Name { get { return name; } set { name = value; } }
-			public string DataName { get { return dataName; } set { dataName = value; } }
-			public RectangleF Bounds { get { return bounds; } set { bounds = value; } }
-			public List<Zone> Zones { get { return zones; } }
-			public ZoneMap ZoneMap { get { return zoneMap; } set { zoneMap = value; } }
+			public int Id { get; private set; }
+			public int MapId { get; private set; }
+			public string Name { get; private set; }
+			public string DataName { get; private set; }
+			public RectangleF Bounds { get; private set; }
+			public ReadOnlyCollection<Zone> Zones { get; private set; }
+			public ZoneMap ZoneMap { get; private set; }
 
-			public override string ToString() { return name; }
+			public override string ToString() { return Name; }
 		}
 
-		class Zone
+		[Flags]
+		private enum ZoneFlags
 		{
-			int id;
-			int areaId;
-			int mapId;
-			string name;
-			string dataName;
-			RectangleF bounds;
-			List<Overlay> overlays;
+			None = 0,
+			// 1 has no use yet
+			Phased = 2,
+			Unknown1 = 4,
+			MælströmContinent = 8, // Only used on the maëlstrom ?
+			MælströmZone = 16
+		}
 
-			public Zone(int id, int areaId, int mapId, RectangleF bounds, string name, string dataName)
+		private class Zone
+		{
+			public Zone(int id, int areaId, int mapId, RectangleF bounds, ZoneFlags flags, string name, string dataName, Overlay[] overlays)
 			{
-				this.id = id;
-				this.areaId = areaId;
-				this.mapId = mapId;
-				this.bounds = bounds;
-				this.name = name;
-				this.dataName = dataName;
-				this.overlays = new List<Overlay>();
+				Id = id;
+				AreaId = areaId;
+				MapId = mapId;
+				Bounds = bounds;
+				Flags = flags;
+				Name = name;
+				DataName = dataName;
+				Overlays = new ReadOnlyCollection<Overlay>(overlays);
 			}
 
-			public int Id { get { return id; } set { id = value; } }
-			public int AreaId { get { return areaId; } set { areaId = value; } }
-			public int MapId { get { return mapId; } set { mapId = value; } }
-			public string Name { get { return name; } set { name = value; } }
-			public string DataName { get { return dataName; } set { dataName = value; } }
-			public RectangleF Bounds { get { return bounds; } set { bounds = value; } }
-			public List<Overlay> Overlays { get { return overlays; } }
+			public int Id { get; private set; }
+			public int AreaId { get; private set; }
+			public int MapId { get; private set; }
+			public ZoneFlags Flags { get; private set; }
+			public string Name { get; private set; }
+			public string DataName { get; private set; }
+			public RectangleF Bounds { get; private set; }
+			public ReadOnlyCollection<Overlay> Overlays { get; private set; }
 
-			public override string ToString() { return name; }
+			public override string ToString() { return Name; }
 		}
 
-		class Overlay
+		private class Overlay
 		{
-			int id;
-			int zoneId;
-			int areaId;
-			Rectangle bounds;
-			Rectangle boundingRectangle;
-			string name;
-			string dataName;
-
 			public Overlay(int id, int zoneId, int areaId, Rectangle bounds, Rectangle boundingRectangle, string name, string dataName)
 			{
-				this.id = id;
-				this.zoneId = zoneId;
-				this.areaId = areaId;
-				this.bounds = bounds;
-				this.boundingRectangle = boundingRectangle;
-				this.name = name;
-				this.dataName = dataName;
+				Id = id;
+				ZoneId = zoneId;
+				AreaId = areaId;
+				Bounds = bounds;
+				BoundingRectangle = boundingRectangle;
+				Name = name;
+				DataName = dataName;
 			}
 
-			public int Id { get { return id; } set { id = value; } }
-			public int ZoneId { get { return zoneId; } set { zoneId = value; } }
-			public int AreaId { get { return areaId; } set { areaId = value; } }
-			public Rectangle Bounds { get { return bounds; } set { bounds = value; } }
-			public Rectangle BoundingRectangle { get { return boundingRectangle; } set { boundingRectangle = value; } }
-			public string Name { get { return name; } set { name = value; } }
-			public string DataName { get { return dataName; } set { dataName = value; } }
+			public int Id { get; private set; }
+			public int ZoneId { get; private set; }
+			public int AreaId { get; private set; }
+			public Rectangle Bounds { get; private set; }
+			public Rectangle BoundingRectangle { get; private set; }
+			public string Name { get; private set; }
+			public string DataName { get; private set; }
 
-			public override string ToString() { return name; }
+			public override string ToString() { return Name; }
 		}
 
 		#endregion
@@ -148,7 +138,6 @@ namespace WoWMapExplorer
 		Font zoneInformationFont;
 		Brush zoneErrorBrush;
 		const int zoneInformationFontHeight = 40;
-		List<IntPtr> fontPointerList;
 		// World Map Size: 1002x668
 		Bitmap mapBitmap;
 		Bitmap outlandHighlightBitmap,
@@ -167,8 +156,8 @@ namespace WoWMapExplorer
 		// Status
 		int currentContinent, currentZone;
 		List<Continent> continents;
-		List<Zone> zones;
-		List<Overlay> overlays;
+		IList<Zone> zones;
+		IList<Overlay> overlays;
 		string zoneInformationText;
 
 		#endregion
@@ -200,12 +189,6 @@ namespace WoWMapExplorer
 			FillZones();
 			LoadCosmicHighlights();
 			UpdateMap();
-		}
-
-		~MainForm()
-		{
-			foreach (IntPtr pointer in fontPointerList)
-				Marshal.FreeHGlobal(pointer);
 		}
 
 		#endregion
@@ -273,30 +256,26 @@ namespace WoWMapExplorer
 
 		private FontFamily LoadFont(string filename)
 		{
-			MpqFile fontFile;
-			Stream stream;
-			byte[] buffer;
+			// Initialize the font collection…
+			wowFontCollection = wowFontCollection ?? new PrivateFontCollection();
 
-			fontPointerList = new List<IntPtr>();
-			wowFontCollection = new PrivateFontCollection();
-			try
-			{
-				// Open the file
-				fontFile = mpqFileSystem.FindFile(filename);
-				// Read the contents of the file
-				stream = fontFile.Open();
-				buffer = new byte[fontFile.Size]; // Allocate the read buffer
+			// Open the file
+			var fontFile = mpqFileSystem.FindFile(filename);
+
+			// Read the contents of the file
+			var buffer = new byte[fontFile.Size]; // Allocate the read buffer
+			using (var stream = fontFile.Open())
 				stream.Read(buffer, 0, (int)fontFile.Size);
-				stream.Close();
-				IntPtr fontPointer = Marshal.AllocHGlobal((int)fontFile.Size);
-				Marshal.Copy(buffer, 0, fontPointer, (int)fontFile.Size);
-				fontPointerList.Add(fontPointer); // Add the pointer to the list
-				// Finally add the font
-				wowFontCollection.AddMemoryFont(fontPointer, (int)fontFile.Size);
-				// Return the result
-				return wowFontCollection.Families[wowFontCollection.Families.Length - 1];
+
+			// Finally add the font
+			unsafe
+			{
+				fixed (byte* bufferPointer = buffer)
+					wowFontCollection.AddMemoryFont((IntPtr)bufferPointer, (int)fontFile.Size);
 			}
-			catch { return null; }
+
+			// Return the result
+			return wowFontCollection.Families[wowFontCollection.Families.Length - 1];
 		}
 
 		private BLPTexture LoadTexture(string filename)
@@ -362,19 +341,31 @@ namespace WoWMapExplorer
 
 				if (mapDatabase.TryGetValue(worldMapContinentRecord.Map, out mapRecord))
 				{
-					Continent continent = new Continent(worldMapContinentRecord.Id, worldMapContinentRecord.Map, RectangleF.Empty, mapRecord.Name, mapRecord.DataName);
+					RectangleF bounds;
+					var zones = LoadZones(worldMapContinentRecord.Map, out bounds);
 
-					continent.ZoneMap = LoadZoneMap(@"Interface\WorldMap\" + continent.DataName + ".zmp");
-
-					LoadZones(continent);
+					Continent continent = new Continent
+					(
+						worldMapContinentRecord.Id,
+						worldMapContinentRecord.Map,
+						bounds,
+						mapRecord.Name,
+						mapRecord.DataName,
+						zones,
+						LoadZoneMap(@"Interface\WorldMap\" + mapRecord.DataName + ".zmp")
+					);
 
 					continents.Add(continent);
 				}
 			}
 		}
 
-		private void LoadZones(Continent continent)
+		private Zone[] LoadZones(int MapId, out RectangleF continentBounds)
 		{
+			var zones = new List<Zone>();
+
+			continentBounds = RectangleF.Empty;
+
 			// Look for zones matching this map ID in WorldMapArea database
 			foreach (var worldMapAreaRecord in worldMapAreaDatabase.Records)
 			{
@@ -382,55 +373,74 @@ namespace WoWMapExplorer
 				//  In field 1: ID of the game map containing the zone
 				//  In field 8: ID of the map virtually containing the zone (-1 if it is the same as field 1)
 
-				if ((worldMapAreaRecord.VirtualMap == -1 && worldMapAreaRecord.Map == continent.MapId) // Either virtual ID is -1 and we have ID in field 1
-					|| worldMapAreaRecord.VirtualMap == continent.MapId) // Or we have ID in field 8
+				if ((worldMapAreaRecord.VirtualMap == -1 && worldMapAreaRecord.Map == MapId) // Either virtual ID is -1 and we have ID in field 1
+					|| worldMapAreaRecord.VirtualMap == MapId) // Or we have ID in field 8
 				{
-					Zone zone = new Zone(worldMapAreaRecord.Id, worldMapAreaRecord.Area, continent.MapId,
-									new RectangleF(worldMapAreaRecord.BoxLeft, worldMapAreaRecord.BoxTop, worldMapAreaRecord.BoxRight - worldMapAreaRecord.BoxLeft, worldMapAreaRecord.BoxBottom - worldMapAreaRecord.BoxTop),
-									null, worldMapAreaRecord.DataName);
+					var bounds = new RectangleF(worldMapAreaRecord.BoxLeft, worldMapAreaRecord.BoxTop, worldMapAreaRecord.BoxRight - worldMapAreaRecord.BoxLeft, worldMapAreaRecord.BoxBottom - worldMapAreaRecord.BoxTop);
 
 					if (worldMapAreaRecord.Area == 0) // For continents
-						continent.Bounds = zone.Bounds;
+						continentBounds = bounds;
 					else // Now look into AreaTable database
 					{
 						AreaTableRecord areaTableRecord;
 
 						if (areaTableDatabase.TryGetValue(worldMapAreaRecord.Area, out areaTableRecord))
 						{
-							// Get the localized area name and set it as zone name
-							zone.Name = areaTableRecord.Name;
 #if DEBUG
-							System.Diagnostics.Debug.WriteLine("Bounds of \"" + zone.Name + "\": " + zone.Bounds.ToString());
+							System.Diagnostics.Debug.WriteLine("Bounds of \"" + areaTableRecord.Name + "\": " + bounds.ToString());
 #endif
-							// Load overlays for this zone
-							LoadOverlays(zone);
-							// Add zone to the list
-							continent.Zones.Add(zone);
+							zones.Add
+							(
+								new Zone
+								(
+									worldMapAreaRecord.Id,
+									worldMapAreaRecord.Area,
+									MapId,
+									bounds,
+									(ZoneFlags)worldMapAreaRecord.Flags,
+									areaTableRecord.Name,
+									worldMapAreaRecord.DataName,
+									LoadOverlays(worldMapAreaRecord.Id)
+								)
+							);
 						}
 					}
 				}
 			}
+
+			return zones.ToArray();
 		}
 
-		private void LoadOverlays(Zone zone)
+		private Overlay[] LoadOverlays(int zoneId)
 		{
-			foreach (var overlayRecord in worldMapOverlayDatabase.Records)
-				if (overlayRecord.WorldMapArea == zone.Id)
-				{
-					Rectangle bounds = new Rectangle(overlayRecord.Left, overlayRecord.Top, overlayRecord.Width, overlayRecord.Height),
-						boundingRectangle = new Rectangle(overlayRecord.BoxLeft, overlayRecord.BoxTop, overlayRecord.BoxRight - overlayRecord.BoxLeft, overlayRecord.BoxBottom - overlayRecord.BoxTop);
+			var overlays = new List<Overlay>();
 
-					Overlay overlay = new Overlay(overlayRecord.Id, overlayRecord.WorldMapArea, overlayRecord.Area1,
-						bounds, boundingRectangle,
-						null, overlayRecord.DataName);
+			foreach (var overlayRecord in worldMapOverlayDatabase.Records)
+				if (overlayRecord.WorldMapArea == zoneId)
+				{
+					var bounds = new Rectangle(overlayRecord.Left, overlayRecord.Top, overlayRecord.Width, overlayRecord.Height);
+					var boundingRectangle = new Rectangle(overlayRecord.BoxLeft, overlayRecord.BoxTop, overlayRecord.BoxRight - overlayRecord.BoxLeft, overlayRecord.BoxBottom - overlayRecord.BoxTop);
 
 					AreaTableRecord areaTableRecord;
 
-					if (areaTableDatabase.TryGetValue(overlayRecord.Area1, out areaTableRecord)) // Find the overlay name
-						overlay.Name = areaTableRecord.Name;
+					var name = (areaTableDatabase.TryGetValue(overlayRecord.Area1, out areaTableRecord)) ? areaTableRecord.Name : null;
 
-					zone.Overlays.Add(overlay);
+					overlays.Add
+					(
+						new Overlay
+						(
+							overlayRecord.Id,
+							overlayRecord.WorldMapArea,
+							overlayRecord.Area1,
+							bounds,
+							boundingRectangle,
+							name,
+							overlayRecord.DataName
+						)
+					);
 				}
+
+			return overlays.ToArray();
 		}
 		#endregion
 
@@ -458,7 +468,7 @@ namespace WoWMapExplorer
 			using (var g = Graphics.FromImage(mapBitmap))
 			{
 				string path = @"Interface\WorldMap\";
-				string map = "";
+				string map;
 
 				zoneInformationText = "";
 				overlays = null;
@@ -468,11 +478,14 @@ namespace WoWMapExplorer
 				else if (currentZone == -1) map = ((Continent)continentToolStripComboBox.SelectedItem).DataName;
 				else map = zones[currentZone].DataName;
 
+				int separationOffset = map.IndexOf('_');
+				path = path + (separationOffset >= 0 ? map.Substring(0, separationOffset) : map) + @"\";
+
 				for (int i = 0; i < 3; i++)
 					for (int j = 0; j < 4; j++)
 						try
 						{
-							using (var texture = LoadTexture(String.Format(CultureInfo.InvariantCulture, @"{0}{1}\{1}{2}.blp", path, map, 4 * i + j + 1)))
+							using (var texture = LoadTexture(path + map + (4 * i + j + 1) + ".blp"))
 								g.DrawImageUnscaled(texture.FirstMipMap, 256 * j, 256 * i, 256, 256);
 						}
 						catch { g.FillRectangle(zoneErrorBrush, 256 * j, 256 * i, 256, 256); }
@@ -494,7 +507,7 @@ namespace WoWMapExplorer
 						for (int i = 0; i < textureCount; i++)
 							try
 							{
-								using (var texture = LoadTexture(String.Format(CultureInfo.InvariantCulture, @"{0}{1}\{2}{3}.blp", path, map, overlay.DataName, i + 1)))
+								using (var texture = LoadTexture(path + overlay.DataName + (i + 1) + ".blp"))
 									g.DrawImageUnscaled(texture.FirstMipMap, x + 256 * (i % colCount), y + 256 * (i / colCount));
 							}
 							catch { }

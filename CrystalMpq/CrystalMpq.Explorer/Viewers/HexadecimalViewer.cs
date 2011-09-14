@@ -15,10 +15,11 @@ using System.Drawing;
 using System.Data;
 using System.Text;
 using System.Windows.Forms;
+using CrystalMpq.Explorer.Extensibility;
 
 namespace CrystalMpq.Explorer.Viewers
 {
-	partial class HexadecimalViewer : UserControl
+	internal sealed partial class HexadecimalViewer : UserControl
 	{
 		static Font defaultFont = new Font("Courier New", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
 
