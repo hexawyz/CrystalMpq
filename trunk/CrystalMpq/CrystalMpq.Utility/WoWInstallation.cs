@@ -123,7 +123,8 @@ namespace CrystalMpq.Utility
 		/// Those names are highly related with the version of WoW supported.
 		/// Archives listed here are for the old WoW instalaltion type. (Pre-Cataclysm)
 		/// </remarks>
-		static readonly string[] expectedArchiveNamesOld = new string[] {
+		static readonly string[] expectedArchiveNamesOld = new string[]
+		{
 			"common",
 			"expansion",
 			"lichking",
@@ -135,7 +136,8 @@ namespace CrystalMpq.Utility
 		/// Archives listes here are the new cataclysm archives.
 		/// 
 		/// </remarks>
-		static readonly string[] expectedArchiveNamesCataclysm = new string[] {
+		static readonly string[] expectedArchiveNamesCataclysm = new string[]
+		{
 			"sound",
 			"art",
 			"world",

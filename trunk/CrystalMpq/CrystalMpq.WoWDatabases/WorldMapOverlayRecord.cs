@@ -11,10 +11,12 @@
 using System;
 using System.Runtime.InteropServices;
 using CrystalMpq.WoWFile;
+using System.Diagnostics;
 
 namespace CrystalMpq.WoWDatabases
 {
 	[StructLayout(LayoutKind.Sequential)]
+	[DebuggerDisplay("WorldMapOverlayRecord: Id={Id}, DataName={DataName}")]
 	public struct WorldMapOverlayRecord
 	{
 		[Id] public int Id;

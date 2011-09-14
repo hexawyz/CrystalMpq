@@ -18,9 +18,7 @@ using System.Runtime.InteropServices;
 
 namespace CrystalMpq.WoWFile
 {
-	/// <summary>
-	/// Encapsulates bitmap data corresponding to a BLP image.
-	/// </summary>
+	/// <summary>Encapsulates bitmap data corresponding to a BLP image.</summary>
 	public sealed class BLPTexture : IDisposable
 	{
 		#region BLP Header Structures
@@ -138,10 +136,10 @@ namespace CrystalMpq.WoWFile
 			stream.Close();
 		}
 
-		// This method read file signature and if valid BLP is found
-		// dispatches the loading process to version corresponding functions
-		// Actually handles BLP1 and BLP2
-		// BLP1 is JPEG-based and BLP2 is DXTC-based
+		// This method reads the file signature and, if valid,
+		// dispatches the loading process to version-corresponding functions
+		// NB: Actually handles BLP1 and BLP2
+		// NB: BLP1 is JPEG-based and BLP2 is DXTC-based
 		private void LoadFromStream(Stream stream, bool loadMipMaps)
 		{
 			BinaryReader reader = new BinaryReader(stream);
@@ -174,7 +172,7 @@ namespace CrystalMpq.WoWFile
 				throw new InvalidDataException();
 		}
 
-		// Incorrect rendering due to Blizzard's use of Intel's Jpeg Library
+		// Incorrect rendering due to Blizzard's use of Intel's Jpeg Library (CMYK vs YMCK…)
 		// We need to swap Red and Blue channels to get a correct image
 		private void LoadBlp1(BinaryReader reader, int startOffset, int mipMapCount)
 		{
@@ -244,7 +242,7 @@ namespace CrystalMpq.WoWFile
 				// Now we can load the mip map in a bitmap, and swap Red/Blue channels
 				// because the JPEG encoder used by Blizzard is not the one used in GDI+
 				// (Blizzard uses Intel JPEG Library)
-				currentMipMap = new Bitmap(bufferStream);
+				currentMipMap = Image.FromStream(bufferStream, true, false) as Bitmap;
 				SwapRedAndBlueChannels(currentMipMap);
 				mipmaps.Add(currentMipMap);
 			}
@@ -299,9 +297,7 @@ namespace CrystalMpq.WoWFile
 			this.mipmaps = mipmaps.ToArray();
 		}
 
-		/// <summary>
-		/// Reads a 256 color palette from a stream
-		/// </summary>
+		/// <summary>Reads a 256 color palette from a stream</summary>
 		/// <param name="reader">The BinaryReader used for reading data in the stream</param>
 		/// <param name="alphaOperation">The operation to apply on each palette entry's alpha component</param>
 		/// <returns>An array of bytes containing the palette entries</returns>
@@ -347,9 +343,9 @@ namespace CrystalMpq.WoWFile
 			pCurrentPixel = (uint*)pCurrentScan;
 
 			// We read the data, assuming correct values are contained in the palette
-			// For opaques images, you must ensure set alpha to 255 for each palette entry
-			// For paletted alpha images, you must invert alpha for each palette entry
-			// For separate alpha images, we just don't care :)
+			// With opaques images, you must ensure alpha is equal to 255 for each palette entry
+			// With paletted alpha images, you must invert alpha for each palette entry
+			// With separate alpha images, we just don't care :)
 			for (y = 0; y < h; y++)
 			{
 				for (x = 0; x < w; x++)

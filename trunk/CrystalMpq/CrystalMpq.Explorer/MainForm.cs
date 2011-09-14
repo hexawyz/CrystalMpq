@@ -157,6 +157,7 @@ namespace CrystalMpq.Explorer
 			AddViewer(directoryViewer = new DirectoryViewer(this, pluginsHost));
 			AddViewer(new BitmapViewer(pluginsHost));
 			AddViewer(new TextViewer(pluginsHost));
+			AddViewer(new FontViewer(pluginsHost));
 		}
 
 		private void LoadPlugins()

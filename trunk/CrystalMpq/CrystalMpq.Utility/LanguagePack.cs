@@ -20,7 +20,8 @@ namespace CrystalMpq.Utility
 {
 	public sealed class LanguagePack
 	{
-		static readonly string[] expectedArchiveNamesOld = new string[] {
+		static readonly string[] expectedArchiveNamesOld = new string[]
+		{
 			"backup",
 			"base",
 			"locale",
@@ -32,14 +33,16 @@ namespace CrystalMpq.Utility
 			"patch"
 		};
 
-		static readonly string[] expectedArchiveNamesCataclysm = new string[] {
+		static readonly string[] expectedArchiveNamesCataclysm = new string[]
+		{
 			"backup",
 			"base",
 			"locale",
 			"speech"
 		};
 
-		static readonly string[] expectedExpansionArchiveNames = new string[] {
+		static readonly string[] expectedExpansionArchiveNames = new string[]
+		{
 			"locale",
 			"speech"
 		};
@@ -48,7 +51,8 @@ namespace CrystalMpq.Utility
 		static readonly string otherArchive = "{0}-{1}-{2}.MPQ";
 		static readonly string expansionArchive = "expansion{0}-{1}-{2}.MPQ";
 
-		static readonly Dictionary<string, int> localeFieldIndexDictionary = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase) {
+		static readonly Dictionary<string, int> localeFieldIndexDictionary = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase)
+		{
 			{ "enUS", 0 },
 			{ "enGB", 0 },
 			{ "koKR", 1 },
@@ -79,10 +83,9 @@ namespace CrystalMpq.Utility
 				this.localeFieldIndex = -1;
 			this.dataPath = _Path.Combine(wowInstallation.DataPath, wowCultureId);
 
-			if ((archiveArray = wowInstallation.InstallationKind == InstallationKind.Cataclysmic ?
+			archiveArray = wowInstallation.InstallationKind == InstallationKind.Cataclysmic ?
 				FindArchives(this.dataPath, this.wowCultureId) :
-				FindArchivesOld(this.dataPath, this.wowCultureId)) == null)
-				throw new FileNotFoundException();
+				FindArchivesOld(this.dataPath, this.wowCultureId);
 			archiveCollection = new ReadOnlyCollection<string>(archiveArray);
 		}
 
@@ -96,7 +99,6 @@ namespace CrystalMpq.Utility
 			{
 				string archiveName = string.Format(CultureInfo.InvariantCulture, firstArchive, expectedArchiveName, wowCultureId);
 				if (File.Exists(_Path.Combine(dataPath, archiveName))) archiveList.Add(archiveName);
-				else return null;
 			}
 
 			for (int i = 1; ; i++)

@@ -21,14 +21,11 @@ namespace CrystalMpq.Explorer.Viewers
 {
 	[LocalizedDisplayName("TextViewerSettings")]
 	[LocalizedDescription("TextViewerSettings")]
-	sealed class TextViewerSettings : IPluginSettings
+	internal sealed class TextViewerSettings : IPluginSettings
 	{
-		Encoding defaultEncoding;
+		private Encoding defaultEncoding;
 
-		public TextViewerSettings()
-		{
-			Reset();
-		}
+		public TextViewerSettings() { Reset(); }
 
 		[Category("Behavior")]
 		[LocalizedDisplayName("DefaultEncoding")]
@@ -36,10 +33,7 @@ namespace CrystalMpq.Explorer.Viewers
 		[TypeConverter(typeof(EncodingConverter))]
 		public Encoding DefaultEncoding
 		{
-			get
-			{
-				return defaultEncoding;
-			}
+			get { return defaultEncoding; }
 			set
 			{
 				if (value == null)
@@ -49,15 +43,9 @@ namespace CrystalMpq.Explorer.Viewers
 			}
 		}
 
-		public bool ShouldSerializeDefaultEncoding()
-		{
-			return defaultEncoding.WebName != "utf-8";
-		}
+		public bool ShouldSerializeDefaultEncoding() { return defaultEncoding.WebName != "utf-8"; }
 
-		public void ResetDefaultEncoding()
-		{
-			defaultEncoding = Encoding.UTF8;
-		}
+		public void ResetDefaultEncoding() { defaultEncoding = Encoding.UTF8; }
 
 		public void Reset()
 		{
@@ -71,9 +59,6 @@ namespace CrystalMpq.Explorer.Viewers
 			Settings.Default.Save();
 		}
 
-		public override string ToString()
-		{
-			return null;
-		}
+		public override string ToString() { return null; }
 	}
 }

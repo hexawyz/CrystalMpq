@@ -11,10 +11,12 @@
 using System;
 using System.Runtime.InteropServices;
 using CrystalMpq.WoWFile;
+using System.Diagnostics;
 
 namespace CrystalMpq.WoWDatabases
 {
 	[StructLayout(LayoutKind.Sequential)]
+	[DebuggerDisplay("WorldMapAreaRecord: Id={Id}, DataName={DataName}")]
 	public struct WorldMapAreaRecord
 	{
 		[Id] public int Id;
@@ -26,8 +28,8 @@ namespace CrystalMpq.WoWDatabases
 		public float BoxBottom;
 		public float BoxTop;
 		public int VirtualMap;
-		public int Unknown1;
-		public int ParentId; // Used to reference dungeon maps
-		public int Unknown2;
+		public int DungeonMapId;
+		public int ParentId;
+		public int Flags;
 	}
 }

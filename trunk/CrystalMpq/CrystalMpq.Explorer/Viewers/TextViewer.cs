@@ -19,13 +19,13 @@ using CrystalMpq.Explorer.Extensibility;
 
 namespace CrystalMpq.Explorer.Viewers
 {
-	partial class TextViewer : FileViewer
+	internal sealed partial class TextViewer : FileViewer
 	{
-		byte[] data;
-		Encoding encoding;
-		FindTextForm findTextForm;
-		string searchText;
-		bool caseSensitive, entireWord;
+		private byte[] data;
+		private Encoding encoding;
+		private FindTextForm findTextForm;
+		private string searchText;
+		private bool caseSensitive, entireWord;
 
 		public TextViewer(IHost host)
 			: base(host)
@@ -44,7 +44,7 @@ namespace CrystalMpq.Explorer.Viewers
 		public override MenuStrip Menu { get { return menuStrip; } }
 		public override ToolStrip MainToolStrip { get { return mainToolStrip; } }
 		public override StatusStrip StatusStrip { get { return statusStrip; } }
-		public override IPluginSettings Settings { get { return new TextViewerSettings(); } }
+		protected override IPluginSettings CreatePluginSettings() { return new TextViewerSettings(); }
 
 		/// <summary>
 		/// Gets the FindTextForm object associated with the text viewer

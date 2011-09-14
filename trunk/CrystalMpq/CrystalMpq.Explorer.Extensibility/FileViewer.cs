@@ -17,7 +17,7 @@ using CrystalMpq;
 namespace CrystalMpq.Explorer.Extensibility
 {
 	/// <summary>Base class for implementig a FileViewer plugin.</summary>
-	public /*abstract */class FileViewer : UserControl // Using abstract breaks the conceptor :(
+	public /*abstract */class FileViewer : UserControl // Using abstract breaks the designer :(
 	{
 		private MpqFile file;
 		private IHost host;
@@ -41,7 +41,7 @@ namespace CrystalMpq.Explorer.Extensibility
 		public virtual StatusStrip StatusStrip { get { return null; } }
 
 		/// <summary>Gets the object that can be used to change the settings of this plugin, or <c>null</c> if there is none.</summary>
-		public virtual IPluginSettings Settings
+		public IPluginSettings Settings
 		{
 			get
 			{
