@@ -25,9 +25,7 @@ namespace CrystalMpq
 	{
 		#region MpqFileCollection Class
 
-		/// <summary>
-		/// Represents a collection of MpqFile in a MpqArchive
-		/// </summary>
+		/// <summary>Represents a collection of <see cref="MpqFile"/> in an <see cref="MpqArchive"/>.</summary>
 		public class MpqFileCollection : IEnumerable<MpqFile>
 		{
 			private MpqArchive owner;
@@ -39,7 +37,7 @@ namespace CrystalMpq
 				this.owner = owner;
 			}
 
-			/// <summary> Gets a file from the collection.</summary>
+			/// <summary>Gets a file from the collection.</summary>
 			/// <param name="index">Index of the desired <see cref="MpqFile"/> item.</param>
 			/// <returns>Returns the <see cref="MpqFile"/> at the specified index.</returns>
 			public MpqFile this[int index]
@@ -59,7 +57,7 @@ namespace CrystalMpq
 
 			IEnumerator IEnumerable.GetEnumerator() { return owner.files.GetEnumerator(); }
 
-			/// <summary> Gets an enumerator for the collection. </summary>
+			/// <summary>Gets an enumerator for the collection.</summary>
 			/// <returns>Returns an enumerator for the current collection.</returns>
 			public IEnumerator<MpqFile> GetEnumerator()
 			{
@@ -93,34 +91,36 @@ namespace CrystalMpq
 		private MpqFileCollection fileCollection;
 		private MpqFile listFile;
 		private bool listFileParsed;
-		private object syncRoot;
+		private readonly ResolveStreamEventArgs resolveStreamEventArgs;
+		private readonly object syncRoot;
+
+		/// <summary>Occurs when the base file for a given <see cref="MpqFile"/> should be resolved.</summary>
+		/// <remarks>
+		/// This event will be raised when opening an <see cref="MpqFile"/> which is a patch file.
+		/// Because patch files should be applied to a base file, it is needed to access to this file.
+		/// The application is responsible for providing a stream containing valid data for this to work.
+		/// </remarks>
+		public event EventHandler<ResolveStreamEventArgs> ResolveBaseFile;
 
 		#region Instance Constructors
 
 		private MpqArchive()
 		{
 			syncRoot = new object();
+			resolveStreamEventArgs = new ResolveStreamEventArgs();
 			fileCollection = new MpqFileCollection(this);
 			listFileParsed = false;
 		}
 
-		/// <summary>
-		/// Initialize a new instance of the class MPQArchive
-		/// </summary>
-		/// <remarks>
-		/// This constructor will by default parse the list file
-		/// </remarks>
-		/// <param name="filename">MPQ Archive filename</param>
+		/// <summary>Initializes a new instance of the <see cref="MpqArchive"/> class.</summary>
+		/// <remarks>The listfile will be parsed if present.</remarks>
+		/// <param name="filename">The MPQ archive's filename.</param>
 		public MpqArchive(string filename)
-			: this(filename, true)
-		{
-		}
+			: this(filename, true) { }
 
-		/// <summary>
-		/// Initialize a new instance of the class MPQArchive
-		/// </summary>
-		/// <param name="filename">MPQ Archive filename</param>
-		/// <param name="parseListFile">Determines if listfile will be parsed automatically when found</param>
+		/// <summary>Initializes a new instance of the <see cref="MpqArchive"/> class.</summary>
+		/// <param name="filename">The MPQ archive's filename.</param>
+		/// <param name="parseListFile">Determines if the listfile will be parsed.</param>
 		public MpqArchive(string filename, bool parseListFile)
 			: this()
 		{
@@ -128,21 +128,15 @@ namespace CrystalMpq
 			this.filename = filename;
 		}
 
-		/// <summary>
-		/// Initialize a new instance of the class MPQArchive
-		/// </summary>
-		/// <remarks>
-		/// This constructor will by default parse the list file
-		/// </remarks>
-		/// <param name="stream">Stream containing MPQ Archive</param>
+		/// <summary>Initializes a new instance of the <see cref="MpqArchive"/> class.</summary>
+		/// <remarks>The listfile will be parsed if present.</remarks>
+		/// <param name="stream">A <see cref="Stream"/> containing the MPQ archive.</param>
 		public MpqArchive(Stream stream)
 			: this(stream, true) { }
 
-		/// <summary>
-		/// Initialize a new instance of the class MPQArchive
-		/// </summary>
-		/// <param name="stream">Stream containing MPQ Archive</param>
-		/// <param name="parseListFile">Determines if listfile will be parsed automatically when found</param>
+		/// <summary>Initializes a new instance of the <see cref="MpqArchive"/> class.</summary>
+		/// <param name="stream">A <see cref="Stream"/> containing the MPQ archive.</param>
+		/// <param name="parseListFile">Determines if the listfile will be parsed.</param>
 		public MpqArchive(Stream stream, bool parseListFile)
 			: this()
 		{
@@ -294,13 +288,11 @@ namespace CrystalMpq
 				if (entry.IsValid && entry.Block >= 0 && entry.Block < blockTableSize)
 					files[entry.Block].BindHashTableEntry(entry);
 
-			// When possible, find and parse List File…
+			// When possible, find and parse the listfile…
 			TryFilename("(listfile)");
 			listFile = FindFile("(listfile)", 0);
-			if (listFile == null)
-				return;
-			if (parseListFile)
-				ParseListFile();
+			if (listFile == null) return;
+			if (parseListFile) ParseListFile();
 		}
 
 		private bool CheckOffset(long offset) { return offset >= 0 && offset < archiveSize; }
@@ -322,7 +314,7 @@ namespace CrystalMpq
 
 		private unsafe MpqFile[] ReadBlockTable(byte[] buffer, int tableLength, long offset, long dataLength)
 		{
-			// Stream.Read only takes an int length for now, and it is unlikely that the hash table will exceed 2GB.
+			// Stream.Read only takes an int length for now, and it is unlikely that the block table will exceed 2GB.
 			// But like always, who knows what might happen in the future… Better check for overflow and crash nicely ! ;)
 			int dataLength2 = checked((int)dataLength);
 
@@ -345,20 +337,19 @@ namespace CrystalMpq
 			}
 		}
 
-		/// <summary>Gets a value that indicate wether the current archive possesses a listfile.</summary>
+		/// <summary>Gets a value that indicate wether the current archive has a listfile.</summary>
 		/// <remarks>
 		/// Having a listfile is not required for an archive to be readable.
-		/// But you have to know the filenames if you want to read the files inside.
+		/// However, you need to know the filenames if you want to read the files.
 		/// </remarks>
 		public bool HasListFile { get { return listFile != null; } }
 
-		/// <summary>
-		/// Instructs the MPQArchive object to parse the list file associated with the archive if it had not already been done.
-		/// </summary>
+		/// <summary>Parses the listfile if it has not already been done.</summary>
 		/// <remarks>
 		/// Once the list file has been parsed, calls this function will just do nothing.
-		/// By default the list file will always be parsed, but you can override this behavior using some of the constructors.
+		/// The list file will always be parsed by default, but you can override this behavior using an appropriate constructor.
 		/// Please note that parsing the list file can take some time, and is not required if you already know the filenames.
+		/// Also, this operation is irreversible. Once the filenames are present in memory, the only way to free the memory is to close the archive.
 		/// </remarks>
 		public void ParseListFile()
 		{
@@ -374,13 +365,12 @@ namespace CrystalMpq
 			}
 		}
 
-		/// <summary>
-		/// Instructs the MPQArchive object to associate the given filename with files in the archive.
-		/// If there are files who respond to this filename, it will be associated to them.
-		/// Otherwise, nothing will happen.
-		/// </summary>
-		/// <remarks>This function may be useful when you don't have a listfile for a given MPQ archive or when you just want to find some hidden file.</remarks>
-		/// <param name="filename">The filename you want to try</param>
+		/// <summary>Associate the specified filename with files in the archive.</summary>
+		/// <remarks>
+		/// The filename will only be associated to matching files. If no file corresponds to the specified filename, nothing will happen.
+		/// This function may be useful when you don't have a listfile for a given MPQ archive or when you just want to find some hidden files.
+		/// </remarks>
+		/// <param name="filename">The filename to associate.</param>
 		/// <param name="listed">If set to <c>true</c>, the name was found in the listfile.</param>
 		private void TryFilename(string filename, bool listed)
 		{
@@ -397,22 +387,21 @@ namespace CrystalMpq
 #endif
 		}
 
-		/// <summary>
-		/// Instructs the MPQArchive object to associate the given filename with files in the archive.
-		/// If there are files who respond to this filename, it will be associated to them.
-		/// Otherwise, nothing will happen.
-		/// </summary>
-		/// <remarks>This function may be useful when you don't have a listfile for a given MPQ archive or when you just want to find some hidden file.</remarks>
+		/// <summary>Associate the specified filename with files in the archive.</summary>
+		/// <remarks>
+		/// The filename will only be associated to matching files. If no file corresponds to the specified filename, nothing will happen.
+		/// This function may be useful when you don't have a listfile for a given MPQ archive or when you just want to find some hidden files.
+		/// </remarks>
 		/// <param name="filename">The filename you want to try</param>
 		public void TryFilename(string filename) { TryFilename(filename, false); }
 
-		/// <summary>Find files in archive.</summary>
+		/// <summary>Finds files with the specified filename.</summary>
 		/// <remarks>
-		/// This function will return all MPQFile matching the given filename.
-		/// There might be more than one MPQFile because of localization.
+		/// This function will return all <see cref="MpqFile"/>s matching the given filename.
+		/// There might be more than one <see cref="MpqFile"/> returned because of the localization.
 		/// </remarks>
-		/// <param name="filename">Filename of the files.</param>
-		/// <returns>Returns an array of MPQFile, containing 0 or more MPQFile.</returns>
+		/// <param name="filename">The filename of the files to find.</param>
+		/// <returns>Returns an array of <see cref="MpqFile"/>, containing zero or more <see cref="MpqFile"/>.</returns>
 		public MpqFile[] FindFiles(string filename)
 		{
 			int[] blocks = hashTable.FindMulti(filename);
@@ -423,10 +412,10 @@ namespace CrystalMpq
 			return files;
 		}
 
-		/// <summary>Find one file in archive.</summary>
+		/// <summary>Finds one file the specified filename.</summary>
 		/// <remarks>This function will only return the first result found.</remarks>
-		/// <param name="filename">Filename of the file to find.</param>
-		/// <returns>Returns an MPQFile object if file is found, or null otherwise.</returns>
+		/// <param name="filename">The filename of the file to find.</param>
+		/// <returns>Returns an <see cref="MpqFile"/> object if file is found, or <c>null</c> otherwise.</returns>
 		public MpqFile FindFile(string filename)
 		{
 			int block = hashTable.Find(filename);
@@ -441,10 +430,10 @@ namespace CrystalMpq
 			else return null;
 		}
 
-		/// <summary>Find one file in archive, based on LCID.</summary>
-		/// <param name="filename">Filename of the file to find.</param>
-		/// <param name="lcid">LCID of file to find.</param>
-		/// <returns>Returns an MPQFile object if file is found, or null otherwise.</returns>
+		/// <summary>Finds one file the specified filename and LCID.</summary>
+		/// <param name="filename">The filename of the file to find.</param>
+		/// <param name="lcid">The LCID of file to find.</param>
+		/// <returns>Returns an <see cref="MpqFile"/> object if file is found, or <c>null</c> otherwise.</returns>
 		public MpqFile FindFile(string filename, int lcid)
 		{
 			int block = hashTable.Find(filename, lcid);
@@ -463,6 +452,20 @@ namespace CrystalMpq
 		/// <remarks>It might happen that a given file exists for different culture in the same MPQ archive, but it is more likely that your MPQ archive is already localized itself…</remarks>
 		/// <param name="lcid">The LCID for the desired culture</param>
 		public void SetPreferredCulture(int lcid) { hashTable.SetPreferredCulture(lcid); }
+
+		/// <summary>Resolves the data corresponding to the base file of a given patch <see cref="MpqFile"/>.</summary>
+		/// <param name="file">The patch file.</param>
+		/// <returns>A <see cref="Stream"/> containing the data for the base file if it was found; otherwise <c>null</c>.</returns>
+		internal Stream ResolveBaseFileInternal(MpqFile file)
+		{
+			if (ResolveBaseFile != null)
+				lock (resolveStreamEventArgs)
+				{
+					ResolveBaseFile(file, resolveStreamEventArgs);
+					return resolveStreamEventArgs.TransferStreamOwnership();
+				}
+			else return null;
+		}
 
 		// To recode and move...
 		internal uint FindFileHash(int index)
