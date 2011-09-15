@@ -10,6 +10,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 
 namespace CrystalMpq
 {
@@ -140,10 +141,9 @@ namespace CrystalMpq
 
 			if (open) throw new IOException("File is already open.");
 
-			var stream = new MpqFileStream(this);
 			open = true;
-
-			return stream;
+			try { return new MpqFileStream(this); }
+			catch { open = false; throw; }
 		}
 
 		internal void Close()

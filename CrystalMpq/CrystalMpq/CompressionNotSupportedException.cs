@@ -12,14 +12,13 @@ using System;
 
 namespace CrystalMpq
 {
-	/// <summary>
-	/// Thrown when a compression is not handled by the library
-	/// </summary>
+	/// <summary>Thrown when a compression is not handled by the library.</summary>
 	public sealed class CompressionNotSupportedException : MpqException
 	{
 		internal CompressionNotSupportedException(byte compression)
-			: base("Invalid or unsupported compression: 0x" + compression.ToString("X"))
-		{
-		}
+			: base("Unsupported compression: 0x" + compression.ToString("X") + ".") { }
+
+		internal CompressionNotSupportedException(string method)
+			: base("Unsupported compression: " + method + ".") { }
 	}
 }

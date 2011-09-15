@@ -16,6 +16,7 @@ using System.Diagnostics;
 
 namespace CrystalMpq
 {
+	/// <summary>Exposes <see cref="Stream"/> with the data contained in an <see cref="MpqFile"/>.</summary>
 	public sealed class MpqFileStream : Stream
 	{
 		MpqFile file;
@@ -32,7 +33,10 @@ namespace CrystalMpq
 			uint length;
 
 			if (file.IsPatch)
+			{
+				file.Archive.ResolveBaseFileInternal(file);
 				throw new NotSupportedException("Patch files will be supported in a later revision");
+			}
 			this.file = file;
 			this.index = file.Index;
 			length = (uint)file.Size;

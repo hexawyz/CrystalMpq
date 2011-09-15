@@ -19,25 +19,19 @@ using IOPath = System.IO.Path;
 
 namespace CrystalMpq.Utility
 {
-	/// <summary>
-	/// Represents a WoW installation on the machine.
-	/// </summary>
+	/// <summary>Represents a WoW installation on the machine.</summary>
 	public sealed class WoWInstallation
 	{
 		#region LanguagePackCollection
 
-		/// <summary>
-		/// Represents a collection of <see cref="LanguagePack"/> associated with a <see cref="WoWInstalaltion"/>.
-		/// </summary>
+		/// <summary>Represents a collection of <see cref="LanguagePack"/> associated with a <see cref="WoWInstallation"/>.</summary>
 		public sealed class LanguagePackCollection : IList<LanguagePack>
 		{
-			WoWInstallation wowInstallation;
+			private WoWInstallation wowInstallation;
 
 			internal LanguagePackCollection(WoWInstallation wowInstallation) { this.wowInstallation = wowInstallation; }
 
-			/// <summary>
-			/// Gets or sets the <see cref="CrystalMpq.Utility.LanguagePack"/> at the specified index.
-			/// </summary>
+			/// <summary>Gets or sets the <see cref="CrystalMpq.Utility.LanguagePack"/> at the specified index.</summary>
 			/// <value></value>
 			public LanguagePack this[int index]
 			{
@@ -45,42 +39,23 @@ namespace CrystalMpq.Utility
 				set { throw new NotSupportedException(); }
 			}
 
-			/// <summary>
-			/// Gets the number of elements contained in the <see cref="LanguagePackCollection"/>.
-			/// </summary>
-			/// <value></value>
-			/// <returns>
-			/// The number of elements contained in the <see cref="LanguagePackCollection"/>.
-			/// </returns>
+			/// <summary>Gets the number of elements contained in the <see cref="LanguagePackCollection"/>.</summary>
+			/// <value>The number of elements contained in the <see cref="LanguagePackCollection"/>.</value>
 			public int Count { get { return wowInstallation.languagePackArray.Length; } }
-			/// <summary>
-			/// Gets a value indicating whether the <see cref="LanguagePackCollection"/> is read-only.
-			/// </summary>
-			/// <value></value>
-			/// <returns>true if the <see cref="LanguagePackCollection"/> is read-only; otherwise, false.
-			/// </returns>
-			/// <remarks>The <see cref="LanguagePackCollection"/> will always be read-only.</remarks>
+			/// <summary>Gets a value indicating whether this instance is read only.</summary>
+			/// <remarks><see cref="LanguagePackCollection"/> will always be read-only.</remarks>
+			/// <value><c>true</c> if this instance is read only; otherwise, <c>false</c>.</value>
 			public bool IsReadOnly { get { return true; } }
 
-			/// <summary>
-			/// Determines the index of a specific item in the <see cref="LanguagePackCollection"/>.
-			/// </summary>
+			/// <summary>Determines the index of a specific item in the <see cref="LanguagePackCollection"/>.</summary>
 			/// <param name="item">The object to locate in the <see cref="LanguagePackCollection"/>.</param>
-			/// <returns>
-			/// The index of <paramref name="item"/> if found in the list; otherwise, -1.
-			/// </returns>
+			/// <returns>The index of <paramref name="item"/> if found in the list; otherwise, -1.</returns>
 			public int IndexOf(LanguagePack item) { return ((IList<LanguagePack>)wowInstallation.languagePackArray).IndexOf(item); }
-			/// <summary>
-			/// Determines whether the <see cref="LanguagePackCollection"/> contains a specific value.
-			/// </summary>
+			/// <summary>Determines whether the <see cref="LanguagePackCollection"/> contains a specific value.</summary>
 			/// <param name="item">The object to locate in the <see cref="LanguagePackCollection"/>.</param>
-			/// <returns>
-			/// true if <paramref name="item"/> is found in the <see cref="LanguagePackCollection"/>; otherwise, false.
-			/// </returns>
+			/// <returns><c>true</c> if <paramref name="item"/> is found in the <see cref="LanguagePackCollection"/>; otherwise, <c>false</c>.</returns>
 			public bool Contains(LanguagePack item) { return ((IList<LanguagePack>)wowInstallation.languagePackArray).Contains(item); }
-			/// <summary>
-			/// Copies the elements of the <see cref="LanguagePackCollection"/> to an <see cref="T:System.Array"/>, starting at a particular <see cref="T:System.Array"/> index.
-			/// </summary>
+			/// <summary>Copies the elements of the <see cref="LanguagePackCollection"/> to an <see cref="T:System.Array"/>, starting at a particular <see cref="T:System.Array"/> index.</summary>
 			/// <param name="array">The one-dimensional <see cref="T:System.Array"/> that is the destination of the elements copied from <see cref="LanguagePackCollection"/>. The <see cref="T:System.Array"/> must have zero-based indexing.</param>
 			/// <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
 			/// <exception cref="T:System.ArgumentNullException">
@@ -95,8 +70,6 @@ namespace CrystalMpq.Utility
 			/// <paramref name="arrayIndex"/> is equal to or greater than the length of <paramref name="array"/>.
 			/// -or-
 			/// The number of elements in the source <see cref="T:System.Collections.Generic.ICollection`1"/> is greater than the available space from <paramref name="arrayIndex"/> to the end of the destination <paramref name="array"/>.
-			/// -or-
-			/// Type <paramref name="T"/> cannot be cast automatically to the type of the destination <paramref name="array"/>.
 			/// </exception>
 			public void CopyTo(LanguagePack[] array, int arrayIndex) { wowInstallation.languagePackArray.CopyTo(array, arrayIndex); }
 
@@ -106,12 +79,8 @@ namespace CrystalMpq.Utility
 			bool ICollection<LanguagePack>.Remove(LanguagePack item) { throw new NotSupportedException(); }
 			void ICollection<LanguagePack>.Clear() { throw new NotSupportedException(); }
 
-			/// <summary>
-			/// Returns an enumerator that iterates through the collection.
-			/// </summary>
-			/// <returns>
-			/// A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the collection.
-			/// </returns>
+			/// <summary>Returns an enumerator that iterates through the collection.</summary>
+			/// <returns>A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the collection.</returns>
 			public IEnumerator<LanguagePack> GetEnumerator() { return ((IList<LanguagePack>)wowInstallation.languagePackArray).GetEnumerator(); }
 			System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return ((System.Collections.IEnumerable)wowInstallation.languagePackArray).GetEnumerator(); }
 		}
@@ -123,7 +92,7 @@ namespace CrystalMpq.Utility
 		/// Those names are highly related with the version of WoW supported.
 		/// Archives listed here are for the old WoW instalaltion type. (Pre-Cataclysm)
 		/// </remarks>
-		static readonly string[] expectedArchiveNamesOld = new string[]
+		private static readonly string[] expectedArchiveNamesOld = new string[]
 		{
 			"common",
 			"expansion",
@@ -136,7 +105,7 @@ namespace CrystalMpq.Utility
 		/// Archives listes here are the new cataclysm archives.
 		/// 
 		/// </remarks>
-		static readonly string[] expectedArchiveNamesCataclysm = new string[]
+		private static readonly string[] expectedArchiveNamesCataclysm = new string[]
 		{
 			"sound",
 			"art",
@@ -144,32 +113,34 @@ namespace CrystalMpq.Utility
 		};
 
 		/// <summary>Format of the default archive filename.</summary>
-		static readonly string firstArchive = "{0}.MPQ";
+		private static readonly string firstArchive = "{0}.MPQ";
 		/// <summary>Format of the filename for supplementary archives.</summary>
-		static readonly string otherArchive = "{0}-{1}.MPQ";
+		private static readonly string otherArchive = "{0}-{1}.MPQ";
 		/// <summary>Format of the filename for expansion archives.</summary>
-		static readonly string expansionArchive = "expansion{0}.MPQ";
+		private static readonly string expansionArchive = "expansion{0}.MPQ";
 
 		/// <summary>Path to the instalaltion.</summary>
-		string wowPath;
+		private string wowPath;
 		/// <summary>Path to the data associated with the instalaltion.</summary>
-		string dataPath;
+		private string dataPath;
 		/// <summary>Array of archives associated with the instalaltion.</summary>
 		/// <remarks>The archives are detected based on their filename, during the instantiation of the class.</remarks>
-		string[] archiveArray;
+		private string[] archiveArray;
 		/// <summary>Collection of archives associated with the instalaltion.</summary>
 		/// <remarks>This is a wrapper around <seealso cref="F:archiveArray"/>.</remarks>
-		ReadOnlyCollection<string> archiveCollection;
+		private ReadOnlyCollection<string> archiveCollection;
 		/// <summary>Array of <see cref="LanguagePack"/> associated with the installation.</summary>
-		LanguagePack[] languagePackArray;
+		private LanguagePack[] languagePackArray;
 		/// <summary>Collection of <see cref="LanguagePack"/> associated with the installation.</summary>
 		/// <remarks>This is a wrapper around <seealso cref="F:languagePackArray"/>.</remarks>
-		LanguagePackCollection languagePackCollection;
+		private LanguagePackCollection languagePackCollection;
 		/// <summary>Value representing the instllation kind.</summary>
-		InstallationKind installationKind;
+		private InstallationKind installationKind;
 
 		/// <summary>Initializes a new instance of the <see cref="WoWInstallation"/> class.</summary>
-		/// <param name="path">The path.</param>
+		/// <param name="path">The installation path.</param>
+		/// <exception cref="DirectoryNotFoundException"><paramref name="path"/> does not exist, or does not contain a directory named <c>Data</c>.</exception>
+		/// <exception cref="FileNotFoundException">At least one of the required archives has not been found in the specified directory.</exception>
 		private WoWInstallation(string path)
 		{
 			if (!Directory.Exists(this.wowPath = path))

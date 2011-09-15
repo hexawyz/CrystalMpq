@@ -16,22 +16,19 @@ using CrystalMpq;
 
 namespace CrystalMpq.Utility
 {
+	/// <summary>Represents a file system composed of multiple MPQ archives.</summary>
+	/// <remarks>When searching a file, the first archives are always searched first.</remarks>
 	public sealed class MpqFileSystem
 	{
-		List<MpqArchive> archiveList;
+		private List<MpqArchive> archiveList;
 
-		public MpqFileSystem()
-		{
-			archiveList = new List<MpqArchive>();
-		}
+		/// <summary>Initializes a new instance of the <see cref="MpqFileSystem"/> class.</summary>
+		public MpqFileSystem() { archiveList = new List<MpqArchive>(); }
 
-		public List<MpqArchive> Archives
-		{
-			get
-			{
-				return archiveList;
-			}
-		}
+		/// <summary>Gets the list of archives.</summary>
+		/// <remarks>Archives should be added to this list for being searched.</remarks>
+		/// <value>The archive list.</value>
+		public List<MpqArchive> Archives { get { return archiveList; } }
 
 		public MpqFile[] FindFiles(string filename)
 		{
