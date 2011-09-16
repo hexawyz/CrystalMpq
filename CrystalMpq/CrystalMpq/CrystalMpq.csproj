@@ -158,6 +158,8 @@
     <Compile Include="CompressionNotSupportedException.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="SparseCompression.cs" />
+    <Compile Include="SparseInputStream.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="7zip\ReadMe.txt" />
