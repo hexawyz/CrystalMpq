@@ -27,13 +27,15 @@ namespace CrystalMpq
 #if USE_SHARPZIPLIB
 		[ThreadStatic]
 		private static Inflater inflater;
-
 		private static Inflater Inflater { get { return inflater = inflater ?? new Inflater(); } }
 #endif
 		[ThreadStatic]
 		private static LZMA.Decoder lzmaDecoder;
-
 		private static LZMA.Decoder LzmaDecoder { get { return lzmaDecoder = lzmaDecoder ?? new LZMA.Decoder(); } }
+
+		[ThreadStatic]
+		private static byte[] tempBuffer;
+		private static byte[] GetTempBuffer(int length) { return tempBuffer = tempBuffer == null || tempBuffer.Length < length ? new byte[length] : tempBuffer; }
 
 		public static int CompressBlock(byte[] inBuffer, byte[] outBuffer, bool multi)
 		{
@@ -42,6 +44,8 @@ namespace CrystalMpq
 
 		public static void DecompressBlock(byte[] inBuffer, int inLength, byte[] outBuffer, bool multi)
 		{
+			byte[] tempBuffer;
+
 			if (!multi) DclCompression.DecompressBlock(inBuffer, 0, inLength, outBuffer);
 			else // Examinate first byte for finding compression methods used
 			{
@@ -50,28 +54,24 @@ namespace CrystalMpq
 					case 0x01: // Huffman
 						throw new CompressionNotSupportedException("Hufman");
 					case 0x02: // Zlib (Deflate/Inflate)
-#if USE_SHARPZIPLIB // We handle the compression with SharpZipLib's Deflate implementation
-						var inflater = Inflater;
-
-						inflater.Reset();
+#if USE_SHARPZIPLIB // Use SharpZipLib's Deflate implementation
+						Inflater.Reset(); // The first property read will initialize the field…
 						inflater.SetInput(inBuffer, 1, inLength - 1);
 						inflater.Inflate(outBuffer);
-#else
-						// We handle the decompression using .NET 2.0 built-in inflate algorithm
+#else // Use .NET 2.0's built-in inflate algorithm
 						using (var inStream = new MemoryStream(inBuffer, 3, inLength - 7, false, false))
-						using (var deflate = new DeflateStream(inStream, CompressionMode.Decompress))
-							deflate.Read(outBuffer, 0, outBuffer.Length);
+						using (var outStream = new DeflateStream(inStream, CompressionMode.Decompress))
+							outStream.Read(outBuffer, 0, outBuffer.Length);
 #endif
 						break;
 					case 0x08: // PKWare DCL (Implode/Explode)
 						DclCompression.DecompressBlock(inBuffer, 1, inLength - 1, outBuffer);
 						break;
 					case 0x10: // BZip2
-#if USE_SHARPZIPLIB
-						// Use SharpZipLib for decompression
+#if USE_SHARPZIPLIB // Use SharpZipLib for decompression
 						using (var inStream = new MemoryStream(inBuffer, 1, inLength - 1, false, false))
-						using (var outputStream = new BZip2InputStream(inStream))
-							outputStream.Read(outBuffer, 0, outBuffer.Length);
+						using (var outStream = new BZip2InputStream(inStream))
+							outStream.Read(outBuffer, 0, outBuffer.Length);
 #else
 						throw new UnsupportedCompressionException("BZip2");
 #endif
@@ -82,11 +82,31 @@ namespace CrystalMpq
 							lzmaDecoder.Code(inStream, outStream, inStream.Length, outStream.Length, null);
 						break;
 					case 0x20: // Sparse
-						throw new CompressionNotSupportedException("Sparse");
+						SparseCompression.DecompressBlock(inBuffer, 1, inLength - 1, outBuffer);
+						break;
 					case 0x22: // Sparse + Deflate
-						throw new CompressionNotSupportedException("Sparse + Deflate");
+#if USE_SHARPZIPLIB // Use SharpZipLib's Deflate implementation
+						Inflater.Reset(); // The first property read will initialize the field…
+						inflater.SetInput(inBuffer, 1, inLength - 1);
+						tempBuffer = GetTempBuffer(outBuffer.Length);
+						SparseCompression.DecompressBlock(tempBuffer, 0, inflater.Inflate(tempBuffer), outBuffer);
+#else // Use .NET 2.0's built-in inflate algorithm
+						using (var inStream = new MemoryStream(inBuffer, 3, inLength - 7, false, false))
+						using (var inoutStream = new DeflateStream(inStream, CompressionMode.Decompress))
+						using (var outStream = new SparseInputStream(inoutStream))
+							outStream.Read(outBuffer, 0, outBuffer.Length);
+#endif
+						break;
 					case 0x30: // Sparse + BZip2
-						throw new CompressionNotSupportedException("Sparse + BZip2");
+#if USE_SHARPZIPLIB // Use SharpZipLib for decompression
+						using (var inStream = new MemoryStream(inBuffer, 1, inLength - 1, false, false))
+						using (var inoutStream = new BZip2InputStream(inStream))
+						using (var outStream = new SparseInputStream(inoutStream))
+							outStream.Read(outBuffer, 0, outBuffer.Length);
+#else
+						throw new UnsupportedCompressionException("Sparse + BZip2");
+#endif
+						break;
 					case 0x40: // Mono IMA ADPCM
 						throw new CompressionNotSupportedException("Mono IMA ADPCM");
 					case 0x41: // Mono IMA ADPCM + Huffman

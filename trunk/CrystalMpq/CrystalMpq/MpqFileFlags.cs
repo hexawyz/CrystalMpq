@@ -12,9 +12,7 @@ using System;
 
 namespace CrystalMpq
 {
-	/// <summary>
-	/// Flags that can be applied to files in a MPQ archive
-	/// </summary>
+	/// <summary>Flags which can be applied to files in a MPQ archive.</summary>
 	[Flags]
 	public enum MpqFileFlags
 	{
