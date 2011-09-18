@@ -99,6 +99,17 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <None Include="Doc\AreaTable.dbc.txt" />
+    <None Include="Doc\FactionGroup.dbc.txt" />
+    <None Include="Doc\Map.dbc - 20100112.txt" />
+    <None Include="Doc\Map.dbc.txt" />
+    <None Include="Doc\WorldMapArea.dbc.txt" />
+    <None Include="Doc\WorldMapContinent.dbc - 20100112.txt" />
+    <None Include="Doc\WorldMapContinent.dbc.txt" />
+    <None Include="Doc\WorldMapOverlay.dbc.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
