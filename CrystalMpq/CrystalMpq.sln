@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.Utility", "Cryst
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.Explorer.BaseViewers", "CrystalMpq.Explorer.BaseViewers\CrystalMpq.Explorer.BaseViewers.csproj", "{960554AB-B9FF-4F05-83BD-B00FCAE420A6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.WoWFile", "CrystalMpq.WoWFile\CrystalMpq.WoWFile.csproj", "{3D8577CD-1B39-4F6A-B358-34FE04D5379B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.DataFormats", "CrystalMpq.DataFormats\CrystalMpq.DataFormats.csproj", "{3D8577CD-1B39-4F6A-B358-34FE04D5379B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.Explorer.AudioVideo", "CrystalMpq.Explorer.AudioVideo\CrystalMpq.Explorer.AudioVideo.csproj", "{2AD6A3A0-B936-4CBA-8789-771C4EA64277}"
 EndProject
@@ -32,35 +32,43 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.Utility.Windows.Forms", "CrystalMpq.Utility.Windows.Forms\CrystalMpq.Utility.Windows.Forms.csproj", "{E16A1D77-E293-4E26-A1EB-CD90C37A3913}"
 EndProject
 Global
+	GlobalSection(SubversionScc) = preSolution
+		Svn-Managed = True
+		Manager = AnkhSVN - Subversion Support for Visual Studio
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2AD6A3A0-B936-4CBA-8789-771C4EA64277}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2AD6A3A0-B936-4CBA-8789-771C4EA64277}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2AD6A3A0-B936-4CBA-8789-771C4EA64277}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2AD6A3A0-B936-4CBA-8789-771C4EA64277}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5A4A3C8-5F65-4112-B147-31E2AA1A1E9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5A4A3C8-5F65-4112-B147-31E2AA1A1E9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5A4A3C8-5F65-4112-B147-31E2AA1A1E9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5A4A3C8-5F65-4112-B147-31E2AA1A1E9F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3353A39B-7B2F-4A87-860C-7D00881F792D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3353A39B-7B2F-4A87-860C-7D00881F792D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3353A39B-7B2F-4A87-860C-7D00881F792D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3353A39B-7B2F-4A87-860C-7D00881F792D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3D8577CD-1B39-4F6A-B358-34FE04D5379B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3D8577CD-1B39-4F6A-B358-34FE04D5379B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3D8577CD-1B39-4F6A-B358-34FE04D5379B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3D8577CD-1B39-4F6A-B358-34FE04D5379B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4DE7F455-535E-40A7-BAE1-83CA4DCA363A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4DE7F455-535E-40A7-BAE1-83CA4DCA363A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4DE7F455-535E-40A7-BAE1-83CA4DCA363A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4DE7F455-535E-40A7-BAE1-83CA4DCA363A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{60C14A78-1E0A-4F96-8A32-525213F5FD56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{60C14A78-1E0A-4F96-8A32-525213F5FD56}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60C14A78-1E0A-4F96-8A32-525213F5FD56}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60C14A78-1E0A-4F96-8A32-525213F5FD56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A81D6E00-66E6-42CC-91D5-B922E8928C3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A81D6E00-66E6-42CC-91D5-B922E8928C3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A81D6E00-66E6-42CC-91D5-B922E8928C3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A81D6E00-66E6-42CC-91D5-B922E8928C3E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{960554AB-B9FF-4F05-83BD-B00FCAE420A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{960554AB-B9FF-4F05-83BD-B00FCAE420A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{960554AB-B9FF-4F05-83BD-B00FCAE420A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{960554AB-B9FF-4F05-83BD-B00FCAE420A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D8577CD-1B39-4F6A-B358-34FE04D5379B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D8577CD-1B39-4F6A-B358-34FE04D5379B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D8577CD-1B39-4F6A-B358-34FE04D5379B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D8577CD-1B39-4F6A-B358-34FE04D5379B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AD6A3A0-B936-4CBA-8789-771C4EA64277}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AD6A3A0-B936-4CBA-8789-771C4EA64277}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AD6A3A0-B936-4CBA-8789-771C4EA64277}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AD6A3A0-B936-4CBA-8789-771C4EA64277}.Release|Any CPU.Build.0 = Release|Any CPU
 		{73FC46C3-A032-4C39-85D2-5F0B209CE756}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{73FC46C3-A032-4C39-85D2-5F0B209CE756}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73FC46C3-A032-4C39-85D2-5F0B209CE756}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -69,33 +77,23 @@ Global
 		{87333C7F-09FB-416B-BC90-4708D9D3DB09}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{87333C7F-09FB-416B-BC90-4708D9D3DB09}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{87333C7F-09FB-416B-BC90-4708D9D3DB09}.Release|Any CPU.Build.0 = Release|Any CPU
-		{960554AB-B9FF-4F05-83BD-B00FCAE420A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{960554AB-B9FF-4F05-83BD-B00FCAE420A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{960554AB-B9FF-4F05-83BD-B00FCAE420A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{960554AB-B9FF-4F05-83BD-B00FCAE420A6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A81D6E00-66E6-42CC-91D5-B922E8928C3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A81D6E00-66E6-42CC-91D5-B922E8928C3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A81D6E00-66E6-42CC-91D5-B922E8928C3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A81D6E00-66E6-42CC-91D5-B922E8928C3E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B5A4A3C8-5F65-4112-B147-31E2AA1A1E9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B5A4A3C8-5F65-4112-B147-31E2AA1A1E9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B5A4A3C8-5F65-4112-B147-31E2AA1A1E9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B5A4A3C8-5F65-4112-B147-31E2AA1A1E9F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4DE7F455-535E-40A7-BAE1-83CA4DCA363A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DE7F455-535E-40A7-BAE1-83CA4DCA363A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DE7F455-535E-40A7-BAE1-83CA4DCA363A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DE7F455-535E-40A7-BAE1-83CA4DCA363A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E16A1D77-E293-4E26-A1EB-CD90C37A3913}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E16A1D77-E293-4E26-A1EB-CD90C37A3913}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E16A1D77-E293-4E26-A1EB-CD90C37A3913}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E16A1D77-E293-4E26-A1EB-CD90C37A3913}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = CrystalMpq.Explorer\CrystalMpq.Explorer.csproj
-	EndGlobalSection
-	GlobalSection(SubversionScc) = preSolution
-		Svn-Managed = True
-		Manager = AnkhSVN - Subversion Support for Visual Studio
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal

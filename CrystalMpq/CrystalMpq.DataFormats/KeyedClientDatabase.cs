@@ -12,7 +12,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
-namespace CrystalMpq.WoWFile
+namespace CrystalMpq.DataFormats
 {
 	public sealed class KeyedClientDatabase<TKey, TValue> : ClientDatabase<TValue>
 		where TValue : struct

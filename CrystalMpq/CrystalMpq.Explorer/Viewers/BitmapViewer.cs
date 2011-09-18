@@ -11,7 +11,7 @@
 using System;
 using System.Drawing;
 using Stream = System.IO.Stream;
-using CrystalMpq.WoWFile;
+using CrystalMpq.DataFormats;
 using CrystalMpq.Explorer.Extensibility;
 
 namespace CrystalMpq.Explorer.Viewers

@@ -10,7 +10,7 @@
 
 using System;
 using System.Runtime.InteropServices;
-using CrystalMpq.WoWFile;
+using CrystalMpq.DataFormats;
 using System.Diagnostics;
 
 namespace CrystalMpq.WoWDatabases

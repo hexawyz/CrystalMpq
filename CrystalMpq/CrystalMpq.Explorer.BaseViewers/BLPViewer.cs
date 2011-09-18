@@ -17,7 +17,7 @@ using System.Drawing.Imaging;
 using System.Windows.Forms;
 using System.ComponentModel;
 using Stream = System.IO.Stream;
-using CrystalMpq.WoWFile;
+using CrystalMpq.DataFormats;
 using CrystalMpq.Explorer.Extensibility;
 
 namespace CrystalMpq.Explorer.BaseViewers

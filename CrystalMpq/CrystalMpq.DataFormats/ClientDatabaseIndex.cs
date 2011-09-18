@@ -11,7 +11,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CrystalMpq.WoWFile
+namespace CrystalMpq.DataFormats
 {
 	public abstract class ClientDatabaseIndex<T>
 		where T : struct

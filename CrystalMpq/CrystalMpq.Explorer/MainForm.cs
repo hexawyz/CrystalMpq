@@ -19,7 +19,7 @@ using System.Reflection;
 using System.Windows.Forms;
 using CrystalMpq;
 using System.IO;
-using CrystalMpq.WoWFile;
+using CrystalMpq.DataFormats;
 using CrystalMpq.Explorer.Extensibility;
 using CrystalMpq.Explorer.Properties;
 using CrystalMpq.Explorer.Viewers;

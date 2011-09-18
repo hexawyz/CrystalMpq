@@ -21,7 +21,7 @@ using System.Text;
 using System.Windows.Forms;
 using CrystalMpq;
 using CrystalMpq.Utility;
-using CrystalMpq.WoWFile;
+using CrystalMpq.DataFormats;
 using CrystalMpq.WoWDatabases;
 using System.IO;
 using System.Globalization;

@@ -12,7 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CrystalMpq.WoWFile
+namespace CrystalMpq.DataFormats
 {
 	/// <summary>
 	/// Specifies the presence of a key on a field in a record structure.

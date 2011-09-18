@@ -104,9 +104,9 @@
       <Name>CrystalMpq.Utility</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\CrystalMpq.WoWFile\CrystalMpq.WoWFile.csproj">
+    <ProjectReference Include="..\CrystalMpq.WoWFile\CrystalMpq.DataFormats.csproj">
       <Project>{3D8577CD-1B39-4F6A-B358-34FE04D5379B}</Project>
-      <Name>CrystalMpq.WoWFile</Name>
+      <Name>CrystalMpq.DataFormats</Name>
       <Private>False</Private>
     </ProjectReference>
     <ProjectReference Include="..\CrystalMpq\CrystalMpq.csproj">

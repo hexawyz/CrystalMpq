@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
-namespace CrystalMpq.WoWFile
+namespace CrystalMpq.DataFormats
 {
 	public sealed class ZoneMap
 	{

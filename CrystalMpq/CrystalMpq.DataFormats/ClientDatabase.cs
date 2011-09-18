@@ -19,7 +19,7 @@ using System.Runtime.InteropServices;
 using System.Globalization;
 #endregion
 
-namespace CrystalMpq.WoWFile
+namespace CrystalMpq.DataFormats
 {
 	public abstract class ClientDatabase
 	{
@@ -274,7 +274,7 @@ namespace CrystalMpq.WoWFile
 			bool IDictionary<string, ClientDatabaseIndex<T>>.TryGetValue(string key, out ClientDatabaseIndex<T> value) { return database.indexDictionary.TryGetValue(key, out value); }
 
 			/// <summary>
-			/// Gets or sets the <see cref="CrystalMpq.WoWFile.ClientDatabaseIndex{T}"/> with the specified key.
+			/// Gets or sets the <see cref="CrystalMpq.DataFormats.ClientDatabaseIndex{T}"/> with the specified key.
 			/// </summary>
 			/// <value></value>
 			public ClientDatabaseIndex<T> this[string key] { get { return database.indexDictionary[key]; } }
