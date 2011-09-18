@@ -8,8 +8,8 @@
     <ProjectGuid>{3D8577CD-1B39-4F6A-B358-34FE04D5379B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CrystalMpq.WoWFile</RootNamespace>
-    <AssemblyName>CrystalMpq.WoWFile</AssemblyName>
+    <RootNamespace>CrystalMpq.DataFormats</RootNamespace>
+    <AssemblyName>CrystalMpq.DataFormats</AssemblyName>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
@@ -41,7 +41,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>..\bin\Debug\CrystalMpq.WoWFile.xml</DocumentationFile>
+    <DocumentationFile>..\bin\Debug\CrystalMpq.DataFormats.xml</DocumentationFile>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -52,7 +52,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>..\bin\Release\CrystalMpq.WoWFile.xml</DocumentationFile>
+    <DocumentationFile>..\bin\Release\CrystalMpq.DataFormats.xml</DocumentationFile>
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
@@ -63,15 +63,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ArgbColor.cs" />
+    <Compile Include="ArgbSurface.cs" />
     <Compile Include="BLPTexture.cs" />
     <Compile Include="ClientDatabase.cs" />
     <Compile Include="ClientDatabaseIndex.cs" />
+    <Compile Include="Dxt1Surface.cs" />
+    <Compile Include="Dxt3Surface.cs" />
+    <Compile Include="Dxt5Surface.cs" />
+    <Compile Include="DxtSurface.cs" />
     <Compile Include="IdAttribute.cs" />
     <Compile Include="KeyAttribute.cs" />
     <Compile Include="LocalizedAttribute.cs" />
     <Compile Include="KeyedClientDatabase.cs" />
     <Compile Include="RawClientDatabase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Surface.cs" />
+    <Compile Include="SurfaceData.cs" />
     <Compile Include="ZoneMap.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -21,7 +21,7 @@ namespace CrystalMpq
 			throw new NotImplementedException();
 		}
 
-		public unsafe static int DecompressBlock(byte[] inBuffer, int offset, int count, byte[] outBuffer)
+		public static unsafe int DecompressBlock(byte[] inBuffer, int offset, int count, byte[] outBuffer)
 		{
 			if (inBuffer == null) throw new ArgumentNullException("inBuffer");
 			if (outBuffer == null) throw new ArgumentNullException("outBuffer");
@@ -33,7 +33,7 @@ namespace CrystalMpq
 				return DecompressBlock(inBufferPointer + offset, count, outBufferPointer, outBuffer.Length);
 		}
 
-		public unsafe static int DecompressBlock(byte* inBuffer, int inLength, byte* outBuffer, int outLength)
+		public static unsafe int DecompressBlock(byte* inBuffer, int inLength, byte* outBuffer, int outLength)
 		{
 			if (inLength < 5)
 			{

@@ -14,7 +14,7 @@ using System.Collections.Generic;
 using System.Text;
 using CrystalMpq;
 using CrystalMpq.Utility;
-using CrystalMpq.WoWFile;
+using CrystalMpq.DataFormats;
 using CrystalMpq.WoWDatabases;
 #endregion
 

@@ -113,9 +113,9 @@
       <Project>{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}</Project>
       <Name>CrystalMpq.WoWDatabases</Name>
     </ProjectReference>
-    <ProjectReference Include="..\CrystalMpq.WoWFile\CrystalMpq.WoWFile.csproj">
+    <ProjectReference Include="..\CrystalMpq.WoWFile\CrystalMpq.DataFormats.csproj">
       <Project>{3D8577CD-1B39-4F6A-B358-34FE04D5379B}</Project>
-      <Name>CrystalMpq.WoWFile</Name>
+      <Name>CrystalMpq.DataFormats</Name>
     </ProjectReference>
     <ProjectReference Include="..\CrystalMpq\CrystalMpq.csproj">
       <Project>{B5A4A3C8-5F65-4112-B147-31E2AA1A1E9F}</Project>

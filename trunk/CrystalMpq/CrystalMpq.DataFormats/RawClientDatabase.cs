@@ -14,7 +14,7 @@ using System.Collections.ObjectModel;
 using System.Text;
 using System.IO;
 
-namespace CrystalMpq.WoWFile
+namespace CrystalMpq.DataFormats
 {
 	/// <summary>
 	/// Represents a client database (DBC) file in its raw data format.

@@ -16,7 +16,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace CrystalMpq.WoWFile
+namespace CrystalMpq.DataFormats
 {
 	/// <summary>Encapsulates bitmap data corresponding to a BLP image.</summary>
 	public sealed class BLPTexture : IDisposable
@@ -521,48 +521,45 @@ namespace CrystalMpq.WoWFile
 						for (int a = 0; a < w; a += 4)
 						{
 							// First read alpha if present
-							if (alphaDepth == 8) // DTX3 or DTX5
+							if (alphaType == 7 && alphaDepth == 8) // DTX5
 							{
-								if (alphaType == 7) // DXT5
+								byte alpha0 = reader.ReadByte(),
+									alpha1 = reader.ReadByte();
+
+								// Initialize interpolated values
+								alpha[0] = alpha0;
+								alpha[1] = alpha1;
+								if (alpha0 > alpha1) // 8 interpolated alpha values
+									for (int l = 1; l < 7; l++)
+										alpha[l + 1] = (byte)(((7 - l) * alpha0 + l * alpha1 + 3) / 7);
+								else // 6 interpolated alpha value + 0 and 255
 								{
-									byte alpha0 = reader.ReadByte(),
-										alpha1 = reader.ReadByte();
+									for (int l = 1; l < 5; l++)
+										alpha[l + 1] = (byte)(((5 - l) * alpha0 + l * alpha1 + 2) / 5);
+									alpha[6] = 0;
+									alpha[7] = 255;
+								}
 
-									// Initialize interpolated values
-									alpha[0] = alpha0;
-									alpha[1] = alpha1;
-									if (alpha0 > alpha1) // 8 interpolated alpha values
-										for (int l = 1; l < 7; l++)
-											alpha[l + 1] = (byte)(((7 - l) * alpha0 + l * alpha1 + 3) / 7);
-									else // 6 interpolated alpha value + 0 and 255
+								int data24 = 0;
+								for (int y = 0; y < 4; y++)
+								{
+									if ((y & 1) == 0)
+										data24 = reader.ReadUInt16() + ((int)reader.ReadByte() << 16);
+									for (int x = 0; x < 4; x++)
 									{
-										for (int l = 1; l < 5; l++)
-											alpha[l + 1] = (byte)(((5 - l) * alpha0 + l * alpha1 + 2) / 5);
-										alpha[6] = 0;
-										alpha[7] = 255;
-									}
-
-									int data24 = 0;
-									for (int y = 0; y < 4; y++)
-									{
-										if ((y & 1) == 0)
-											data24 = reader.ReadUInt16() + ((int)reader.ReadByte() << 16);
-										for (int x = 0; x < 4; x++)
-										{
-											//buffer[y, x] = alpha[(data24 >> (3 * (((y & 1) << 2) + x))) & 7];
-											buffer[y, x] = alpha[data24 & 7];
-											data24 >>= 3;
-										}
+										//buffer[y, x] = alpha[(data24 >> (3 * (((y & 1) << 2) + x))) & 7];
+										buffer[y, x] = alpha[data24 & 7];
+										data24 >>= 3;
 									}
 								}
-								else // DXT3
-									for (int y = 0; y < 4; y++)
-									{
-										line = reader.ReadUInt16();
-										for (int x = 0; x < 4; x++)
-											buffer[y, x] = ((line >> (4 * x)) & 0xF) << 4;
-									}
 							}
+							else if (alphaType == 1 && (alphaDepth == 4 || alphaDepth == 8))
+								for (int y = 0; y < 4; y++)
+								{
+									line = reader.ReadUInt16();
+									for (int x = 0; x < 4; x++)
+										buffer[y, x] = ((line >> (4 * x)) & 0xF) << 4;
+								}
 							// Then read colors
 							// Two first words are extreme colors that will be used for interpolation
 							color0 = reader.ReadUInt16();

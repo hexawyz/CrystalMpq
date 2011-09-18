@@ -16,7 +16,7 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using CrystalMpq.WoWFile;
+using CrystalMpq.DataFormats;
 using CrystalMpq.Explorer.BaseViewers;
 using CrystalMpq.Explorer.Extensibility;
 

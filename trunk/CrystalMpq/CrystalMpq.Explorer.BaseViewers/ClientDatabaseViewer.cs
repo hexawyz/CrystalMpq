@@ -15,7 +15,7 @@ using System.Globalization;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using System.ComponentModel;
-using CrystalMpq.WoWFile;
+using CrystalMpq.DataFormats;
 using CrystalMpq.Explorer.Extensibility;
 
 namespace CrystalMpq.Explorer.BaseViewers
