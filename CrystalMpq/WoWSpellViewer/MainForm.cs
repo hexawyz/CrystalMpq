@@ -33,7 +33,7 @@ namespace WoWSpellViewer
 		MpqFileSystem mpqFileSystem;
 		KeyedClientDatabase<int, SpellRecord> spellDatabase;
 		KeyedClientDatabase<int, SpellIconRecord> spellIconDatabase;
-		BLPTexture currentIconTexture;
+		BlpTexture currentIconTexture;
 		SpellInformation spellInformation;
 		int currentSpellIndex;
 
@@ -67,17 +67,17 @@ namespace WoWSpellViewer
 				return null;
 		}
 
-		private BLPTexture LoadTexture(string filename)
+		private BlpTexture LoadTexture(string filename)
 		{
 			MpqFile file;
 			Stream fileStream = null;
-			BLPTexture texture;
+			BlpTexture texture;
 
 			try
 			{
 				file = mpqFileSystem.FindFile(filename);
 				fileStream = file.Open();
-				texture = new BLPTexture(fileStream, false);
+				texture = new BlpTexture(fileStream, false);
 			}
 			catch
 			{
@@ -135,7 +135,7 @@ namespace WoWSpellViewer
 				try
 				{
 					currentIconTexture = LoadTexture(spellIconRecord.Value.Path + ".blp");
-					spellIconPictureBox.Image = currentIconTexture.FirstMipMap;
+					//spellIconPictureBox.Image = currentIconTexture.FirstMipMap;
 				}
 				catch
 				{

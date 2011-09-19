@@ -24,29 +24,30 @@ namespace CrystalMpq.DataFormats
 		public unsafe Dxt1Surface(byte* rawData, int width, int height, bool opaque = false, bool alphaPremultiplied = false)
 			: base(rawData, width, height, opaque ? (byte)0 : (byte)1, alphaPremultiplied) { }
 
-		public unsafe override void CopyToArgbInternal(SurfaceData surfaceData)
+		protected unsafe override void CopyToArgbInternal(SurfaceData surfaceData)
 		{
-			ArgbColor* colors = stackalloc ArgbColor[4];
-			ArgbColor nullColor = AlphaBitCount != 0 ? new ArgbColor(0, 0, 0, 0) : new ArgbColor(0, 0, 0);
+			var colors = stackalloc ArgbColor[4];
+			var nullColor = AlphaBitCount != 0 ? new ArgbColor(0, 0, 0, 0) : new ArgbColor(0, 0, 0);
 
 			fixed (byte* dataPointer = data)
 			{
-				byte* destinationRowPointer = (byte*)surfaceData.DataPointer;
-				byte* sourcePointer = dataPointer;
+				var destinationRowPointer = (byte*)surfaceData.DataPointer;
+				var sourcePointer = dataPointer;
+				int rowBlockStride = surfaceData.Stride << 2;
 
-				for (int i = Height; i > 0; i -= 4, destinationRowPointer += surfaceData.Stride)
+				for (int i = Height; i > 0; i -= 4, destinationRowPointer += rowBlockStride)
 				{
-					byte* destinationPointer = destinationRowPointer;
+					var destinationPointer = destinationRowPointer;
 
 					for (int j = Width; j > 0; j -= 4)
 					{
-						ushort color0 = (ushort)(*sourcePointer++ | (*sourcePointer++ << 8));
-						ushort color1 = (ushort)(*sourcePointer++ | (*sourcePointer++ << 8));
+						ushort color0 = (ushort)(*sourcePointer++ | *sourcePointer++ << 8);
+						ushort color1 = (ushort)(*sourcePointer++ | *sourcePointer++ << 8);
 
 						colors[0] = new ArgbColor(color0);
 						colors[1] = new ArgbColor(color1);
 
-						if (color0 < color1)
+						if (color0 <= color1)
 						{
 							ArgbColor.DxtMergeHalves(colors + 2, colors, colors + 1);
 							colors[3] = nullColor;
@@ -60,17 +61,17 @@ namespace CrystalMpq.DataFormats
 						// Handle the case where the surface's width is not a multiple of 4.
 						int inverseBlockWidth = j > 4 ? 0 : 4 - j;
 
-						byte* blockRowDestinationPointer = destinationPointer;
+						var blockRowDestinationPointer = destinationPointer;
 
 						for (int k = 4; k-- != 0; blockRowDestinationPointer += surfaceData.Stride)
 						{
 							byte rowData = *sourcePointer++;
 
-							if (i + k <= 4) continue; // Handle the case where the surface's height is not a multiple of 4.
+							if (i + k < 4) continue; // Handle the case where the surface's height is not a multiple of 4.
 
-							ArgbColor* blockDestinationPointer = (ArgbColor*)blockRowDestinationPointer;
+							var blockDestinationPointer = (ArgbColor*)blockRowDestinationPointer;
 
-							// The small loop here has been unrolled, which shoudl be well worth it:
+							// The small loop here has been unrolled, which should be well worth it:
 							//  - No loop variable is needed.
 							//  - No useless shift and incrementation for the last step.
 							//  - Only one conditional jump.
@@ -94,6 +95,8 @@ namespace CrystalMpq.DataFormats
 									break;
 							}
 						}
+
+						destinationPointer += 4 * sizeof(uint); // Skip the 4 processed pixels
 					}
 				}
 			}

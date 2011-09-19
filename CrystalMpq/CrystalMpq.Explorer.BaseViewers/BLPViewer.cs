@@ -24,7 +24,8 @@ namespace CrystalMpq.Explorer.BaseViewers
 {
 	public sealed partial class BLPViewer : FileViewer
 	{
-		BLPTexture texture;
+		private BlpTexture texture;
+		private Bitmap bitmap;
 
 		public BLPViewer(IHost host)
 			: base(host)
@@ -44,7 +45,7 @@ namespace CrystalMpq.Explorer.BaseViewers
 		public override ToolStrip MainToolStrip { get { return mainToolStrip; } }
 		public override StatusStrip StatusStrip { get { return statusStrip; } }
 
-		public BLPTexture Texture
+		public BlpTexture Texture
 		{
 			get
 			{
@@ -55,9 +56,17 @@ namespace CrystalMpq.Explorer.BaseViewers
 				if (value != texture)
 				{
 					texture = value;
+
+					if (bitmap != null)
+					{
+						bitmap.Dispose();
+						bitmap = null;
+					}
+
 					if (texture != null)
 					{
-						this.BackgroundImage = texture.FirstMipMap;
+						bitmap = SurfaceToBitmap(texture.FirstMipmap.BaseSurface);
+						this.BackgroundImage = bitmap;
 						exportToolStripMenuItem.Enabled = true;
 					}
 					else
@@ -80,10 +89,10 @@ namespace CrystalMpq.Explorer.BaseViewers
 			else
 			{
 				Stream stream;
-				BLPTexture texture = null; // Avoid the stupid catch-throw with this mini hack
+				BlpTexture texture = null; // Avoid the stupid catch-throw with this mini hack
 
 				stream = File.Open();
-				try { texture = new BLPTexture(stream, false); }
+				try { texture = new BlpTexture(stream, false); }
 				finally { stream.Close(); Texture = texture; }
 			}
 		}
@@ -99,11 +108,70 @@ namespace CrystalMpq.Explorer.BaseViewers
 			{
 				sizeToolStripStatusLabel.Text = string.Format(Properties.Resources.Culture,
 					Properties.Resources.SizeFormat,
-					texture.FirstMipMap.Width, texture.FirstMipMap.Height);
+					texture.FirstMipmap.Width, texture.FirstMipmap.Height);
 				ShowStatusInformation(true);
 			}
 			else
 				ShowStatusInformation(false);
+		}
+
+		private Bitmap SurfaceToBitmap(Surface surface)
+		{
+			if (surface is JpegSurface)
+			{
+				var bitmap = new Bitmap(surface.CreateStream());
+
+				SwapRedAndBlueChannels(bitmap);
+
+				return bitmap;
+			}
+			else
+			{
+				var bitmap = new Bitmap(surface.Width, surface.Height, PixelFormat.Format32bppArgb);
+
+				try
+				{
+					var bitmapData = bitmap.LockBits(new Rectangle(0, 0, surface.Width, surface.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+
+					surface.CopyToArgb(new SurfaceData(bitmapData.Width, bitmapData.Height, bitmapData.Scan0, bitmapData.Stride));
+
+					bitmap.UnlockBits(bitmapData);
+
+					return bitmap;
+				}
+				catch { bitmap.Dispose(); throw; }
+			}
+		}
+
+		/// <summary>
+		/// Swaps red and blue channels of a bitmap.
+		/// This function is useful to recover colors from JPEG mip maps stored in BLP1 images.
+		/// </summary>
+		/// <param name="bitmap">Bitmap to modify</param>
+		private static unsafe void SwapRedAndBlueChannels(Bitmap bitmap)
+		{
+			int width = bitmap.Width;
+			int height = bitmap.Height;
+
+			var bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+
+			var rowPointer = (byte*)bitmapData.Scan0.ToPointer();
+
+			for (int y = height; y-- != 0; rowPointer += bitmapData.Stride)
+			{
+				var pixelPointer = rowPointer;
+
+				for (int x = width; x-- != 0; pixelPointer += 4)
+				{
+					byte tmp;
+
+					tmp = pixelPointer[0];
+					pixelPointer[0] = pixelPointer[2];
+					pixelPointer[2] = tmp;
+				}
+			}
+
+			bitmap.UnlockBits(bitmapData);
 		}
 
 		private void exportToolStripMenuItem_Click(object sender, EventArgs e)
@@ -113,10 +181,10 @@ namespace CrystalMpq.Explorer.BaseViewers
 				switch (saveFileDialog.FilterIndex)
 				{
 					case 1:
-						texture.FirstMipMap.Save(saveFileDialog.FileName, ImageFormat.Png);
+						bitmap.Save(saveFileDialog.FileName, ImageFormat.Png);
 						break;
 					case 2:
-						texture.FirstMipMap.Save(saveFileDialog.FileName, ImageFormat.Bmp);
+						bitmap.Save(saveFileDialog.FileName, ImageFormat.Bmp);
 						break;
 				}
 			}

@@ -13,6 +13,7 @@ using System.IO;
 
 namespace CrystalMpq.DataFormats
 {
+	/// <summary>Represents a surface of image data.</summary>
 	public abstract class Surface : IDisposable, ICloneable
 	{
 		private int width;
@@ -31,12 +32,19 @@ namespace CrystalMpq.DataFormats
 		/// <param name="alphaBitCount">The alpha bit count.</param>
 		/// <param name="alphaPremultiplied">If set to <c>true</c>, the surface uses premultiplied alpha.</param>
 		/// <exception cref="ArgumentOutOfRangeException">Either <paramref name="width"/> or <paramref name="height"/> has a value that is not allowed.</exception>
-		/// <exception cref="ArgumentException">The dimensions specified by <paramref name="width"/> and <paramref name="height"/> are not allowed.</exception>
+		/// <exception cref="ArgumentException">
+		/// The dimensions specified by <paramref name="width"/> and <paramref name="height"/> are not allowed.
+		/// - or -
+		/// <paramref name="alphaPremultiplied"/> is true while <paramref name="alphaBitCount"/> is zero.
+		/// - or -
+		/// Another parameter verification has failed.
+		/// </exception>
 		public Surface(int width, int height, byte alphaBitCount, bool alphaPremultiplied = false)
 		{
 			if (width < 0) throw new ArgumentOutOfRangeException("width");
 			if (height < 0) throw new ArgumentOutOfRangeException("height");
 			if (sizeof(int) * (long)width * (long)height > int.MaxValue) throw new ArgumentException();
+			if (alphaPremultiplied && alphaBitCount == 0) throw new ArgumentException();
 
 			ValidateDimensions(width, height);
 
@@ -45,6 +53,24 @@ namespace CrystalMpq.DataFormats
 
 			this.alphaBitCount = alphaBitCount;
 			this.alphaPremultiplied = alphaPremultiplied;
+		}
+
+		/// <summary>Initializes a new instance of the <see cref="Surface"/> class by copying data from another <see cref="Surface"/>.</summary>
+		/// <remarks>
+		/// The base implementation in <see cref="Surface"/> only copies the common surface characteristics.
+		/// Copying the actual surface data needs to be done by subclasses overriding this constructor.
+		/// </remarks>
+		/// <param name="surface">A reference surface which should be copied.</param>
+		/// <exception cref="ArgumentNullException"><paramref name="surface"/> is <c>null</c>.</exception>
+		protected Surface(Surface surface)
+		{
+			if (surface == null) throw new ArgumentNullException("surface");
+
+			this.width = surface.width;
+			this.height = surface.height;
+
+			this.alphaBitCount = surface.alphaBitCount;
+			this.alphaPremultiplied = surface.alphaPremultiplied;
 		}
 
 		/// <summary>Releases unmanaged resources and performs other cleanup operations before the <see cref="Surface"/> is reclaimed by garbage collection.</summary>
@@ -57,25 +83,9 @@ namespace CrystalMpq.DataFormats
 		}
 
 		/// <summary>Releases unmanaged and - optionally - managed resources.</summary>
+		/// <remarks>Implementation in the base class do nothing.</remarks>
 		/// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
 		protected virtual void Dispose(bool disposing) { }
-
-		/// <summary>Initializes a new instance of the <see cref="Surface"/> class by copying data from another <see cref="Surface"/>.</summary>
-		/// <remarks>
-		/// The base implementation in <see cref="Surface"/> only copies the common surface characteristics.
-		/// Copying the actual surface data needs to be done by subclasses overriding this constructor.
-		/// </remarks>
-		/// <param name="surface">A reference surface which should be copied.</param>
-		protected Surface(Surface surface)
-		{
-			if (surface == null) throw new ArgumentNullException("surface");
-
-			this.width = surface.width;
-			this.height = surface.height;
-
-			this.alphaBitCount = surface.alphaBitCount;
-			this.alphaPremultiplied = surface.alphaPremultiplied;
-		}
 
 		/// <summary>Gets the width of the surface.</summary>
 		/// <value>The width of the surface.</value>
@@ -93,6 +103,21 @@ namespace CrystalMpq.DataFormats
 		/// </remarks>
 		/// <value>The maximum number of bits used for alpha.</value>
 		public int AlphaBitCount { get { return alphaBitCount; } }
+
+		/// <summary>Gets a value indicating whether this instance has premultiplied alpha.</summary>
+		/// <remarks>Note that this property is useless when <see cref="AlphaBitCount"/> is zero.</remarks>
+		/// <value><c>true</c> if this instance has premultiplied alpha; otherwise, <c>false</c>.</value>
+		public bool IsAlphaPremultiplied { get { return alphaPremultiplied; } }
+
+		/// <summary>Gets a value indicating whether the surface is opaque.</summary>
+		/// <remarks>This is exactly the same as checking if <see cref="AlphaBitCount"/> is zero.</remarks>
+		/// <value><c>true</c> if the surface is opaque; otherwise, <c>false</c>.</value>
+		public bool IsOpaque { get { return alphaBitCount == 0; } }
+
+		/// <summary>Gets a value indicating whether the surface is opaque.</summary>
+		/// <remarks>This is exactly the same as checking if <see cref="AlphaBitCount"/> is nonzero.</remarks>
+		/// <value><c>true</c> if the surface is opaque; otherwise, <c>false</c>.</value>
+		public bool IsTransparent { get { return alphaBitCount != 0; } }
 
 		/// <summary>Validates the specified surface dimensions.</summary>
 		/// <remarks>
@@ -166,7 +191,7 @@ namespace CrystalMpq.DataFormats
 			CopyToArgbInternal(surfaceData);
 		}
 
-		public abstract void CopyToArgbInternal(SurfaceData surfaceData);
+		protected abstract void CopyToArgbInternal(SurfaceData surfaceData);
 
 		/// <summary>Gets a copy of the buffer's contents.</summary>
 		/// <returns>A buffer containing the same data as the surface's internal buffer.</returns>
@@ -184,6 +209,39 @@ namespace CrystalMpq.DataFormats
 			clone.locked = false;
 
 			return clone;
+		}
+
+		/// <summary>Base class for wrapping a Surface inside another one.</summary>
+		/// <remarks>Inherit this class for defining a new type of surface that itself contains no data.</remarks>
+		public abstract class Wrapper : Surface
+		{
+			private Surface @this;
+
+			public Wrapper(Surface surface)
+				: base(surface) { this.@this = surface; }
+
+			protected override void Dispose(bool disposing)
+			{
+				if (disposing && @this != null)
+				{
+					@this.Dispose();
+					@this = null;
+				}
+			}
+
+			public Surface BaseSurface { get { return @this; } }
+
+			public sealed override bool CanLock { get { return @this.CanLock; } }
+
+			protected sealed override IntPtr LockInternal(out int stride) { return @this.LockInternal(out stride); }
+
+			protected sealed override void UnlockInternal() { @this.UnlockInternal(); }
+
+			protected sealed override void CopyToArgbInternal(SurfaceData surfaceData) { @this.CopyToArgbInternal(surfaceData); }
+
+			public sealed override byte[] ToArray() { return @this.ToArray(); }
+
+			public sealed override Stream CreateStream() { return @this.CreateStream(); }
 		}
 	}
 }
