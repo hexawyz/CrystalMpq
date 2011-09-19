@@ -25,6 +25,8 @@ namespace CrystalMpq.DataFormats
 		internal unsafe DxtSurface(byte[] rawData, int width, int height, byte alphaBitCount, bool alphaPremultiplied = false, bool shareBuffer = false)
 			: base(width, height, alphaBitCount, alphaPremultiplied)
 		{
+			if (rawData == null) throw new ArgumentNullException("rawData");
+
 			int wr = width & 3;
 			int hr = height & 3;
 			int length = (((wr != 0 ? width + 4 - wr : width) * (hr != 0 ? height + 4 - hr : height)) & ~0xF) >> (alphaBitCount > 1 ? 0 : 1);
@@ -37,6 +39,8 @@ namespace CrystalMpq.DataFormats
 		internal unsafe DxtSurface(byte* rawData, int width, int height, byte alphaBitCount, bool alphaPremultiplied = false)
 			: base(width, height, alphaBitCount, alphaPremultiplied)
 		{
+			if (rawData == null) throw new ArgumentNullException("rawData");
+
 			int wr = width & 3;
 			int hr = height & 3;
 			int length = (((wr != 0 ? width + 4 - wr : width) * (hr != 0 ? height + 4 - hr : height)) & ~0xF) >> (alphaBitCount > 1 ? 0 : 1);
@@ -63,7 +67,7 @@ namespace CrystalMpq.DataFormats
 
 		/// <summary>Creates a stream for accessing the surface data.</summary>
 		/// <remarks>The returned stream can be used for reading or modifying the surface data.</remarks>
-		/// <returns>A stream which can be sued to access the surface data.</returns>
+		/// <returns>A stream which can be used to access the surface data.</returns>
 		public override Stream CreateStream() { return new MemoryStream(data, true); }
 
 		public override object Clone()

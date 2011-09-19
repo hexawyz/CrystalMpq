@@ -227,11 +227,11 @@ namespace WoWMapExplorer
 
 		private void LoadCosmicHighlights()
 		{
-			using (BLPTexture texture = LoadTexture(@"Interface\WorldMap\Cosmic\Cosmic-Outland-Highlight.blp"))
-				outlandHighlightBitmap = new Bitmap(texture.FirstMipMap, 856, 605);
+			using (var texture = LoadTextureAsBitmap(@"Interface\WorldMap\Cosmic\Cosmic-Outland-Highlight.blp"))
+				outlandHighlightBitmap = new Bitmap(texture, 856, 605);
 			outlandButtonBounds = new Rectangle(115, 90, 320, 320);
-			using (BLPTexture texture = LoadTexture(@"Interface\WorldMap\Cosmic\Cosmic-Azeroth-Highlight.blp"))
-				azerothHighlightBitmap = new Bitmap(texture.FirstMipMap, 898, 647);
+			using (var texture = LoadTextureAsBitmap(@"Interface\WorldMap\Cosmic\Cosmic-Azeroth-Highlight.blp"))
+				azerothHighlightBitmap = new Bitmap(texture, 898, 647);
 			azerothButtonBounds = new Rectangle(593, 255, 366, 366);
 		}
 
@@ -278,14 +278,29 @@ namespace WoWMapExplorer
 			return wowFontCollection.Families[wowFontCollection.Families.Length - 1];
 		}
 
-		private BLPTexture LoadTexture(string filename)
+		private Bitmap LoadTextureAsBitmap(string filename)
 		{
 			MpqFile file = mpqFileSystem.FindFile(filename);
 
 			if (file == null) throw new FileNotFoundException();
 
 			using (var stream = file.Open())
-				return new BLPTexture(stream, false);
+			using (var texture = new BlpTexture(stream, false))
+			{
+				var bitmap = new Bitmap(texture.Width, texture.Height, PixelFormat.Format32bppArgb);
+
+				try
+				{
+					var bitmapData = bitmap.LockBits(new Rectangle(0, 0, texture.Width, texture.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+
+					texture.FirstMipmap.CopyToArgb(new SurfaceData(bitmapData.Width, bitmapData.Height, bitmapData.Scan0, bitmapData.Stride));
+
+					bitmap.UnlockBits(bitmapData);
+
+					return bitmap;
+				}
+				catch { bitmap.Dispose(); throw; }
+			}
 		}
 
 		private ZoneMap LoadZoneMap(string filename)
@@ -485,8 +500,8 @@ namespace WoWMapExplorer
 					for (int j = 0; j < 4; j++)
 						try
 						{
-							using (var texture = LoadTexture(path + map + (4 * i + j + 1) + ".blp"))
-								g.DrawImageUnscaled(texture.FirstMipMap, 256 * j, 256 * i, 256, 256);
+							using (var texture = LoadTextureAsBitmap(path + map + (4 * i + j + 1) + ".blp"))
+								g.DrawImageUnscaled(texture, 256 * j, 256 * i, 256, 256);
 						}
 						catch { g.FillRectangle(zoneErrorBrush, 256 * j, 256 * i, 256, 256); }
 
@@ -507,8 +522,8 @@ namespace WoWMapExplorer
 						for (int i = 0; i < textureCount; i++)
 							try
 							{
-								using (var texture = LoadTexture(path + overlay.DataName + (i + 1) + ".blp"))
-									g.DrawImageUnscaled(texture.FirstMipMap, x + 256 * (i % colCount), y + 256 * (i / colCount));
+								using (var texture = LoadTextureAsBitmap(path + overlay.DataName + (i + 1) + ".blp"))
+									g.DrawImageUnscaled(texture, x + 256 * (i % colCount), y + 256 * (i / colCount));
 							}
 							catch { }
 					}

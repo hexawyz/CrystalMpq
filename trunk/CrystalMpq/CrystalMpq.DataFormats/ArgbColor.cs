@@ -27,8 +27,8 @@ namespace CrystalMpq.DataFormats
 			// x / 31 = x * 8457 >> 18 (for 0 ≤ x ≤ 31 * 255)
 			// x / 63 = x * 16645 >> 20 (for 0 ≤ x ≤ 63 * 255)
 			// Since a multiplication is needed anyway, it is probably useless to try optimizing the * 255…
-			B = (byte)((color & 0x1F) * (255 * 8457) >> 18);
-			G = (byte)(((color & 0x7E) >> 5) * (255 * 16645) >> 20);
+			B = (byte)((color & 0x001F) * (255 * 8457) >> 18);
+			G = (byte)(((color & 0x07E0) >> 5) * (255 * 16645) >> 20);
 			R = (byte)((color >> 11) * (255 * 8457) >> 18);
 			A = 255;
 		}
@@ -69,6 +69,28 @@ namespace CrystalMpq.DataFormats
 			result->G = (byte)((minColor->G + maxColor->G + maxColor->G) * 683 >> 11);
 			result->R = (byte)((minColor->R + maxColor->R + maxColor->R) * 683 >> 11);
 			result->A = 255;
+		}
+
+		/// <summary>Copies an <see cref="ArgbColor"/> into another, with forced opaque alpha.</summary>
+		/// <param name="destination">The destination color.</param>
+		/// <param name="source">The source color.</param>
+		internal static unsafe void CopyOpaque(ArgbColor* destination, ArgbColor* source)
+		{
+			destination->B = source->B;
+			destination->G = source->G;
+			destination->R = source->R;
+			destination->A = 255;
+		}
+
+		/// <summary>Copies an <see cref="ArgbColor"/> into another, with forced opaque alpha.</summary>
+		/// <param name="destination">The destination color.</param>
+		/// <param name="source">The source color.</param>
+		internal static unsafe void CopyWithAlpha(ArgbColor* destination, ArgbColor* source, byte alpha)
+		{
+			destination->B = source->B;
+			destination->G = source->G;
+			destination->R = source->R;
+			destination->A = alpha;
 		}
 	}
 }

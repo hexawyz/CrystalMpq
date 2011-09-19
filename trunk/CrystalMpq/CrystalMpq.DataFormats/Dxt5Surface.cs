@@ -24,26 +24,53 @@ namespace CrystalMpq.DataFormats
 		public unsafe Dxt5Surface(byte* rawData, int width, int height, bool alphaPremultiplied = false)
 			: base(rawData, width, height, 8, alphaPremultiplied) { }
 
-		public unsafe override void CopyToArgbInternal(SurfaceData surfaceData)
+		protected unsafe override void CopyToArgbInternal(SurfaceData surfaceData)
 		{
-			ArgbColor* colors = stackalloc ArgbColor[4];
-			byte* alpha = stackalloc byte[8];
+			var colors = stackalloc ArgbColor[4];
+			var alpha = stackalloc byte[8];
 
 			fixed (byte* dataPointer = data)
 			{
-				byte* destinationRowPointer = (byte*)surfaceData.DataPointer;
-				byte* sourcePointer = dataPointer;
+				var destinationRowPointer = (byte*)surfaceData.DataPointer;
+				var sourcePointer = dataPointer;
+				int rowBlockStride = surfaceData.Stride << 2;
 
-				for (int i = Height; i > 0; i -= 4, destinationRowPointer += surfaceData.Stride)
+				for (int i = Height; i > 0; i -= 4, destinationRowPointer += rowBlockStride)
 				{
-					byte* destinationPointer = destinationRowPointer;
+					var destinationPointer = destinationRowPointer;
 
 					for (int j = Width; j > 0; j -= 4)
 					{
-						sourcePointer += 8; // Skip the alpha processing for now…
+						alpha[0] = *sourcePointer++;
+						alpha[1] = *sourcePointer++;
 
-						ushort color0 = (ushort)(*sourcePointer++ | (*sourcePointer++ << 8));
-						ushort color1 = (ushort)(*sourcePointer++ | (*sourcePointer++ << 8));
+						// The divisions here have been optimized with multiply/shift
+						// Maybe there is way for some optimization in the multiplications, (using shifts and additions/substractions where applicable)
+						// but for now I just hope the .NET JIT know how to do those optimizations when they are possible…
+						if (alpha[0] <= alpha[1])
+						{
+							alpha[2] = (byte)((4 * alpha[0] + alpha[1]) * 1639 >> 13);
+							alpha[3] = (byte)((3 * alpha[0] + 2 * alpha[1]) * 1639 >> 13);
+							alpha[4] = (byte)((2 * alpha[0] + 3 * alpha[1]) * 1639 >> 13);
+							alpha[5] = (byte)((alpha[0] + 4 * alpha[1]) * 1639 >> 13);
+							alpha[6] = 0;
+							alpha[7] = 255;
+						}
+						else
+						{
+							alpha[2] = (byte)((6 * alpha[0] + alpha[1]) * 2341 >> 14);
+							alpha[3] = (byte)((5 * alpha[0] + 2 * alpha[1]) * 2341 >> 14);
+							alpha[4] = (byte)((4 * alpha[0] + 3 * alpha[1]) * 2341 >> 14);
+							alpha[5] = (byte)((3 * alpha[0] + 4 * alpha[1]) * 2341 >> 14);
+							alpha[6] = (byte)((2 * alpha[0] + 5 * alpha[1]) * 2341 >> 14);
+							alpha[7] = (byte)((alpha[0] + 6 * alpha[1]) * 2341 >> 14);
+						}
+
+						// Store the block's alpha data in a 64 bit integer. This will probably be a bit slower on 32-bit CPUs, but who cares… :p
+						ulong blockAlphaData = (ulong)(*sourcePointer++ | (uint)*sourcePointer++ << 8 | (uint)*sourcePointer++ << 16 | (uint)*sourcePointer++ << 24) | (ulong)(*sourcePointer++ | (uint)*sourcePointer++ << 8) << 32;
+
+						ushort color0 = (ushort)(*sourcePointer++ | *sourcePointer++ << 8);
+						ushort color1 = (ushort)(*sourcePointer++ | *sourcePointer++ << 8);
 
 						colors[0] = new ArgbColor(color0);
 						colors[1] = new ArgbColor(color1);
@@ -54,15 +81,17 @@ namespace CrystalMpq.DataFormats
 						// Handle the case where the surface's width is not a multiple of 4.
 						int inverseBlockWidth = j > 4 ? 0 : 4 - j;
 
-						byte* blockRowDestinationPointer = destinationPointer;
+						var blockRowDestinationPointer = destinationPointer;
 
 						for (int k = 4; k-- != 0; blockRowDestinationPointer += surfaceData.Stride)
 						{
 							byte rowData = *sourcePointer++;
 
-							if (i + k <= 4) continue; // Handle the case where the surface's height is not a multiple of 4.
+							if (i + k < 4) continue; // Handle the case where the surface's height is not a multiple of 4.
 
-							ArgbColor* blockDestinationPointer = (ArgbColor*)blockRowDestinationPointer;
+							var blockDestinationPointer = (ArgbColor*)blockRowDestinationPointer;
+
+							if (inverseBlockWidth != 0) blockAlphaData >>= 3 * inverseBlockWidth;
 
 							// The small loop here has been unrolled, which shoudl be well worth it:
 							//  - No loop variable is needed.
@@ -72,22 +101,28 @@ namespace CrystalMpq.DataFormats
 							switch (inverseBlockWidth)
 							{
 								case 0:
-									*blockDestinationPointer++ = colors[rowData & 3];
+									ArgbColor.CopyWithAlpha(blockDestinationPointer++, &colors[rowData & 3], alpha[blockAlphaData & 7]);
 									rowData >>= 2;
+									blockAlphaData >>= 3;
 									goto case 1;
 								case 1:
-									*blockDestinationPointer++ = colors[rowData & 3];
+									ArgbColor.CopyWithAlpha(blockDestinationPointer++, &colors[rowData & 3], alpha[blockAlphaData & 7]);
 									rowData >>= 2;
+									blockAlphaData >>= 3;
 									goto case 2;
 								case 2:
-									*blockDestinationPointer++ = colors[rowData & 3];
+									ArgbColor.CopyWithAlpha(blockDestinationPointer++, &colors[rowData & 3], alpha[blockAlphaData & 7]);
 									rowData >>= 2;
+									blockAlphaData >>= 3;
 									goto case 3;
 								case 3:
-									*blockDestinationPointer = colors[rowData & 3];
+									ArgbColor.CopyWithAlpha(blockDestinationPointer++, &colors[rowData & 3], alpha[blockAlphaData & 7]);
+									blockAlphaData >>= 3;
 									break;
 							}
 						}
+
+						destinationPointer += 4 * sizeof(uint); // Skip the 4 processed pixels
 					}
 				}
 			}
