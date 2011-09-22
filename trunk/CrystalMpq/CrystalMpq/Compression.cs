@@ -33,10 +33,6 @@ namespace CrystalMpq
 		private static LZMA.Decoder lzmaDecoder;
 		private static LZMA.Decoder LzmaDecoder { get { return lzmaDecoder = lzmaDecoder ?? new LZMA.Decoder(); } }
 
-		[ThreadStatic]
-		private static byte[] tempBuffer;
-		private static byte[] GetTempBuffer(int length) { return tempBuffer = tempBuffer == null || tempBuffer.Length < length ? new byte[length] : tempBuffer; }
-
 		public static int CompressBlock(byte[] inBuffer, byte[] outBuffer, bool multi)
 		{
 			return 0;
@@ -88,7 +84,7 @@ namespace CrystalMpq
 #if USE_SHARPZIPLIB // Use SharpZipLib's Deflate implementation
 						Inflater.Reset(); // The first property read will initialize the field…
 						inflater.SetInput(inBuffer, 1, inLength - 1);
-						tempBuffer = GetTempBuffer(outBuffer.Length);
+						tempBuffer = Utility.GetSharedBuffer(outBuffer.Length);
 						SparseCompression.DecompressBlock(tempBuffer, 0, inflater.Inflate(tempBuffer), outBuffer);
 #else // Use .NET 2.0's built-in inflate algorithm
 						using (var inStream = new MemoryStream(inBuffer, 3, inLength - 7, false, false))

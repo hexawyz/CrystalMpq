@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CultureNotSupportedException.cs" />
+    <Compile Include="IMpqFileSystem.cs" />
     <Compile Include="InstallationKind.cs" />
     <Compile Include="LanguagePack.cs" />
     <Compile Include="MpqFileSystem.cs" />
@@ -68,7 +69,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="WoWArchive.cs" />
+    <Compile Include="WoWArchiveInformation.cs" />
+    <Compile Include="WoWArchiveKind.cs" />
     <Compile Include="WoWInstallation.cs" />
+    <Compile Include="WoWMpqFileSystem.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CrystalMpq\CrystalMpq.csproj">

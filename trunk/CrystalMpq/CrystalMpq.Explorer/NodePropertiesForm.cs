@@ -68,7 +68,7 @@ namespace CrystalMpq.Explorer
 			{
 				MpqFile mpqFile = (MpqFile)node.Tag;
 
-				fileNameLabel.Text = mpqFile.FileName;
+				fileNameLabel.Text = mpqFile.Name;
 
 				EnableCheckBoxes(true);
 

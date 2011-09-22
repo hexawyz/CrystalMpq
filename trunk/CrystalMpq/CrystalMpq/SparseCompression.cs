@@ -26,7 +26,7 @@ namespace CrystalMpq
 			if (inBuffer == null) throw new ArgumentNullException("inBuffer");
 			if (outBuffer == null) throw new ArgumentNullException("outBuffer");
 
-			if (offset < 0 || offset >= inBuffer.Length) throw new ArgumentOutOfRangeException("offset");
+			if (offset < 0 || offset > inBuffer.Length) throw new ArgumentOutOfRangeException("offset");
 			if (count < 0 || offset + count > inBuffer.Length) throw new ArgumentOutOfRangeException("count");
 
 			fixed (byte* inBufferPointer = inBuffer, outBufferPointer = outBuffer)

@@ -60,7 +60,7 @@ namespace CrystalMpq.Explorer
 		#endregion
 
 		private PluginHost pluginsHost;
-		private MpqFileSystem fileSystem;
+		private IMpqFileSystem fileSystem;
 		private Dictionary<string, TreeNode> nodeDictionnary;
 		private List<TreeNode> temporaryNodeList;
 		private Dictionary<string, FileViewer> fileViewerAssociations, fileViewers;
@@ -285,15 +285,13 @@ namespace CrystalMpq.Explorer
 
 			try
 			{
-#if false
-				// Code used to open wow single-file executable patches
-				Stream strm = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
-				strm.Seek(0xF5400, SeekOrigin.Begin);
-				archive = new MPQArchive(strm, true);
-#else
-				fileSystem.Archives.Clear();
-				fileSystem.Archives.Add(new MpqArchive(filename));
-#endif
+				var mpqFileSystem = fileSystem as MpqFileSystem;
+
+				if (mpqFileSystem == null) fileSystem = mpqFileSystem = new MpqFileSystem();
+				else mpqFileSystem.Archives.Clear();
+
+				mpqFileSystem.Archives.Add(new MpqArchive(filename));
+
 				SetTitle(filename);
 				FillTreeView();
 			}
@@ -309,11 +307,11 @@ namespace CrystalMpq.Explorer
 			Application.DoEvents();
 			try
 			{
-				WoWInstallation wowInstallation = WoWInstallation.Find();
+				var wowInstallation = WoWInstallation.Find();
 
 				languagePackDialog.WoWInstallation = wowInstallation;
 
-				foreach (LanguagePack languagePack in wowInstallation.LanguagePacks)
+				foreach (var languagePack in wowInstallation.LanguagePacks)
 					if (languagePack.Culture == System.Globalization.CultureInfo.CurrentCulture)
 						languagePackDialog.LanguagePack = languagePack;
 
@@ -351,25 +349,40 @@ namespace CrystalMpq.Explorer
 
 		private void FillTreeView()
 		{
-			List<TreeNode> nodeList = new List<TreeNode>();
+			var nodeList = new List<TreeNode>();
 
-			foreach (MpqArchive archive in fileSystem.Archives)
+			var mpqFileSystem = fileSystem as MpqFileSystem;
+			var wowFileSystem = fileSystem as WoWMpqFileSystem;
+
+			if (mpqFileSystem == null && wowFileSystem == null) throw new InvalidOperationException();
+
+			int archiveCount = mpqFileSystem != null ? mpqFileSystem.Archives.Count : wowFileSystem.Archives.Count;
+
+			for (int i = 0; i < archiveCount; i++)
 			{
-				foreach (MpqFile file in archive.Files)
+				var archive = mpqFileSystem != null ? mpqFileSystem.Archives[i] : wowFileSystem.Archives[i].Archive;
+				var archiveKind = wowFileSystem != null ? wowFileSystem.Archives[i].Kind : WoWArchiveKind.Regular;
+
+				foreach (var file in archive.Files)
 				{
 #if EXPERIMENTAL
-					if (file.FileName != null && file.FileName.Length > 0 && (file.Flags & MpqFileFlags.Deleted) == 0)
+					if (file.Name != null && file.Name.Length > 0 && (file.Flags & MpqFileFlags.Deleted) == 0)
 #else
 					if (file.FileName != null && file.FileName.Length > 0)
 #endif
 					{
-						string[] parts = file.FileName.Split('\\');
+						if (archiveCount > 1 && file.Name == "(listfile)") continue;
+
+						string[] parts = file.Name.Split('\\');
 						string assembledPath = "";
 						TreeNode currentNode = null;
+						bool isGlobalPatch = (archiveKind & WoWArchiveKind.Global) == WoWArchiveKind.Global;
 
-						for (int i = 0; i < parts.Length; i++)
+						if (isGlobalPatch && parts[0] != "base" && parts[0] != wowFileSystem.Locale) continue;
+
+						for (int j = isGlobalPatch ? 1 : 0; j < parts.Length; j++)
 						{
-							string part = parts[i];
+							string part = parts[j];
 							TreeNode newNode;
 
 							if (assembledPath.Length == 0)
@@ -396,7 +409,7 @@ namespace CrystalMpq.Explorer
 								newNode = new TreeNode(part);
 								newNode.ContextMenuStrip = fileContextMenuStrip;
 
-								if (i == parts.Length - 1)
+								if (j == parts.Length - 1)
 								{
 									newNode.Tag = file;
 								}
@@ -470,7 +483,7 @@ namespace CrystalMpq.Explorer
 
 		internal void InteractiveExtractFile(MpqFile file)
 		{
-			string fileName = Path.GetFileName(file.FileName),
+			string fileName = Path.GetFileName(file.Name),
 					ext = Path.GetExtension(fileName).ToLowerInvariant();
 
 			if (ext == null || ext.Length == 0)
@@ -613,7 +626,7 @@ namespace CrystalMpq.Explorer
 									string filePhysicalPath = Path.Combine(directoryPhysicalPath, currentNode.Text);
 									bool canExtract = false;
 
-									dialog.UpdateFileInformation(extractedFileCount + 1, file.FileName);
+									dialog.UpdateFileInformation(extractedFileCount + 1, file.Name);
 
 									if (extractionSettingsDialog.OverwriteFiles || !File.Exists(filePhysicalPath)) canExtract = true;
 									else
@@ -782,7 +795,7 @@ namespace CrystalMpq.Explorer
 			}
 			else
 			{
-				string ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+				string ext = Path.GetExtension(file.Name).ToLowerInvariant();
 				FileViewer fileViewer;
 
 				//saveAsToolStripMenuItem.Enabled = true;
@@ -798,7 +811,7 @@ namespace CrystalMpq.Explorer
 				}
 				else
 					SetViewer(null);
-				fileNameToolStripStatusLabel.Text = file.FileName;
+				fileNameToolStripStatusLabel.Text = file.Name;
 			}
 			propertiesToolStripMenuItem1.Enabled = true;
 			propertiesToolStripButton.Enabled = true;
