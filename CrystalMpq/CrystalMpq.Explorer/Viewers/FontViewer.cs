@@ -123,7 +123,7 @@ namespace CrystalMpq.Explorer.Viewers
 
 					fixed (byte* bufferPointer = buffer)
 					{
-						stream.Read(bufferPointer, 0, (int)stream.Length);
+						stream.Read(bufferPointer, (int)stream.Length);
 
 						fontCollection = new PrivateFontCollection();
 						try { fontCollection.AddMemoryFont((IntPtr)bufferPointer, buffer.Length); }

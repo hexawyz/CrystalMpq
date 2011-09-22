@@ -126,39 +126,39 @@ namespace WoWMapExplorer
 		#region Fields
 
 		// Constants
-		const int databaseLocaleFieldCount = 16;
+		private const int databaseLocaleFieldCount = 16;
 		// MPQ Archives
-		WoWInstallation wowInstallation;
-		LanguagePack languagePack;
-		MpqFileSystem mpqFileSystem;
+		private WoWInstallation wowInstallation;
+		private LanguagePack languagePack;
+		private WoWMpqFileSystem wowFileSystem;
 		// Font for displaying zone information
-		PrivateFontCollection wowFontCollection;
-		Brush zoneInformationBrush;
-		Pen zoneInformationPen;
-		Font zoneInformationFont;
-		Brush zoneErrorBrush;
-		const int zoneInformationFontHeight = 40;
+		private PrivateFontCollection wowFontCollection;
+		private Brush zoneInformationBrush;
+		private Pen zoneInformationPen;
+		private Font zoneInformationFont;
+		private Brush zoneErrorBrush;
+		private const int zoneInformationFontHeight = 40;
 		// World Map Size: 1002x668
-		Bitmap mapBitmap;
-		Bitmap outlandHighlightBitmap,
-			azerothHighlightBitmap;
-		Rectangle outlandButtonBounds,
-			azerothButtonBounds;
-		bool outlandHighlighted,
-			azerothHighlighted;
+		private Bitmap mapBitmap;
+		private Bitmap outlandHighlightBitmap;
+		private Bitmap azerothHighlightBitmap;
+		private Rectangle outlandButtonBounds;
+		private Rectangle azerothButtonBounds;
+		private bool outlandHighlighted;
+		private bool azerothHighlighted;
 		// Databases
-		KeyedClientDatabase<int, MapRecord> mapDatabase;
-		KeyedClientDatabase<int, WorldMapContinentRecord> worldMapContinentDatabase;
-		KeyedClientDatabase<int, WorldMapAreaRecord> worldMapAreaDatabase;
-		KeyedClientDatabase<int, AreaTableRecord> areaTableDatabase;
-		KeyedClientDatabase<int, WorldMapOverlayRecord> worldMapOverlayDatabase;
-		KeyedClientDatabase<int, DungeonMapRecord> dungeonMapDatabase;
+		private KeyedClientDatabase<int, MapRecord> mapDatabase;
+		private KeyedClientDatabase<int, WorldMapContinentRecord> worldMapContinentDatabase;
+		private KeyedClientDatabase<int, WorldMapAreaRecord> worldMapAreaDatabase;
+		private KeyedClientDatabase<int, AreaTableRecord> areaTableDatabase;
+		private KeyedClientDatabase<int, WorldMapOverlayRecord> worldMapOverlayDatabase;
+		private KeyedClientDatabase<int, DungeonMapRecord> dungeonMapDatabase;
 		// Status
-		int currentContinent, currentZone;
-		List<Continent> continents;
-		IList<Zone> zones;
-		IList<Overlay> overlays;
-		string zoneInformationText;
+		private int currentContinent, currentZone;
+		private List<Continent> continents;
+		private IList<Zone> zones;
+		private IList<Overlay> overlays;
+		private string zoneInformationText;
 
 		#endregion
 
@@ -201,7 +201,7 @@ namespace WoWMapExplorer
 		private void InitializeFileSystem()
 		{
 			// Create a new instance
-			mpqFileSystem = wowInstallation.CreateFileSystem(languagePack, false, false);
+			wowFileSystem = wowInstallation.CreateFileSystem(languagePack, false, false);
 		}
 
 		private void LoadDatabases()
@@ -227,10 +227,10 @@ namespace WoWMapExplorer
 
 		private void LoadCosmicHighlights()
 		{
-			using (var texture = LoadTextureAsBitmap(@"Interface\WorldMap\Cosmic\Cosmic-Outland-Highlight.blp"))
+			using (var texture = LoadBlpTextureAsBitmap(@"Interface\WorldMap\Cosmic\Cosmic-Outland-Highlight.blp"))
 				outlandHighlightBitmap = new Bitmap(texture, 856, 605);
 			outlandButtonBounds = new Rectangle(115, 90, 320, 320);
-			using (var texture = LoadTextureAsBitmap(@"Interface\WorldMap\Cosmic\Cosmic-Azeroth-Highlight.blp"))
+			using (var texture = LoadBlpTextureAsBitmap(@"Interface\WorldMap\Cosmic\Cosmic-Azeroth-Highlight.blp"))
 				azerothHighlightBitmap = new Bitmap(texture, 898, 647);
 			azerothButtonBounds = new Rectangle(593, 255, 366, 366);
 		}
@@ -247,7 +247,7 @@ namespace WoWMapExplorer
 			MpqFile file;
 			Stream fileStream = null;
 
-			if ((file = mpqFileSystem.FindFile(filename)) != null)
+			if ((file = wowFileSystem.FindFile(filename)) != null)
 				using (fileStream = file.Open())
 					return new KeyedClientDatabase<TKey, TValue>(fileStream, languagePack.DatabaseFieldIndex);
 			else
@@ -260,7 +260,7 @@ namespace WoWMapExplorer
 			wowFontCollection = wowFontCollection ?? new PrivateFontCollection();
 
 			// Open the file
-			var fontFile = mpqFileSystem.FindFile(filename);
+			var fontFile = wowFileSystem.FindFile(filename);
 
 			// Read the contents of the file
 			var buffer = new byte[fontFile.Size]; // Allocate the read buffer
@@ -278,9 +278,19 @@ namespace WoWMapExplorer
 			return wowFontCollection.Families[wowFontCollection.Families.Length - 1];
 		}
 
-		private Bitmap LoadTextureAsBitmap(string filename)
+		private BlpTexture LoadBlpTexture(string filename)
 		{
-			MpqFile file = mpqFileSystem.FindFile(filename);
+			MpqFile file = wowFileSystem.FindFile(filename);
+
+			if (file == null) throw new FileNotFoundException();
+
+			using (var stream = file.Open())
+				return new BlpTexture(stream, false);
+		}
+
+		private Bitmap LoadBlpTextureAsBitmap(string filename)
+		{
+			MpqFile file = wowFileSystem.FindFile(filename);
 
 			if (file == null) throw new FileNotFoundException();
 
@@ -305,7 +315,7 @@ namespace WoWMapExplorer
 
 		private ZoneMap LoadZoneMap(string filename)
 		{
-			MpqFile file = mpqFileSystem.FindFile(filename);
+			MpqFile file = wowFileSystem.FindFile(filename);
 			Stream stream = null;
 			ZoneMap zoneMap;
 
@@ -500,7 +510,7 @@ namespace WoWMapExplorer
 					for (int j = 0; j < 4; j++)
 						try
 						{
-							using (var texture = LoadTextureAsBitmap(path + map + (4 * i + j + 1) + ".blp"))
+							using (var texture = LoadBlpTextureAsBitmap(path + map + (4 * i + j + 1) + ".blp"))
 								g.DrawImageUnscaled(texture, 256 * j, 256 * i, 256, 256);
 						}
 						catch { g.FillRectangle(zoneErrorBrush, 256 * j, 256 * i, 256, 256); }
@@ -522,7 +532,7 @@ namespace WoWMapExplorer
 						for (int i = 0; i < textureCount; i++)
 							try
 							{
-								using (var texture = LoadTextureAsBitmap(path + overlay.DataName + (i + 1) + ".blp"))
+								using (var texture = LoadBlpTextureAsBitmap(path + overlay.DataName + (i + 1) + ".blp"))
 									g.DrawImageUnscaled(texture, x + 256 * (i % colCount), y + 256 * (i / colCount));
 							}
 							catch { }

@@ -160,6 +160,7 @@
     </Compile>
     <Compile Include="SparseCompression.cs" />
     <Compile Include="SparseInputStream.cs" />
+    <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="7zip\ReadMe.txt" />

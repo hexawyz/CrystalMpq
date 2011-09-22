@@ -30,7 +30,7 @@ namespace WoWSpellViewer
 	{
 		WoWInstallation wowInstallation;
 		LanguagePack languagePack;
-		MpqFileSystem mpqFileSystem;
+		WoWMpqFileSystem wowFileSystem;
 		KeyedClientDatabase<int, SpellRecord> spellDatabase;
 		KeyedClientDatabase<int, SpellIconRecord> spellIconDatabase;
 		BlpTexture currentIconTexture;
@@ -42,7 +42,7 @@ namespace WoWSpellViewer
 			InitializeComponent();
 			this.wowInstallation = wowInstallation;
 			this.languagePack = languagePack;
-			this.mpqFileSystem = wowInstallation.CreateFileSystem(languagePack, false);
+			this.wowFileSystem = wowInstallation.CreateFileSystem(languagePack, false);
 			spellDatabase = LoadDatabase<SpellRecord>(@"DBFilesClient\Spell.dbc");
 			spellIconDatabase = LoadDatabase<SpellIconRecord>(@"DBFilesClient\SpellIcon.dbc");
 			countToolStripLabel.Text = string.Format(CultureInfo.CurrentUICulture, Properties.Resources.SpellCountFormatString, spellDatabase.Records.Count);
@@ -60,7 +60,7 @@ namespace WoWSpellViewer
 			MpqFile file;
 			Stream fileStream = null;
 
-			if ((file = mpqFileSystem.FindFile(filename)) != null)
+			if ((file = wowFileSystem.FindFile(filename)) != null)
 				using (fileStream = file.Open())
 					return new KeyedClientDatabase<TKey, TValue>(fileStream, languagePack.DatabaseFieldIndex);
 			else
@@ -75,7 +75,7 @@ namespace WoWSpellViewer
 
 			try
 			{
-				file = mpqFileSystem.FindFile(filename);
+				file = wowFileSystem.FindFile(filename);
 				fileStream = file.Open();
 				texture = new BlpTexture(fileStream, false);
 			}

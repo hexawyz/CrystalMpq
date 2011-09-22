@@ -69,7 +69,7 @@ namespace CrystalMpq
 		}
 
 		#endregion
-
+		
 		#region Static Fields
 
 		internal static readonly uint HashTableHash = Encryption.Hash("(hash table)", 0x300);
@@ -467,85 +467,13 @@ namespace CrystalMpq
 			else return null;
 		}
 
-		// To recode and move...
-		internal uint FindFileHash(int index)
-		{
-			MpqFileFlags flags;
-			uint[] header, tmp;
-			uint hash;
-
-			if (index >= files.Length)
-				throw new ArgumentOutOfRangeException("index");
-			flags = files[index].Flags;
-			if (files[index].Seed != 0)
-				return files[index].Seed;
-			else if ((flags & MpqFileFlags.Encrypted) != 0) // If file is coded we try to find a valid Hash for the file
-			{
-				if ((flags & MpqFileFlags.Compressed) != 0) // If file is packed we will use some brute force method
-				{
-					GetPackedFileHeader(index, 0, out header);
-					for (uint i = 0; i < 256; i++) // Check every possible hash
-					{
-						unchecked { hash = (((uint)header.Length * 4) ^ header[0]) - 0xEEEEEEEE - Encryption.precalc[0x400 + i]; }
-						if ((hash & 0xFFU) == i)
-						{
-							tmp = (uint[])header.Clone();
-							Encryption.Decrypt(tmp, hash);
-							if (tmp[0] == tmp.Length * 4)
-							{
-								for (int j = 0; j < tmp.Length - 1; j++)
-									if (tmp[j + 1] - tmp[j] > blockSize)
-									{
-										hash = 0;
-										break;
-									}
-								if (hash != 0)
-									return hash;
-							}
-						}
-					}
-					return 0;
-				}
-				else // If file is not packed we could assume it's WAVE or MPQ, but for now we'll just do nothing
-				{
-					return 0;
-				}
-			}
-			else // If file is not coded, we don't need a valid hash and we can't find one...
-				return 0;
-		}
-
-		internal void ReadBlock(byte[] buffer, int index, long offset, int length)
+		internal int ReadBlock(byte[] buffer, int index, long offset, int length)
 		{
 			lock (syncRoot) // Allow multithreaded read access
 			{
 				reader.BaseStream.Seek(archiveOffset + offset, SeekOrigin.Begin);
-				reader.Read(buffer, index, length);
+				return reader.Read(buffer, index, length);
 			}
-		}
-
-		// To remove
-		internal void GetPackedFileHeader(int index, uint hash, out uint[] header)
-		{
-			uint length;
-			int blockCount;
-			byte[] buffer;
-
-			if (index >= files.Length)
-				throw new ArgumentOutOfRangeException("index");
-			if ((files[index].Flags & MpqFileFlags.Compressed) == 0)
-				throw new Exception("Trying to read a compressed header from an uncompressed file");
-			length = (uint)files[index].Size;
-			blockCount = (int)((length - 1) / blockSize + 2);
-			header = new uint[blockCount];
-			lock (syncRoot)
-			{
-				buffer = new byte[Buffer.ByteLength(header)];
-				ReadBlock(buffer, 0, (uint)files[index].Offset, Buffer.ByteLength(header));
-				Buffer.BlockCopy(buffer, 0, header, 0, Buffer.ByteLength(header));
-			}
-			if (hash != 0) // If hash is valid, then we decode the header
-				unchecked { Encryption.Decrypt(header, hash - 1); }
 		}
 
 		/// <summary>Gets the size of blocks in the archive.</summary>
@@ -561,4 +489,3 @@ namespace CrystalMpq
 		public MpqFormat Format { get { return archiveFormat; } }
 	}
 }
-

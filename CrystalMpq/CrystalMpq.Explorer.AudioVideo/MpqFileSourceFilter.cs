@@ -325,7 +325,7 @@ namespace CrystalMpq.Explorer.AudioVideo
 			CopyMediaTypes(detectedMediaType, defaultMediaType);
 			name = "Stream Source Filter";
 			filterState = FilterState.Stopped;
-			var extension = Path.GetExtension(file.FileName);
+			var extension = Path.GetExtension(file.Name);
 			try
 			{
 				using (var mediaTypeKey = Registry.ClassesRoot.OpenSubKey(@"Media Type"))
@@ -444,7 +444,7 @@ namespace CrystalMpq.Explorer.AudioVideo
 
 		int IFileSourceFilter.GetCurFile(out string pszFileName, AMMediaType pmt)
 		{
-			pszFileName = file.FileName;
+			pszFileName = file.Name;
 
 			if (pmt != null)
 				CopyMediaTypes(pmt, detectedMediaType);

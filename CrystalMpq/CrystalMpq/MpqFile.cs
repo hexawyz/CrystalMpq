@@ -28,12 +28,11 @@ namespace CrystalMpq
 		MpqFileFlags flags;
 		uint seed;
 		private int index;
-		private bool listed, open;
+		private bool listed;
 
 		internal MpqFile(MpqArchive owner, int index, long offset, uint compressedSize, uint uncompressedSize, uint flags)
 		{
-			if (owner == null)
-				throw new ArgumentNullException("owner");
+			if (owner == null) throw new ArgumentNullException("owner");
 			this.owner = owner;
 			this.index = index;
 			this.offset = offset;
@@ -43,7 +42,6 @@ namespace CrystalMpq
 			this.name = "";
 			this.seed = 0;
 			this.listed = false;
-			this.open = false;
 		}
 
 		internal void BindHashTableEntry(MpqHashTable.HashEntry hashEntry) { this.hashEntry = hashEntry; }
@@ -60,11 +58,8 @@ namespace CrystalMpq
 			// TODO: Improve the name caching mechanism (Global hash table for MPQ archives ?)
 			if (cache || (flags & MpqFileFlags.Encrypted) != 0)
 				this.seed = ComputeSeed(name);
-			if (cache)
-			{
-				this.name = name;
-				this.listed = listed;
-			}
+			if (cache || IsPatch) this.name = name; // Always cache the filename if the file si a patch… This is needed for base file lookup.
+			if (cache) this.listed = listed;
 		}
 
 		private static uint ComputeSeed(string filename)
@@ -79,8 +74,8 @@ namespace CrystalMpq
 		/// <summary>Gets the archive to whom this file belongs.</summary>
 		public MpqArchive Archive { get { return owner; } }
 
-		/// <summary>Gets the filename for this file, or null if the filename is unknown.</summary>
-		public string FileName { get { return name; } }
+		/// <summary>Gets the name for this file, or null if the filename is unknown.</summary>
+		public string Name { get { return name; } }
 
 		/// <summary>Gets the offset of this file in the archive.</summary>
 		public long Offset { get { return offset; } }
@@ -108,7 +103,7 @@ namespace CrystalMpq
 		public bool IsPatch { get { return (flags & MpqFileFlags.Patch) != 0; } }
 
 		/// <summary>Gets the LCID associated with this file.</summary>
-		public int LCID { get { return hashEntry.Locale; } }
+		public int Lcid { get { return hashEntry.Locale; } }
 
 		/// <summary>Gets the index of the file in the collection.</summary>
 		/// <remarks>In the current impelmentation, this index is also the index of the file in the archive's block table.</remarks>
@@ -135,21 +130,24 @@ namespace CrystalMpq
 		/// <summary>Opens the file for reading.</summary>
 		/// <returns>Returns a Stream object which can be used to read data in the file.</returns>
 		/// <remarks>Files can only be opened once, so don't forget to close the stream after you've used it.</remarks>
-		public MpqFileStream Open()
+		public MpqFileStream Open() { return new MpqFileStream(this); }
+
+		/// <summary>Opens a patched file for reading.</summary>
+		/// <param name="baseStream">A base stream.</param>
+		/// <returns>Returns a Stream object which can be used to read data in the file.</returns>
+		/// <remarks>
+		/// This method should only be used for explicitly providing a base stream when the <see cref="MpqFile"/> is a patch.
+		/// Files can only be opened once, so don't forget to close the stream after you've used it.
+		/// </remarks>
+		/// <exception cref="InvalidOperationException">This instance of <see cref="MpqFile"/> is not a patch.</exception>
+		/// <exception cref="ArgumentNullException"><paramref name="baseStream"/> is <c>null</c>.</exception>
+		public MpqFileStream Open(Stream baseStream)
 		{
-			// TODO: make thread-safe ?
+			if (!IsPatch) throw new InvalidOperationException();
 
-			if (open) throw new IOException("File is already open.");
+			if (baseStream == null) throw new ArgumentNullException("baseStream");
 
-			open = true;
-			try { return new MpqFileStream(this); }
-			catch { open = false; throw; }
-		}
-
-		internal void Close()
-		{
-			if (!open) throw new IOException("Trying to close an unopened file.");
-			open = false;
+			return new MpqFileStream(this);
 		}
 	}
 }

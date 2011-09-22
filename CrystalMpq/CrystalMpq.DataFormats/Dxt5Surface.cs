@@ -46,7 +46,7 @@ namespace CrystalMpq.DataFormats
 
 						// The divisions here have been optimized with multiply/shift
 						// Maybe there is way for some optimization in the multiplications, (using shifts and additions/substractions where applicable)
-						// but for now I just hope the .NET JIT know how to do those optimizations when they are possible…
+						// but for now I just hope the .NET JIT knows how to do those optimizations when they are possible…
 						if (alpha[0] <= alpha[1])
 						{
 							alpha[2] = (byte)((4 * alpha[0] + alpha[1]) * 1639 >> 13);
@@ -116,7 +116,7 @@ namespace CrystalMpq.DataFormats
 									blockAlphaData >>= 3;
 									goto case 3;
 								case 3:
-									ArgbColor.CopyWithAlpha(blockDestinationPointer++, &colors[rowData & 3], alpha[blockAlphaData & 7]);
+									ArgbColor.CopyWithAlpha(blockDestinationPointer, &colors[rowData & 3], alpha[blockAlphaData & 7]);
 									blockAlphaData >>= 3;
 									break;
 							}

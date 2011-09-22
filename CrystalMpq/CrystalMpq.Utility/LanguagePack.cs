@@ -14,7 +14,7 @@ using System.Text;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using _Path = System.IO.Path;
+using IOPath = System.IO.Path;
 
 namespace CrystalMpq.Utility
 {
@@ -48,9 +48,15 @@ namespace CrystalMpq.Utility
 			"speech"
 		};
 
-		private static readonly string firstArchive = "{0}-{1}.MPQ";
-		private static readonly string otherArchive = "{0}-{1}-{2}.MPQ";
-		private static readonly string expansionArchive = "expansion{0}-{1}-{2}.MPQ";
+		private const string firstArchive = "{0}-{1}.MPQ";
+		private const string otherArchive = "{0}-{1}-{2}.MPQ";
+		private const string expansionArchive = "expansion{0}-{1}-{2}.MPQ";
+		/// <summary>Format of the filename for cataclysm patch archives.</summary>
+		private const string patchArchivePattern = "wow-update-{0}-?????.MPQ";
+		/// <summary>Start index of the version number for patches.</summary>
+		private const int patchArchiveNumberIndex = 11;
+		/// <summary>Number of digits for patch MPQ version number.</summary>
+		private const int patchArchiveNumberLength = 5;
 
 		private static readonly Dictionary<string, int> localeFieldIndexDictionary = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase)
 		{
@@ -70,10 +76,9 @@ namespace CrystalMpq.Utility
 		private CultureInfo culture;
 		private string wowCultureId;
 		private string dataPath;
-		private string[] archiveArray;
+		private WoWArchiveInformation[] archiveArray;
+		private ReadOnlyCollection<WoWArchiveInformation> archiveCollection;
 		private int localeFieldIndex;
-
-		private ReadOnlyCollection<string> archiveCollection;
 
 		internal LanguagePack(WoWInstallation wowInstallation, CultureInfo culture)
 		{
@@ -82,24 +87,24 @@ namespace CrystalMpq.Utility
 			this.wowCultureId = string.Join(null, culture.Name.Split('-'));
 			if (!localeFieldIndexDictionary.TryGetValue(this.wowCultureId, out this.localeFieldIndex))
 				this.localeFieldIndex = -1;
-			this.dataPath = _Path.Combine(wowInstallation.DataPath, wowCultureId);
+			this.dataPath = IOPath.Combine(wowInstallation.DataPath, wowCultureId);
 
 			archiveArray = wowInstallation.InstallationKind == InstallationKind.Cataclysmic ?
 				FindArchives(this.dataPath, this.wowCultureId) :
 				FindArchivesOld(this.dataPath, this.wowCultureId);
-			archiveCollection = new ReadOnlyCollection<string>(archiveArray);
+			archiveCollection = new ReadOnlyCollection<WoWArchiveInformation>(archiveArray);
 		}
 
 		#region Archive Detection Functions
 
-		private static string[] FindArchives(string dataPath, string wowCultureId)
+		private static WoWArchiveInformation[] FindArchives(string dataPath, string wowCultureId)
 		{
-			List<string> archiveList = new List<string>();
+			var archiveList = new List<WoWArchiveInformation>();
 
 			foreach (string expectedArchiveName in expectedArchiveNamesCataclysm)
 			{
 				string archiveName = string.Format(CultureInfo.InvariantCulture, firstArchive, expectedArchiveName, wowCultureId);
-				if (File.Exists(_Path.Combine(dataPath, archiveName))) archiveList.Add(archiveName);
+				if (File.Exists(IOPath.Combine(dataPath, archiveName))) archiveList.Add(new WoWArchiveInformation(archiveName, WoWArchiveKind.LanguagePack));
 			}
 
 			for (int i = 1; ; i++)
@@ -107,20 +112,28 @@ namespace CrystalMpq.Utility
 				foreach (string expectedArchiveName in expectedExpansionArchiveNames)
 				{
 					string archiveName = string.Format(CultureInfo.InvariantCulture, expansionArchive, i, expectedArchiveName, wowCultureId);
-					if (File.Exists(_Path.Combine(dataPath, archiveName))) archiveList.Add(archiveName);
+					if (File.Exists(IOPath.Combine(dataPath, archiveName))) archiveList.Add(new WoWArchiveInformation(archiveName, WoWArchiveKind.LanguagePack));
 					else if (i <= 3) return null; // There are at least 3 expansion archives for cataclysm…
-					else
-					{
-						archiveList.Reverse();
-						return archiveList.ToArray();
-					}
+					else goto FindPatchArchives;
 				}
 			}
+
+		FindPatchArchives: ;
+			var patchArchives = Directory.GetFiles(dataPath, string.Format(CultureInfo.InvariantCulture, patchArchivePattern, wowCultureId), SearchOption.TopDirectoryOnly);
+			Array.Sort(patchArchives, StringComparer.InvariantCultureIgnoreCase);
+
+			foreach (var archivePath in patchArchives)
+			{
+				string archiveName = IOPath.GetFileName(archivePath);
+				archiveList.Add(new WoWArchiveInformation(archiveName, WoWArchiveKind.LanguagePack | WoWArchiveKind.Patch, WoWInstallation.DetectArchiveNumber(archiveName)));
+			}
+
+			return archiveList.ToArray();
 		}
 
-		private static string[] FindArchivesOld(string dataPath, string wowCultureId)
+		private static WoWArchiveInformation[] FindArchivesOld(string dataPath, string wowCultureId)
 		{
-			List<string> archiveList = new List<string>();
+			var archiveList = new List<WoWArchiveInformation>();
 
 			foreach (string expectedArchiveName in expectedArchiveNamesOld)
 			{
@@ -131,12 +144,12 @@ namespace CrystalMpq.Utility
 				{
 					if (i++ != 0)
 					{
-						archiveList.Add(archiveName);
+						archiveList.Add(new WoWArchiveInformation(archiveName, WoWArchiveKind.LanguagePack));
 						archiveName = string.Format(CultureInfo.InvariantCulture, otherArchive, expectedArchiveName, wowCultureId, i);
 					}
 					else
 						archiveName = string.Format(CultureInfo.InvariantCulture, firstArchive, expectedArchiveName, wowCultureId);
-				} while (File.Exists(_Path.Combine(dataPath, archiveName)));
+				} while (File.Exists(IOPath.Combine(dataPath, archiveName)));
 			}
 
 			archiveList.Reverse();
@@ -156,7 +169,7 @@ namespace CrystalMpq.Utility
 		public string Path { get { return dataPath; } }
 		/// <summary>Gets the collection of archives for this language pack.</summary>
 		/// <value>The collection of archives for this language pack.</value>
-		public ReadOnlyCollection<string> Archives { get { return archiveCollection; } }
+		public ReadOnlyCollection<WoWArchiveInformation> Archives { get { return archiveCollection; } }
 		/// <summary>Gets the index of the localized database field.</summary>
 		/// <remarks>
 		/// In first versions of World of Warcraft, the client databases contained special localized strings spanning multiple fields.

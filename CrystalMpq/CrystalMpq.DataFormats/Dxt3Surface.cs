@@ -85,7 +85,7 @@ namespace CrystalMpq.DataFormats
 									rowData >>= 2;
 									goto case 3;
 								case 3:
-									ArgbColor.CopyWithAlpha(blockDestinationPointer++, &colors[rowData & 3], (byte)((*alphaPointer++ >> 8) & 0xF0));
+									ArgbColor.CopyWithAlpha(blockDestinationPointer, &colors[rowData & 3], (byte)((*alphaPointer++ >> 8) & 0xF0));
 									break;
 							}
 						}

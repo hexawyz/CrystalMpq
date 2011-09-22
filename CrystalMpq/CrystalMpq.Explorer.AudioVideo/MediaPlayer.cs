@@ -224,7 +224,7 @@ namespace CrystalMpq.Explorer.AudioVideo
 		private void UpdateInterface()
 		{
 			if (File != null)
-				fileNameLabel.Text = File.FileName;
+				fileNameLabel.Text = File.Name;
 			else
 				fileNameLabel.Text = null;
 
