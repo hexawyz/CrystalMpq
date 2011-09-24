@@ -66,6 +66,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\AssemblyInfo.Common.cs">
+      <Link>Properties\AssemblyInfo.Common.cs</Link>
+    </Compile>
     <Compile Include="ManagedMemAllocator.cs" />
     <Compile Include="MediaPlayer.cs">
       <SubType>UserControl</SubType>

@@ -128,6 +128,9 @@
     <None Include="export.png" />
     <None Include="properties.png" />
     <None Include="open.png" />
+    <Compile Include="..\AssemblyInfo.Common.cs">
+      <Link>Properties\AssemblyInfo.Common.cs</Link>
+    </Compile>
     <Compile Include="AssociationEditionForm.cs">
       <SubType>Form</SubType>
     </Compile>

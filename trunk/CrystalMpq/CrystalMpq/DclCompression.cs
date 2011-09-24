@@ -177,10 +177,11 @@ namespace CrystalMpq
 				var node = lengthTree;
 
 				int j = 15;
-				while (j < lengthBase[j]) j--; // Should not cause an infinite loop
+				while (i < lengthBase[j]) j--; // Should not cause an infinite loop
 
-				int length = lengthLowerCodeLength[j] + lengthUpperCodeLength[j];
+				int length = lengthLowerCodeLength[j];
 				int value = ((i - lengthBase[j]) << length) | lengthLowerCode[j];
+				length += lengthUpperCodeLength[j];
 
 				while (length-- > 0)
 				{

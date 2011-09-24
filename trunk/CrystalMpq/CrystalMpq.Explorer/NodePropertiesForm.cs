@@ -19,10 +19,10 @@ using System.Globalization;
 
 namespace CrystalMpq.Explorer
 {
-	sealed partial class NodePropertiesForm : Form
+	internal sealed partial class NodePropertiesForm : Form
 	{
-		MainForm mainForm;
-		TreeNode node;
+		private MainForm mainForm;
+		private TreeNode node;
 
 		public NodePropertiesForm(MainForm mainForm)
 		{
@@ -32,10 +32,7 @@ namespace CrystalMpq.Explorer
 
 		public TreeNode Node
 		{
-			get
-			{
-				return node;
-			}
+			get { return node; }
 			set
 			{
 				node = value;
@@ -60,10 +57,7 @@ namespace CrystalMpq.Explorer
 			GetNodeInfo(node, out size, out compressedSize);
 			expandedSizeLabel.Text = Program.FormatFileSize(size);
 			compressedSizeLabel.Text = Program.FormatFileSize(compressedSize);
-			if (node != null)
-				iconPictureBox.Image = mainForm.file32ImageList.Images[Math.Max(node.ImageIndex, 0)];
-			else
-				iconPictureBox.Image = null;
+			iconPictureBox.Image = node != null ? mainForm.file32ImageList.Images[Math.Max(node.ImageIndex, 0)] : null;
 			if (node != null && node.Tag is MpqFile)
 			{
 				MpqFile mpqFile = (MpqFile)node.Tag;
@@ -105,6 +99,8 @@ namespace CrystalMpq.Explorer
 					multiCompressedRadioButton.Checked = false;
 					notCompressedRadioButton.Checked = true;
 				}
+
+				patchCheckBox.Checked = (mpqFile.Flags & MpqFileFlags.Patch) != 0;
 			}
 			else
 			{

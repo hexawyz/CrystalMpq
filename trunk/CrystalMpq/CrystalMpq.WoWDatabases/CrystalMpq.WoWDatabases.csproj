@@ -51,12 +51,21 @@
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\CrystalMpq.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\AssemblyInfo.Common.cs">
+      <Link>Properties\AssemblyInfo.Common.cs</Link>
+    </Compile>
     <Compile Include="AreaTableRecord.cs" />
     <Compile Include="PhaseRecord.cs" />
     <Compile Include="DungeonMapRecord.cs" />
@@ -101,6 +110,9 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <None Include="..\CrystalMpq.snk">
+      <Link>CrystalMpq.snk</Link>
+    </None>
     <None Include="Doc\AreaTable.dbc.txt" />
     <None Include="Doc\FactionGroup.dbc.txt" />
     <None Include="Doc\Map.dbc - 20100112.txt" />

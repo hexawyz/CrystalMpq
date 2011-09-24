@@ -109,7 +109,7 @@ namespace CrystalMpq
 		/// <remarks>In the current impelmentation, this index is also the index of the file in the archive's block table.</remarks>
 		public int Index { get { return index; } }
 
-		/// <summary>Gets a value indicating wether this file is compressed.</summary>
+		/// <summary>Gets a value indicating whether this file is compressed.</summary>
 		public bool Compressed
 		{
 			get
@@ -123,7 +123,7 @@ namespace CrystalMpq
 
 		internal uint Seed { get { return seed; } }
 
-		/// <summary>Gets a value indicating wether the file was found in the list file of the archive.</summary>
+		/// <summary>Gets a value indicating whether the file was found in the list file of the archive.</summary>
 		/// <remarks>This can only be true if the list file was parsed.</remarks>
 		public bool Listed { get { return listed; } }
 

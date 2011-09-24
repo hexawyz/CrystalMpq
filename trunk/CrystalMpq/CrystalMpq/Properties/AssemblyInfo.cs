@@ -10,13 +10,10 @@
 
 using System;
 using System.Reflection;
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
-[assembly: AssemblyTitle("CrystalMpq.Explorer.BaseViewers")]
-[assembly: AssemblyDescription("Base Viewers for CrystalMpq Explorer")]
-[assembly: AssemblyProduct("CrystalMpq.Explorer")]
+[assembly: AssemblyTitle("CrystalMpq")]
+[assembly: AssemblyDescription("MPQ reading/writing Library for .NET")]
+[assembly: AssemblyProduct("CrystalMpq")]
 
-[assembly: ComVisible(false)]
-[assembly: Guid("3cc16810-d76d-447d-a2e4-a8da8e53fc44")]
-
-[assembly: AssemblyVersion("1.5.0.0")]
+[assembly: AssemblyVersion("1.7.0.0")]

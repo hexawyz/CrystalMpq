@@ -47,15 +47,15 @@
 <body>
 	<div id="main">
 		<h1>CrystalMpq</h1>
-		<h2>By <a href="http://www.yaronet.com/blogs/GoldenCrystal">GoldenCrystal</a>, Updated for WoW 3.1.1</h2>
+		<h2>By <a href="http://www.yaronet.com/blogs/GoldenCrystal">GoldenCrystal</a>, Updated for WoW 4.0</h2>
 		<dl>
 			<dt>What is it ?</dt>
-			<dd>CrystalMpq is a C# library designed to open <acronym title="MoPAQ">MPQ</acronym> archives. 
+			<dd>CrystalMpq is a C# library designed to open <acronym title="MoPaQ">MPQ</acronym> archives. 
 				It still doesn't support all compression types, but most files should open 
 				correctly. <acronym title="World of Warcraft">WoW</acronym> Archives don&#39;t use 
 				the older compression types and should never encounter any problems. Older game 
-				archives such as Warcraft III archives might use unsupported compressions (such 
-				as ADPCM or Huffman that aren&#39;t supported yet), meaning that some files might be 
+				archives such as Warcraft III archives might use unsupported compressions (ADPCM or Huffman that aren&#39;t supported yet), meaning that some 
+				(old) files might be 
 				unreadable by CrystalMpq for the time being.<br />
 				Some applications were developped along with the library and are part of the 
 				package. They should allow you to peek into your favorite Blizzard MMORPG&#39;s 
@@ -70,7 +70,6 @@
 					<li>Windows 98 or later</li>
 					<li><a href="http://www.microsoft.com/downloads/details.aspx?FamilyID=0856eacb-4362-4b0d-8edd-aab15c5e04f5">Microsoft .NET Framework 2.0</a></li>
 					<li><a href="http://www.microsoft.com/downloads/details.aspx?familyid=9226a611-62fe-4f61-aba1-914185249413">DirectX 9.0c (for Audio/Video visualization)</a></li>
-					<li>Managed DirectX Runtime (for Audio/Video visualization)</li>
 				</ul>
 			</dd>
 			<dt>How to install</dt>
@@ -90,40 +89,26 @@
 			<dt>Known issues</dt>
 			<dd>
 				<ul>
-					<li>There is a bug (leading to a crash) if you ever try to open BLP textures smaller than 4x4 pixels.
-					It's just a stupid buffer overflow bug but i'm too lazy to fix it for now. I'll have to rewrite most of the texture loading code at some point anyway, so it'll probably be done at the same time.
-					Because of this bug, loading of mipmaps in BLP Textures is disabled.</li>
-					<li>The DBC viewer can be quite memory hungry because of the usage of .NET 2.0's DataGridView control.
-					Please note that trying to open files too large may easily lead your computer to run out of free memory and degrade considerably your user experience.<br />
-						This remarks apply particularly to the file &quot;Spell.dbc&quot; that has now grown over 
-						40 MB and cannot be viewed anymore, sorry. For your convenience, a warning has 
-						been added to the DBC viewer to prevent you from viewing too large files. You 
-						are free to bypass this warning, but be aware that it might be a really bad idea 
-						for some files, and I advise you never to bypass it for the &quot;Spell.dbc&quot; file.<br />
-						Anyway, I canot be held responsible for any consequences of the bypass of this 
-						warning...</li>
 					<li>Missing (known) compression types: ADPCM, Huffman</li>
 					<li>It is not possible to manually pick a WoW installation directory for now...</li>
-					<li>Some parts of the code are really old, and may need some refactoring or event 
-						complete rewriting, and thus, some &quot;small&quot; features might need more work than 
-						expected to implement.</li>
 				</ul>
 			</dd>
 			<dt>Source Code</dt>
 			<dd>
-				Currently, the source code is not available, but I plan to make it available sometime in the future (might be tomorrow as it might be in five years...)
-				Since I started this project a long time ago, there are some parts of the code that are really ugly (there shouldn't be many left tough).
-				Particularly, the WoW Map Explorer (which is one of the best application in this package ! :p) was written mainly for testing purposes, and would need a complete rewrite
-				now that the code is stable and known to work.
-				If ever released, the code should be released under the <a href="http://www.opensource.org/licenses/ms-rl.html">Ms-RL</a> License.
+				You can find the source code at <a href="http://code.google.com/p/crystalmpq/">
+				http://code.google.com/p/crystalmpq/</a>.
+				<br />CrystalMpq is released under the
+				<a href="http://www.opensource.org/licenses/ms-rl.html">Ms-RL</a> License.
 			</dd>
 			<dt>For developers</dt>
 			<dd>
-				You are free to use the CrystalMpq library along with the CrystalMpq.Utility and CrystalMpq.WoWFile librairies in your project.
-				Just give credit to the author for these. :)<br />
-				I don't consider the API stable, so I don't provide the documentation for now. If you want to use them you'll have to figure out how 
-				they work, but it shouldn't be really hard. ;)
-			</dd>
+				You are free to use the CrystalMpq library along with the CrystalMpq.Utility and CrystalMpq.DataFile librairies in your project.
+				Just give credit to the author for these. :)<br />Now the API should be stable 
+				enough (which by now way means that I will not break something if I need to), 
+				and a big part of the source code has XML documentation comments if you need 
+				information.<br />
+				I always try to name code elements in a meaningful way, so you shouldn&#39;t have 
+				too much trouble using the library.</dd>
 		</dl>
 	</div>
 </body>

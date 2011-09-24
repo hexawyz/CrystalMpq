@@ -337,7 +337,7 @@ namespace CrystalMpq
 			}
 		}
 
-		/// <summary>Gets a value that indicate wether the current archive has a listfile.</summary>
+		/// <summary>Gets a value that indicate whether the current archive has a listfile.</summary>
 		/// <remarks>
 		/// Having a listfile is not required for an archive to be readable.
 		/// However, you need to know the filenames if you want to read the files.

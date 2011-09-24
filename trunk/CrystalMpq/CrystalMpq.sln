@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B181E022-3069-42E2-A659-41ED17215807}"
 	ProjectSection(SolutionItems) = preProject
+		AssemblyInfo.Common.cs = AssemblyInfo.Common.cs
+		CrystalMpq.snk = CrystalMpq.snk
 		License.txt = License.txt
 		Readme.htm = Readme.htm
 	EndProjectSection
