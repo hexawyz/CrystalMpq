@@ -8,22 +8,15 @@
 // or at this URL: http://www.microsoft.com/opensource/licenses.mspx#Ms-RL
 #endregion
 
+using System;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("WoW Map Explorer")]
-[assembly: AssemblyDescription("WoW World Map Viewer")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("GoldenCrystal")]
+[assembly: AssemblyDescription("World of Warcraft world map viewer")]
 [assembly: AssemblyProduct("WoWMapExplorer")]
-[assembly: AssemblyCopyright("Copyright © GoldenCrystal 2007-2009")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
 
 [assembly: ComVisible(false)]
-
 [assembly: Guid("f0763c13-c1dc-4f31-9779-d1f2bf14812a")]
 
-[assembly: AssemblyVersion("1.3.0.0")]
-[assembly: AssemblyFileVersion("1.3.0.0")]
+[assembly: AssemblyVersion("1.7.0.0")]

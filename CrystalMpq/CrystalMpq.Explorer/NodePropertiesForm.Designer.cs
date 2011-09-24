@@ -56,6 +56,7 @@ namespace CrystalMpq.Explorer
 			this.iconPictureBox = new System.Windows.Forms.PictureBox();
 			this.okButton = new System.Windows.Forms.Button();
 			this.fileNameLabel = new System.Windows.Forms.Label();
+			this.patchCheckBox = new System.Windows.Forms.CheckBox();
 			compressionGroupBox = new System.Windows.Forms.GroupBox();
 			compressionTableLayoutPanel = new System.Windows.Forms.TableLayoutPanel();
 			label1 = new System.Windows.Forms.Label();
@@ -135,6 +136,7 @@ namespace CrystalMpq.Explorer
 			flagsTableLayoutPanel.Controls.Add(this.adjustedKeyCheckBox, 1, 2);
 			flagsTableLayoutPanel.Controls.Add(label1, 0, 0);
 			flagsTableLayoutPanel.Controls.Add(label2, 0, 1);
+			flagsTableLayoutPanel.Controls.Add(this.patchCheckBox, 1, 3);
 			flagsTableLayoutPanel.Name = "flagsTableLayoutPanel";
 			// 
 			// singleUnitCheckBox
@@ -187,6 +189,13 @@ namespace CrystalMpq.Explorer
 			resources.ApplyResources(this.fileNameLabel, "fileNameLabel");
 			this.fileNameLabel.Name = "fileNameLabel";
 			// 
+			// patchCheckBox
+			// 
+			this.patchCheckBox.AutoCheck = false;
+			resources.ApplyResources(this.patchCheckBox, "patchCheckBox");
+			this.patchCheckBox.Name = "patchCheckBox";
+			this.patchCheckBox.UseVisualStyleBackColor = true;
+			// 
 			// NodePropertiesForm
 			// 
 			this.AcceptButton = this.okButton;
@@ -228,6 +237,7 @@ namespace CrystalMpq.Explorer
 		private System.Windows.Forms.CheckBox adjustedKeyCheckBox;
 		private System.Windows.Forms.CheckBox encryptedCheckBox;
 		private System.Windows.Forms.CheckBox singleUnitCheckBox;
+		private System.Windows.Forms.CheckBox patchCheckBox;
 
 	}
 }

@@ -28,42 +28,42 @@ namespace CrystalMpq.Explorer.Properties {
         [global::System.Configuration.DefaultSettingValueAttribute("<?xml version=\"1.0\" encoding=\"utf-16\"?>\r\n<ArrayOfString xmlns:xsi=\"http://www.w3." +
             "org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\r\n  <s" +
             "tring>.txt|CrystalMpq.Explorer.Viewers.TextViewer, CrystalMpqExplorer, Version=1" +
-            ".6.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n  <string>.ini|CrystalMpq" +
-            ".Explorer.Viewers.TextViewer, CrystalMpqExplorer, Version=1.6.0.0, Culture=neutr" +
+            ".7.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n  <string>.ini|CrystalMpq" +
+            ".Explorer.Viewers.TextViewer, CrystalMpqExplorer, Version=1.7.0.0, Culture=neutr" +
             "al, PublicKeyToken=null</string>\r\n  <string>.wtf|CrystalMpq.Explorer.Viewers.Tex" +
-            "tViewer, CrystalMpqExplorer, Version=1.6.0.0, Culture=neutral, PublicKeyToken=nu" +
+            "tViewer, CrystalMpqExplorer, Version=1.7.0.0, Culture=neutral, PublicKeyToken=nu" +
             "ll</string>\r\n  <string>.lst|CrystalMpq.Explorer.Viewers.TextViewer, CrystalMpqEx" +
-            "plorer, Version=1.6.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n  <strin" +
-            "g>.sbt|CrystalMpq.Explorer.Viewers.TextViewer, CrystalMpqExplorer, Version=1.6.0" +
+            "plorer, Version=1.7.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n  <strin" +
+            "g>.sbt|CrystalMpq.Explorer.Viewers.TextViewer, CrystalMpqExplorer, Version=1.7.0" +
             ".0, Culture=neutral, PublicKeyToken=null</string>\r\n  <string>.toc|CrystalMpq.Exp" +
-            "lorer.Viewers.TextViewer, CrystalMpqExplorer, Version=1.6.0.0, Culture=neutral, " +
+            "lorer.Viewers.TextViewer, CrystalMpqExplorer, Version=1.7.0.0, Culture=neutral, " +
             "PublicKeyToken=null</string>\r\n  <string>.css|CrystalMpq.Explorer.Viewers.TextVie" +
-            "wer, CrystalMpqExplorer, Version=1.6.0.0, Culture=neutral, PublicKeyToken=null</" +
+            "wer, CrystalMpqExplorer, Version=1.7.0.0, Culture=neutral, PublicKeyToken=null</" +
             "string>\r\n  <string>.htm|CrystalMpq.Explorer.Viewers.TextViewer, CrystalMpqExplor" +
-            "er, Version=1.6.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n  <string>.h" +
-            "tml|CrystalMpq.Explorer.Viewers.TextViewer, CrystalMpqExplorer, Version=1.6.0.0," +
+            "er, Version=1.7.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n  <string>.h" +
+            "tml|CrystalMpq.Explorer.Viewers.TextViewer, CrystalMpqExplorer, Version=1.7.0.0," +
             " Culture=neutral, PublicKeyToken=null</string>\r\n  <string>.xml|CrystalMpq.Explor" +
-            "er.Viewers.TextViewer, CrystalMpqExplorer, Version=1.6.0.0, Culture=neutral, Pub" +
+            "er.Viewers.TextViewer, CrystalMpqExplorer, Version=1.7.0.0, Culture=neutral, Pub" +
             "licKeyToken=null</string>\r\n  <string>.lua|CrystalMpq.Explorer.Viewers.TextViewer" +
-            ", CrystalMpqExplorer, Version=1.6.0.0, Culture=neutral, PublicKeyToken=null</str" +
+            ", CrystalMpqExplorer, Version=1.7.0.0, Culture=neutral, PublicKeyToken=null</str" +
             "ing>\r\n  <string>.js|CrystalMpq.Explorer.Viewers.TextViewer, CrystalMpqExplorer, " +
-            "Version=1.6.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n  <string>.xsl|C" +
-            "rystalMpq.Explorer.Viewers.TextViewer, CrystalMpqExplorer, Version=1.6.0.0, Cult" +
+            "Version=1.7.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n  <string>.xsl|C" +
+            "rystalMpq.Explorer.Viewers.TextViewer, CrystalMpqExplorer, Version=1.7.0.0, Cult" +
             "ure=neutral, PublicKeyToken=null</string>\r\n  <string>.ttf|CrystalMpq.Explorer.Vi" +
-            "ewers.FontViewer, CrystalMpqExplorer, Version=1.6.0.0, Culture=neutral, PublicKe" +
+            "ewers.FontViewer, CrystalMpqExplorer, Version=1.7.0.0, Culture=neutral, PublicKe" +
             "yToken=null</string>\r\n  <string>.bmp|CrystalMpq.Explorer.Viewers.BitmapViewer, C" +
-            "rystalMpqExplorer, Version=1.6.0.0, Culture=neutral, PublicKeyToken=null</string" +
+            "rystalMpqExplorer, Version=1.7.0.0, Culture=neutral, PublicKeyToken=null</string" +
             ">\r\n  <string>.jpg|CrystalMpq.Explorer.Viewers.BitmapViewer, CrystalMpqExplorer, " +
-            "Version=1.6.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n  <string>.jpeg|" +
-            "CrystalMpq.Explorer.Viewers.BitmapViewer, CrystalMpqExplorer, Version=1.6.0.0, C" +
+            "Version=1.7.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n  <string>.jpeg|" +
+            "CrystalMpq.Explorer.Viewers.BitmapViewer, CrystalMpqExplorer, Version=1.7.0.0, C" +
             "ulture=neutral, PublicKeyToken=null</string>\r\n  <string>.png|CrystalMpq.Explorer" +
-            ".Viewers.BitmapViewer, CrystalMpqExplorer, Version=1.6.0.0, Culture=neutral, Pub" +
+            ".Viewers.BitmapViewer, CrystalMpqExplorer, Version=1.7.0.0, Culture=neutral, Pub" +
             "licKeyToken=null</string>\r\n  <string>.gif|CrystalMpq.Explorer.Viewers.BitmapView" +
-            "er, CrystalMpqExplorer, Version=1.6.0.0, Culture=neutral, PublicKeyToken=null</s" +
+            "er, CrystalMpqExplorer, Version=1.7.0.0, Culture=neutral, PublicKeyToken=null</s" +
             "tring>\r\n  <string>.blp|CrystalMpq.Explorer.BaseViewers.BLPViewer, CrystalMpq.Exp" +
-            "lorer.BaseViewers, Version=1.2.0.0, Culture=neutral, PublicKeyToken=null</string" +
+            "lorer.BaseViewers, Version=1.5.0.0, Culture=neutral, PublicKeyToken=null</string" +
             ">\r\n  <string>.dbc|CrystalMpq.Explorer.BaseViewers.ClientDatabaseViewer, CrystalM" +
-            "pq.Explorer.BaseViewers, Version=1.2.0.0, Culture=neutral, PublicKeyToken=null</" +
+            "pq.Explorer.BaseViewers, Version=1.5.0.0, Culture=neutral, PublicKeyToken=null</" +
             "string>\r\n  <string>.wav|CrystalMpq.Explorer.AudioVideo.MediaPlayer, CrystalMpq.E" +
             "xplorer.AudioVideo, Version=2.5.0.0, Culture=neutral, PublicKeyToken=null</strin" +
             "g>\r\n  <string>.mp3|CrystalMpq.Explorer.AudioVideo.MediaPlayer, CrystalMpq.Explor" +

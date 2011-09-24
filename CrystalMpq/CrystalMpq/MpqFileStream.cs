@@ -60,7 +60,7 @@ namespace CrystalMpq
 		#endregion
 
 		private MpqFile file;
-		private uint last;
+		private uint lastBlockLength;
 		private long position;
 		int currentBlock;
 		int readBufferOffset;
@@ -75,14 +75,17 @@ namespace CrystalMpq
 		{
 			try
 			{
+				PatchInfoHeader? patchInfoHeader; // Used to differentiate between regulat files and patch files. Also contains the patch header :p
+
+				// Store bits of information as local variables, in order to adjust them later.
 				bool singleUnit = (file.Flags & MpqFileFlags.SingleBlock) != 0;
+				bool compressed = file.IsCompressed;
+				uint compressedSize = (uint)file.CompressedSize;
 
 				this.file = file;
 				this.offset = file.Offset;
 
-				// Process the patch information header first, if needed
-
-				PatchInfoHeader? patchInfoHeader;
+				// Process the patch information header first
 
 				if (file.IsPatch)
 				{
@@ -92,6 +95,25 @@ namespace CrystalMpq
 
 					offset += patchInfoHeader.Value.HeaderLength;
 					length = patchInfoHeader.Value.PatchLength; // No matter what crap may be written in the block table, it seems that this field is always right (I had to update the decompression method just for that…)
+
+					if (patchInfoHeader.Value.PatchLength <= file.CompressedSize)
+					{
+						// As it seems, there are some bogus entries in the block table of mpq patch archives. (Only for patch files though)
+						// If you browse the list of DBC files, i'd say there are about 10% of them which have a bogus block table entry.
+						// So, for detecting them, we'll use the same method as in stormlib. We'll try to read the patch header to know is the patch is compressed or not.
+
+						// By the way, we cannot detect whether the patch is compressed or not if it is encrypted.
+						if (file.IsEncrypted) throw new InvalidDataException();
+
+						// Try to read the patch header in the data following the information header and adjust the compressed size dependign on the result:
+						// Since we are “sure” of the uncompressed size (given in the patch header), there is no point in compression if the compressed data isn't even one byte less.
+						// Thus, we can mostly safely decrease the compressed size by 1, which, by the way, is necessary to make decompression work in UpdateBuffer()…
+						compressedSize = patchInfoHeader.Value.PatchLength - ((compressed = !TestPatchHeader(file.Archive, offset)) ? (uint)1 : 0);
+
+						// It appears that the single unit flag is also lying on some patch entries. Files reported as blocky (such as some of the cataclysm mp3) are in fact single unit…
+						// Forcing ths single unit flag to true when the file is compressed seems to be a good solution. Also, we may (or not :p) save a bit of memory by using blocks for uncompressed files.
+						singleUnit = compressed;
+					}
 				}
 				else
 				{
@@ -107,73 +129,34 @@ namespace CrystalMpq
 					else this.seed = file.Seed;
 
 					if ((file.Flags & MpqFileFlags.PositionEncrypted) != 0)
-						seed = (seed + (uint)file.Offset) ^ (uint)length;
+						this.seed = (this.seed + (uint)file.Offset) ^ (uint)this.length;
 				}
 
 				if (singleUnit)
-					this.fileHeader = new uint[] { 0, (uint)file.CompressedSize };
-				else if (file.IsCompressed)
-					fileHeader = ReadBlockOffsets(file.Archive, seed, offset, (int)((length - 1) / file.Archive.BlockSize + 2));
+					this.fileHeader = new uint[] { 0, compressedSize };
+				else if (compressed)
+					this.fileHeader = ReadBlockOffsets(file.Archive, this.seed, this.offset, (int)((length - 1) / file.Archive.BlockSize + 2));
 				else
 				{
-					fileHeader = new uint[(int)((length - 1) / file.Archive.BlockSize) + 2];
-					fileHeader[0] = 0;
-					for (int i = 1; i < fileHeader.Length; i++)
+					this.fileHeader = new uint[(int)((length - 1) / file.Archive.BlockSize) + 2];
+					this.fileHeader[0] = 0;
+					for (int i = 1; i < this.fileHeader.Length; i++)
 					{
-						fileHeader[i] = fileHeader[i - 1] + (uint)file.Archive.BlockSize;
-						if (fileHeader[i] > length) fileHeader[i] = (uint)length;
+						this.fileHeader[i] = this.fileHeader[i - 1] + (uint)file.Archive.BlockSize;
+						if (this.fileHeader[i] > length) this.fileHeader[i] = (uint)this.length;
 					}
 				}
-
-				// Now, let's go for the ugly special-case exception code…
-				// Just when I had finished cleaning the code I have to make trash it again… For now this will do the trick, but I'll clean this up later.
-				if (patchInfoHeader != null && patchInfoHeader.Value.PatchLength < file.CompressedSize)
-				{
-					// There are some bogus entries in MPQ archives, as it would seem…
-					// I discovered this thanks to a little misclick while I checked for updates in DBC files:
-					//   DBFilesClient\WorldMapTransforms.dbc in wow-update-13596.MPQ … and also in wow-update-14333.MPQ… Yeah ! :(
-					// According to StormLib, it seems that those bogus files may be uncompressed (!), and it actually was the case of this one…
-
-					if (!singleUnit) throw new InvalidDataException();
-
-					this.currentBlock = 0;
-
-					this.blockBuffer = new byte[patchInfoHeader.Value.PatchLength];
-
-					if (TestPatchHeader(file.Archive, offset + fileHeader[0]))
-					{
-						// It seems that the patch header is the one saying the truth here… (The XFRM chunk check don't fail with WorldMapTransforms.dbc at least)
-						file.Archive.ReadBlock(blockBuffer, 0, offset, blockBuffer.Length);
-						this.length = (uint)blockBuffer.Length;
-					}
-					else
-					{
-						// I haven't tested this case yet…
-						this.compressedBuffer = new byte[blockBuffer.Length];
-						file.Archive.ReadBlock(compressedBuffer, 0, offset, compressedBuffer.Length);
-						this.length = (uint)Compression.DecompressBlock(this.compressedBuffer, this.compressedBuffer.Length, this.blockBuffer, true);
-						if (length < blockBuffer.Length)
-						{
-							this.compressedBuffer = new byte[length];
-							Buffer.BlockCopy(blockBuffer, 0, compressedBuffer, 0, compressedBuffer.Length);
-							this.blockBuffer = this.compressedBuffer;
-						}
-						this.compressedBuffer = null;
-					}
-				}
-				else
-				{
-					// Treat the files smaller than the block size as single unit
-					singleUnit |= length <= file.Archive.BlockSize; 
+				
+				// Treat the files smaller than the block size as single unit. (But only now that we've read the file header)
+				singleUnit |= length <= file.Archive.BlockSize; 
 					
-					this.blockBuffer = new byte[singleUnit ? length : (uint)file.Archive.BlockSize];
-					if (file.Size != file.CompressedSize) this.compressedBuffer = new byte[singleUnit ? file.CompressedSize : file.Archive.BlockSize];
-					this.last = this.length % (uint)blockBuffer.Length;
-					if (this.last == 0) this.last = (uint)blockBuffer.Length;
-					this.currentBlock = -1;
+				this.blockBuffer = new byte[singleUnit ? length : (uint)file.Archive.BlockSize];
+				if (compressed) this.compressedBuffer = new byte[singleUnit ? compressedSize : (uint)file.Archive.BlockSize];
+				this.lastBlockLength = this.length % (uint)blockBuffer.Length;
+				if (this.lastBlockLength == 0) this.lastBlockLength = (uint)blockBuffer.Length;
+				this.currentBlock = -1;
 
-					UpdateBuffer();
-				}
+				UpdateBuffer();
 
 				// If we finished initializing a stream to patch data, all there is left is to apply the patch
 				if (patchInfoHeader != null)
@@ -529,7 +512,8 @@ namespace CrystalMpq
 		private unsafe void ReadBlock(int block)
 		{
 			int length = (int)(fileHeader[block + 1] - fileHeader[block]);
-			bool compressed = !(length == file.Archive.BlockSize || ((uint)length == last && block == fileHeader.Length - 2));
+			bool last = block == fileHeader.Length - 2;
+			bool compressed = !(length == file.Archive.BlockSize || last && (uint)length == lastBlockLength);
 			var buffer = compressed ? compressedBuffer : blockBuffer;
 
 			file.Archive.ReadBlock(buffer, 0, offset + fileHeader[block], length);
@@ -538,7 +522,7 @@ namespace CrystalMpq
 			{
 				// If last bytes don't fit in an uint, then they won't be encrypted/decrypted
 				// Therefore we just leave "length" here as a parameter and bits 0..1 will be cut
-				unchecked { Encryption.Decrypt(buffer, seed + (uint)block, length); }
+				Encryption.Decrypt(buffer, seed + (uint)block, length);
 			}
 #if DEBUG
 			// This is useful for debugging decompression algorithms
@@ -551,12 +535,19 @@ namespace CrystalMpq
 #endif
 			if (compressed)
 			{
+				int byteCount;
+
 				// Check the advanced compression scheme first, as it is the only used in modern games.
 				if ((file.Flags & MpqFileFlags.MultiCompressed) != 0)
-					Compression.DecompressBlock(compressedBuffer, length, blockBuffer, true);
-				else if ((file.Flags & MpqFileFlags.DclCompressed) != 0)
-					Compression.DecompressBlock(compressedBuffer, length, blockBuffer, false);
+					byteCount = Compression.DecompressBlock(compressedBuffer, length, blockBuffer, true);
+				else /*if ((file.Flags & MpqFileFlags.DclCompressed) != 0)*/
+					byteCount = Compression.DecompressBlock(compressedBuffer, length, blockBuffer, false);
+
+				if (byteCount != (last ? lastBlockLength : (uint)blockBuffer.Length)) throw new InvalidDataException();
 			}
+
+			// As an added bonus, clear the reference to the compressed data buffer once we don't need it anymore
+			if (this.blockBuffer.Length == this.length) this.compressedBuffer = null;
 		}
 	}
 }
