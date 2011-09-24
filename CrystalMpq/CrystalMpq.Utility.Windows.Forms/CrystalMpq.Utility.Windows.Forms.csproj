@@ -78,7 +78,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="LanguagePackPickerForm.fr-FR.resx">
+    <EmbeddedResource Include="LanguagePackPickerForm.fr.resx">
       <DependentUpon>LanguagePackPickerForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>

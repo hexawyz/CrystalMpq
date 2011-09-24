@@ -267,6 +267,10 @@
       <SubType>Designer</SubType>
       <DependentUpon>DirectoryViewer.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Viewers\FindTextForm.fr.resx">
+			<SubType>Designer</SubType>
+      <DependentUpon>FindTextForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Viewers\FindTextForm.resx">
       <SubType>Designer</SubType>
       <DependentUpon>FindTextForm.cs</DependentUpon>
@@ -283,8 +287,8 @@
       <SubType>Designer</SubType>
       <DependentUpon>NodePropertiesForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Viewers\TextViewer.fr-FR.resx">
-      <SubType>Designer</SubType>
+    <EmbeddedResource Include="Viewers\TextViewer.fr.resx">
+			<SubType>Designer</SubType>
       <DependentUpon>TextViewer.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Viewers\TextViewer.resx">
