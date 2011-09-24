@@ -503,8 +503,7 @@ namespace WoWMapExplorer
 				else if (currentZone == -1) map = ((Continent)continentToolStripComboBox.SelectedItem).DataName;
 				else map = zones[currentZone].DataName;
 
-				int separationOffset = map.IndexOf('_');
-				path = path + (separationOffset >= 0 ? map.Substring(0, separationOffset) : map) + @"\";
+				path = path + map + @"\";
 
 				for (int i = 0; i < 3; i++)
 					for (int j = 0; j < 4; j++)

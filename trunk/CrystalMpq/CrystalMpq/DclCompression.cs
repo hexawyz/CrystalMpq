@@ -9,14 +9,15 @@
 #endregion
 
 using System;
+using System.IO;
 
 namespace CrystalMpq
 {
-	static class DclCompression
+	internal static class DclCompression
 	{
 		#region Node Structure
 
-		private class Node
+		private sealed class Node
 		{
 			public int Value = -1;
 			public Node Child0 = null;
@@ -24,19 +25,11 @@ namespace CrystalMpq
 
 			public Node this[int childIndex]
 			{
-				get
-				{
-					if (childIndex != 0)
-						return Child1;
-					else
-						return Child0;
-				}
+				get { return childIndex != 0 ? Child1 : Child0; }
 				set
 				{
-					if (childIndex != 0)
-						Child1 = value;
-					else
-						Child0 = value;
+					if (childIndex != 0) Child1 = value;
+					else Child0 = value;
 				}
 			}
 		}
@@ -133,45 +126,41 @@ namespace CrystalMpq
 
 		#endregion
 
-		private static Node asciiTree = BuildAsciiTree();
-		private static Node lengthTree = BuildLengthTree();
-		private static Node offsetTree = BuildOffsetTree();
+		private static readonly Node asciiTree = BuildAsciiTree();
+		private static readonly Node lengthTree = BuildLengthTree();
+		private static readonly Node offsetTree = BuildOffsetTree();
 
 		#region Data Initialization
 
 		private static Node BuildAsciiTree()
 		{
-			int a, l, v;
+			// Creates the ascii tree
+			var asciiTree = new Node();
 
-			// Creates ascii tree
-			Node asciiTree = new Node();
 			for (int i = 0; i < 256; i++)
 			{
-				Node node = asciiTree;
+				var node = asciiTree;
 
-				l = asciiCodeLength[i];
-				v = asciiCode[i];
+				int length = asciiCodeLength[i];
+				int value = asciiCode[i];
 
-				while (l-- > 0)
+				while (length-- > 0)
 				{
-					a = v & 0x1;
-					v >>= 1;
-					if (node.Value != -1)
-						throw new Exception();
-					if (a != 0)
+					int bit = value & 0x1;
+
+					value >>= 1;
+
+					if (bit != 0)
 					{
-						if (node.Child1 == null)
-							node.Child1 = new Node();
+						if (node.Child1 == null) node.Child1 = new Node();
 						node = node.Child1;
 					}
 					else
 					{
-						if (node.Child0 == null)
-							node.Child0 = new Node();
+						if (node.Child0 == null) node.Child0 = new Node();
 						node = node.Child0;
 					}
-					if (l == 0)
-						node.Value = i;
+					if (length == 0) node.Value = i;
 				}
 			}
 
@@ -180,44 +169,36 @@ namespace CrystalMpq
 
 		private static Node BuildLengthTree()
 		{
-			int a, l, v;
-
-			// Create length tree
-			Node lengthTree = new Node();
+			// Create the length tree
+			var lengthTree = new Node();
 
 			for (int i = 0; i < 518; i++)
 			{
-				Node node = lengthTree;
+				var node = lengthTree;
 
-				a = 15;
-				while (i < lengthBase[a]) a--; // Should not cause an infinite loop
-				l = lengthLowerCodeLength[a];
-				v = ((i - lengthBase[a]) << l) | lengthLowerCode[a];
-				l += lengthUpperCodeLength[a];
-				// this was wrong :/
-				//if (i == 517)
-				//    v = 0;
+				int j = 15;
+				while (j < lengthBase[j]) j--; // Should not cause an infinite loop
 
-				while (l-- > 0)
+				int length = lengthLowerCodeLength[j] + lengthUpperCodeLength[j];
+				int value = ((i - lengthBase[j]) << length) | lengthLowerCode[j];
+
+				while (length-- > 0)
 				{
-					a = v & 0x1;
-					v >>= 1;
-					if (node.Value != -1)
-						throw new Exception();
-					if (a != 0)
+					int bit = value & 0x1;
+
+					value >>= 1;
+
+					if (bit != 0)
 					{
-						if (node.Child1 == null)
-							node.Child1 = new Node();
+						if (node.Child1 == null) node.Child1 = new Node();
 						node = node.Child1;
 					}
 					else
 					{
-						if (node.Child0 == null)
-							node.Child0 = new Node();
+						if (node.Child0 == null) node.Child0 = new Node();
 						node = node.Child0;
 					}
-					if (l == 0)
-						node.Value = i + 2;
+					if (length == 0) node.Value = i + 2;
 				}
 			}
 
@@ -226,38 +207,33 @@ namespace CrystalMpq
 
 		private static Node BuildOffsetTree()
 		{
-			int a, l, v;
-
-			// Create offset tree
-			Node offsetTree = new Node();
+			// Create the offset tree
+			var offsetTree = new Node();
 
 			for (int i = 0; i < 64; i++)
 			{
-				Node node = offsetTree;
+				var node = offsetTree;
 
-				l = offsetCodeLength[i];
-				v = offsetCode[i];
+				int length = offsetCodeLength[i];
+				int value = offsetCode[i];
 
-				while (l-- > 0)
+				while (length-- > 0)
 				{
-					a = v & 0x1;
-					v >>= 1;
-					if (node.Value != -1)
-						throw new Exception();
-					if (a != 0)
+					int bit = value & 0x1;
+
+					value >>= 1;
+
+					if (bit != 0)
 					{
-						if (node.Child1 == null)
-							node.Child1 = new Node();
+						if (node.Child1 == null) node.Child1 = new Node();
 						node = node.Child1;
 					}
 					else
 					{
-						if (node.Child0 == null)
-							node.Child0 = new Node();
+						if (node.Child0 == null) node.Child0 = new Node();
 						node = node.Child0;
 					}
-					if (l == 0)
-						node.Value = i;
+					if (length == 0) node.Value = i;
 				}
 			}
 
@@ -272,78 +248,67 @@ namespace CrystalMpq
 		}
 
 		// 'explode' decompression
-		public static void DecompressBlock(byte[] inBuffer, int index, int count, byte[] outBuffer)
+		public static int DecompressBlock(byte[] inBuffer, int index, int count, byte[] outBuffer)
 		{
-			int dictSize, lowOffsetSize, i, t, l, o;
-			byte b;
 			bool ascii;
-			BitBuffer buffer;
-			Node node;
+			byte b;
 
 			b = inBuffer[index++];
-			if (b == 0) // Check ASCII encoding flag
-				ascii = false; // Don't use ASCII encoding
-			else if (b == 1)
-				ascii = true; // Use ASCII encoding
-			else
-				throw new ArchiveCorruptException();
+
+			// Check the ASCII encoding flag
+			if (b == 0) ascii = false; // Don't use ASCII encoding
+			else if (b == 1) ascii = true; // Use ASCII encoding
+			else throw new ArchiveCorruptException();
+
 			b = inBuffer[index++];
-			if (b < 4 || b > 6)
-				throw new ArchiveCorruptException();
-			dictSize = 0x40 << b; // Calculate dictionnary size
-			lowOffsetSize = b;
-			buffer = new BitBuffer(inBuffer, index, count - 2);
-			i = 0;
-			while (i < outBuffer.Length && !buffer.Eof)
+			if (b < 4 || b > 6) throw new ArchiveCorruptException();
+
+			int dictSize = 0x40 << b; // Calculate dictionnary size
+			int lowOffsetSize = b;
+
+			var bitBuffer = new BitBuffer(inBuffer, index, count - 2);
+
+			int i = 0;
+
+			while (i < outBuffer.Length && !bitBuffer.Eof)
 			{
-				t = buffer.GetBit();
+				int t = bitBuffer.GetBit();
+
 				if (t == 0) // Litteral
 				{
-					if (ascii) // For ASCII Encoding
-					{
-						node = asciiTree;
-						while (node.Value == -1) // Cannot cause an infinite loop if tables are correct
-							node = node[buffer.GetBit()];
-						t = node.Value;
-					}
-					else // For Binary Encoding
-						t = buffer.GetByte();
+					// Depending on the compression mode, this can either be a raw byte or a coded ASCII character
+					t = ascii ? DecodeValue(bitBuffer, asciiTree) : bitBuffer.GetByte();
+
 					outBuffer[i++] = (byte)t;
 				}
 				else // Length/Offset Pair
 				{
-					// Get length
-					node = lengthTree;
-					while (node.Value == -1) // Cannot cause an infinite loop if tables are correct
-						node = node[buffer.GetBit()];
-					l = node.Value;
-					if (l == 519) // Length 519 means end of stream
-						break;
-					// Get offset
-					node = offsetTree;
-					while (node.Value == -1) // Cannot cause an infinite loop if tables are correct
-						node = node[buffer.GetBit()];
-					if (l == 2)
-						o = i - ((node.Value << 2) | buffer.GetBits(2)) - 1;
-					else
-						o = i - ((node.Value << lowOffsetSize) | buffer.GetBits(lowOffsetSize)) - 1;
+					// Get the length
+					int length = DecodeValue(bitBuffer, lengthTree);
+					if (length == 519) break; // Length 519 means end of stream
+
+					// Get the offset
+					int offsetHigh = DecodeValue(bitBuffer, offsetTree);
+					int offset = length == 2 ?
+						i - ((offsetHigh << 2) | bitBuffer.GetBits(2)) - 1 :
+						i - ((offsetHigh << lowOffsetSize) | bitBuffer.GetBits(lowOffsetSize)) - 1;
+
+					if (offset < 0) throw new InvalidDataException();
+
 					// Copy
-					while (l > 0)
-					{
-						l--;
-#if DEBUG
-						// When debugging, do a "safe" decompression, and eventually put a breakpoint where o < 0
-						if (o >= 0)
-							outBuffer[i++] = outBuffer[o++];
-						else
-							outBuffer[i++] = 0;
-#else
-						// When not debugging, we need performance
-						outBuffer[i++] = outBuffer[o++];
-#endif
-					}
+					while (length-- != 0) outBuffer[i++] = outBuffer[offset++];
 				}
 			}
+
+			return i;
+		}
+
+		private static int DecodeValue(BitBuffer bitBuffer, Node node)
+		{
+			// This cannot cause an infinite loop if the tables are correct.
+			while (node.Value == -1) node = node[bitBuffer.GetBit()];
+
+			return node.Value;
 		}
 	}
 }

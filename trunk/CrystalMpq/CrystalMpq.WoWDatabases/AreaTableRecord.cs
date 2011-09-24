@@ -19,29 +19,31 @@ namespace CrystalMpq.WoWDatabases
 	[DebuggerDisplay("AreaTableRecord: Id={Id}, Name={Name}")]
 	public struct AreaTableRecord
 	{
-		[Id] public int Id;
-		public int Map;
-		public int Parent;
-		public int UnknownId;
-		public int Flags;
-		public int SoundPreferences;
-		public int Unknown1;
-		public int SoundAmbience;
-		public int ZoneMusic;
-		public int ZoneIntroMusic;
-		public int AreaLevel;
-		public string Name;
-		public int FactionGroup;
-		public int Unknown2;
-		public int Unknown3;
-		public int Unknown4;
-		public int Unknown5;
-		public float Unknown6;
-		public float Unknown7;
-		public int Unknown8; // 0
-		public int Flags2;
-		public int Unknown9; // 0
-		public int Unknown10;
-		public int Unknown11;
+		/* 000 */ [Id] public int Id;
+		/* 001 */ public int Map;
+		/* 002 */ public int Parent;
+		/* 003 */ public int UnknownId1;
+		/* 004 */ public int Flags;
+		/* 005 */ public int SoundPreferences;
+		/* 006 */ public int SoundPreferencesUnderwater;
+		/* 007 */ public int SoundAmbience;
+		/* 008 */ public int ZoneMusic;
+		/* 009 */ public int ZoneIntroMusic;
+		/* 010 */ public int AreaLevel;
+		/* 011 */ public string Name;
+		/* 012 */ public int FactionGroup;
+		/* 013 */ public int LiquidType1;
+		/* 014 */ public int LiquidType2; // Never set until now, but the 3 other fields around are confirmed…
+		/* 015 */ public int LiquidType3;
+		/* 016 */ public int LiquidType4;
+		/* 017 */ public float MinimumElevation;
+		/* 018 */ public float AmbientMultiplier;
+		/* 019 */ public int Unknown1; // 0
+		/* 020 */ public int LightId; // Unverified
+		/* 021 */ public int Unknown2; // 0
+		/* 022 */ public int Unknown3;
+		/* 023 */ public int Unknown4; // Either 0 or 675…
+		/* 023 */ public int Unknown5;
+		/* 023 */ public int UnknownId2;
 	}
 }

@@ -39,15 +39,14 @@ namespace CrystalMpq
 
 			if (count-- == 0)
 			{
-				if (pos < length)
-					b = buffer[pos++];
-				else
-					return 0;
+				if (pos < length) b = buffer[pos++];
+				else return 0;
 				count = 7;
 			}
 
 			r = b & 0x1;
 			b >>= 1;
+
 			return r;
 		}
 
@@ -56,11 +55,10 @@ namespace CrystalMpq
 		{
 			int r = 0, n = 0, d;
 
-			// Warning: parameter 'count' might be wrong
 			while (count > 0)
 			{
 				d = this.count - count;
-				if (d >= 0) // If more bits in buffer than requested
+				if (d >= 0)
 					do
 					{
 						r = r | ((b & 0x1) << n++);
@@ -85,61 +83,12 @@ namespace CrystalMpq
 					this.count = 8;
 				}
 			}
+
 			return r;
 		}
 
-		//public int GetBitsR(int count)
-		//{
-		//    int r = 0, d;
+		public byte GetByte() { return (byte)GetBits(8); }
 
-		//    // Warning: parameter 'count' might be wrong
-		//    while (count > 0)
-		//    {
-		//        d = this.count - count;
-		//        if (d >= 0) // If more bits in buffer than requested
-		//        {
-		//            do
-		//            {
-		//                r = (r + r) | (b & 0x1);
-		//                b >>= 1;
-		//                count--;
-		//                this.count--;
-		//            } while (count > 0);
-		//        }
-		//        else
-		//            while (this.count > 0)
-		//            {
-		//                r = (r + r) | (b & 0x1);
-		//                b >>= 1;
-		//                count--;
-		//                this.count--;
-		//            }
-		//        if (this.count == 0)
-		//        {
-		//            if (pos < length)
-		//                b = buffer[pos++];
-		//            else
-		//                return r;
-		//            this.count = 8;
-		//        }
-		//    }
-		//    return r;
-		//}
-
-		public byte GetByte()
-		{
-			return (byte)GetBits(8);
-		}
-
-		public bool Eof
-		{
-			get
-			{
-				if ((pos == length - 1 && count == 0) || (pos >= length))
-					return true;
-				else
-					return false;
-			}
-		}
+		public bool Eof { get { return (pos == length - 1 && count == 0) || (pos >= length); } }
 	}
 }

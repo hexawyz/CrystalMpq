@@ -23,20 +23,21 @@ namespace CrystalMpq.WoWDatabases
 		/* 001 */ public string DataName;
 		/* 002 */ public int AreaType;
 		/* 003 */ public int ExtraInformation;
-		/* 004 */ public bool IsBattleground;
-		/* 005 */ public string Name;
-		/* 006 */ public int AreaId;
-		/* 007 */ public string HordeDescription;
-		/* 008 */ public string AllianceDescription;
-		/* 009 */ public int LoadingScreen;
-		/* 010 */ public float MapIconScaling;
-		/* 011 */ public int ParentMapId;
-		/* 012 */ public float EntryCoordX;
-		/* 013 */ public float EntryCoordY;
-		/* 014 */ public int TimeOfDayOverride;
-		/* 015 */ public int ExpansionNumber;
-		/* 016 */ public int Unknown1;
-		/* 017 */ public int MaximumPlayerCount;
-		/* 018 */ public int PhaseMapId;
+		/* 004 */ public int Unknown1;
+		/* 005 */ public bool IsBattleground;
+		/* 006 */ public string Name;
+		/* 007 */ public int AreaId;
+		/* 008 */ public string HordeDescription;
+		/* 009 */ public string AllianceDescription;
+		/* 010 */ public int LoadingScreen;
+		/* 011 */ public float MapIconScaling;
+		/* 012 */ public int ParentMapId;
+		/* 013 */ public float EntryCoordX;
+		/* 014 */ public float EntryCoordY;
+		/* 015 */ public int TimeOfDayOverride;
+		/* 016 */ public int ExpansionNumber;
+		/* 017 */ public int Unknown2;
+		/* 018 */ public int MaximumPlayerCount;
+		/* 019 */ public int PhaseMapId;
 	}
 }
