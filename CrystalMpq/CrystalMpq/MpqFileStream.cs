@@ -49,18 +49,18 @@ namespace CrystalMpq
 		}
 
 		[StructLayout(LayoutKind.Sequential)]
-		private unsafe struct PatchBsd0Header
+		private unsafe struct PatchBsdiff40Header
 		{
 			public ulong Signature;
 			public ulong ControlBlockLength;
-			public ulong DataBlockLength;
+			public ulong DifferenceBlockLength;
 			public ulong PatchedFileSize;
 		}
 
 		#endregion
 
 		private MpqFile file;
-		private int index, last;
+		private uint last;
 		private long position;
 		int currentBlock;
 		int readBufferOffset;
@@ -75,7 +75,10 @@ namespace CrystalMpq
 		{
 			try
 			{
-				offset = file.Offset;
+				bool singleUnit = (file.Flags & MpqFileFlags.SingleBlock) != 0;
+
+				this.file = file;
+				this.offset = file.Offset;
 
 				// Process the patch information header first, if needed
 
@@ -88,7 +91,7 @@ namespace CrystalMpq
 					patchInfoHeader = ReadPatchInfoHeader(file.Archive, file.Offset);
 
 					offset += patchInfoHeader.Value.HeaderLength;
-					length = patchInfoHeader.Value.PatchLength;
+					length = patchInfoHeader.Value.PatchLength; // No matter what crap may be written in the block table, it seems that this field is always right (I had to update the decompression method just for that…)
 				}
 				else
 				{
@@ -98,32 +101,9 @@ namespace CrystalMpq
 
 				// Set up the stream the same way for both patches and regular files…
 
-				this.file = file;
-				this.index = file.Index;
-				this.last = (int)(length % file.Archive.BlockSize);
-				this.position = 0;
-				this.currentBlock = -1;
-				this.readBufferOffset = 0;
-
-				bool singleUnit = (file.Flags & MpqFileFlags.SingleBlock) != 0;
-
-				if (singleUnit)
-				{
-#if DEBUG
-					System.Diagnostics.Debug.WriteLine("Single block files are not fully supported yet...");
-#endif
-					this.blockBuffer = new byte[length];
-					this.compressedBuffer = new byte[file.CompressedSize];
-				}
-				else
-				{
-					this.blockBuffer = new byte[file.Archive.BlockSize];
-					this.compressedBuffer = new byte[file.Archive.BlockSize];
-				}
-
 				if (file.IsEncrypted)
 				{
-					if (file.Seed == 0) throw new SeedNotFoundException(index);
+					if (file.Seed == 0) throw new SeedNotFoundException(file.Index);
 					else this.seed = file.Seed;
 
 					if ((file.Flags & MpqFileFlags.PositionEncrypted) != 0)
@@ -131,51 +111,94 @@ namespace CrystalMpq
 				}
 
 				if (singleUnit)
-				{
 					this.fileHeader = new uint[] { 0, (uint)file.CompressedSize };
-					this.last = (int)file.Size;
-				}
 				else if (file.IsCompressed)
 					fileHeader = ReadBlockOffsets(file.Archive, seed, offset, (int)((length - 1) / file.Archive.BlockSize + 2));
 				else
 				{
-					fileHeader = new uint[(int)((length + file.Archive.BlockSize - 1) / file.Archive.BlockSize) + 1];
+					fileHeader = new uint[(int)((length - 1) / file.Archive.BlockSize) + 2];
 					fileHeader[0] = 0;
 					for (int i = 1; i < fileHeader.Length; i++)
 					{
 						fileHeader[i] = fileHeader[i - 1] + (uint)file.Archive.BlockSize;
-						if (fileHeader[i] > length)
-							fileHeader[i] = (uint)length;
+						if (fileHeader[i] > length) fileHeader[i] = (uint)length;
 					}
 				}
-#if DEBUG
-				Debug.Write("Opening MPQ file #" + file.Index);
-				Debug.WriteLine((file.FileName != null && file.FileName.Length > 0) ? " \"" + file.FileName + "\"" : string.Empty);
-				Debug.Indent();
-				Debug.WriteLine("File Size: " + file.Size);
-				Debug.WriteLine("Last Block Size: " + last);
-				Debug.Unindent();
-#if VERBOSE
-				Debug.WriteLine("Blocks:");
-				foreach (uint block in fileHeader) Debug.WriteLine(" 0x" + block.ToString("X8"));
-#endif
-#endif
-				UpdateBuffer();
 
+				// Now, let's go for the ugly special-case exception code…
+				// Just when I had finished cleaning the code I have to make trash it again… For now this will do the trick, but I'll clean this up later.
+				if (patchInfoHeader != null && patchInfoHeader.Value.PatchLength < file.CompressedSize)
+				{
+					// There are some bogus entries in MPQ archives, as it would seem…
+					// I discovered this thanks to a little misclick while I checked for updates in DBC files:
+					//   DBFilesClient\WorldMapTransforms.dbc in wow-update-13596.MPQ … and also in wow-update-14333.MPQ… Yeah ! :(
+					// According to StormLib, it seems that those bogus files may be uncompressed (!), and it actually was the case of this one…
+
+					if (!singleUnit) throw new InvalidDataException();
+
+					this.currentBlock = 0;
+
+					this.blockBuffer = new byte[patchInfoHeader.Value.PatchLength];
+
+					if (TestPatchHeader(file.Archive, offset + fileHeader[0]))
+					{
+						// It seems that the patch header is the one saying the truth here… (The XFRM chunk check don't fail with WorldMapTransforms.dbc at least)
+						file.Archive.ReadBlock(blockBuffer, 0, offset, blockBuffer.Length);
+						this.length = (uint)blockBuffer.Length;
+					}
+					else
+					{
+						// I haven't tested this case yet…
+						this.compressedBuffer = new byte[blockBuffer.Length];
+						file.Archive.ReadBlock(compressedBuffer, 0, offset, compressedBuffer.Length);
+						this.length = (uint)Compression.DecompressBlock(this.compressedBuffer, this.compressedBuffer.Length, this.blockBuffer, true);
+						if (length < blockBuffer.Length)
+						{
+							this.compressedBuffer = new byte[length];
+							Buffer.BlockCopy(blockBuffer, 0, compressedBuffer, 0, compressedBuffer.Length);
+							this.blockBuffer = this.compressedBuffer;
+						}
+						this.compressedBuffer = null;
+					}
+				}
+				else
+				{
+					// Treat the files smaller than the block size as single unit
+					singleUnit |= length <= file.Archive.BlockSize; 
+					
+					this.blockBuffer = new byte[singleUnit ? length : (uint)file.Archive.BlockSize];
+					if (file.Size != file.CompressedSize) this.compressedBuffer = new byte[singleUnit ? file.CompressedSize : file.Archive.BlockSize];
+					this.last = this.length % (uint)blockBuffer.Length;
+					if (this.last == 0) this.last = (uint)blockBuffer.Length;
+					this.currentBlock = -1;
+
+					UpdateBuffer();
+				}
+
+				// If we finished initializing a stream to patch data, all there is left is to apply the patch
 				if (patchInfoHeader != null)
 				{
-					blockBuffer = ApplyPatch(patchInfoHeader.Value, baseStream);
-					compressedBuffer = null;
-					fileHeader = new uint[] { 0, (uint)blockBuffer.Length };
-					position = 0;
-					currentBlock = 0;
-					readBufferOffset = 0;
-					length = (uint)blockBuffer.Length;
-
-					throw new NotSupportedException("Patch files will be supported in a later revision");
+					// The patching methods will read from this stream instance (whose constructor has yet to finish… !) and return the patched data.
+					this.blockBuffer = ApplyPatch(patchInfoHeader.Value, baseStream);
+					// Once the patch has been applied, transform this stream into a mere memory stream. (The same as with single unit files, in fact)
+					this.compressedBuffer = null;
+					this.fileHeader = new uint[] { 0, (uint)blockBuffer.Length };
+					this.position = 0;
+					this.currentBlock = 0;
+					this.readBufferOffset = 0;
+					this.length = (uint)blockBuffer.Length;
 				}
 			}
 			finally { if (baseStream != null) baseStream.Dispose(); }
+		}
+
+		private static unsafe bool TestPatchHeader(MpqArchive archive, long offset)
+		{
+			var sharedBuffer = Utility.GetSharedBuffer(4);
+
+			if (archive.ReadBlock(sharedBuffer, 0, offset, 4) != 4) throw new EndOfStreamException();
+
+			return sharedBuffer[0] == 0x50 && sharedBuffer[1] == 0x54 && sharedBuffer[2] == 0x43 && sharedBuffer[3] == 0x48;
 		}
 
 		private static unsafe PatchInfoHeader ReadPatchInfoHeader(MpqArchive archive, long offset)
@@ -224,7 +247,6 @@ namespace CrystalMpq
 			Read((byte*)&patchHeader, sizeof(PatchHeader));
 
 			if (patchHeader.Signature != 0x48435450 /* 'PTCH' */
-				//|| patchHeader.PatchLength != patchInfoHeader.PatchLength
 				|| patchHeader.PatchedFileSize != file.Size
 				|| baseStream.Length != patchHeader.OriginalFileSize) throw new InvalidDataException();
 
@@ -258,12 +280,12 @@ namespace CrystalMpq
 				}
 				else if (chunkHeader[0] == 0x4D524658 /* 'XFRM' */)
 				{
-					// This may not be a real problem, however, let's not handle this case for now…
-					if (chunkPosition + chunkHeader[1] != length) throw new InvalidDataException("The XFRM chunk is not the last one in the file.");
+					// This may not be a real problem, however, let's not handle this case for now… (May fail because of the stupid bogus patches…)
+					if (chunkPosition + chunkHeader[1] != Length) throw new InvalidDataException("The XFRM chunk is not the last one in the patch file.");
 
 					uint patchType;
 
-					Read((byte*)&patchType, 4);
+					if (Read((byte*)&patchType, 4) != 4) throw new EndOfStreamException();
 
 					uint patchLength = chunkHeader[1] - 12;
 
@@ -301,22 +323,109 @@ namespace CrystalMpq
 
 		private unsafe byte[] ApplyBsd0Patch(ref PatchInfoHeader patchInfoHeader, ref PatchHeader patchHeader, uint patchLength, byte[] originalData)
 		{
-			PatchBsd0Header header;
+			byte[] patchData;
 
-			if (Read((byte*)&header, sizeof(PatchBsd0Header)) != sizeof(PatchBsd0Header)) throw new EndOfStreamException();
+			if (patchLength < patchHeader.PatchLength) patchData = UnpackRle();
+			else
+			{
+				patchData = new byte[patchLength];
+				if (Read(patchData, 0, checked((int)patchLength)) != patchLength) throw new EndOfStreamException();
+			}
 
-			throw new NotImplementedException();
+			fixed (byte* patchDataPointer = patchData)
+			{
+				var bsdiffHeader = (PatchBsdiff40Header*)patchDataPointer;
+
+				if (bsdiffHeader->Signature != 0x3034464649445342 /* 'BSDIFF40' */) throw new InvalidDataException();
+
+				var controlBlock = (uint*)(patchDataPointer + sizeof(PatchBsdiff40Header));
+				var differenceBlock = (byte*)controlBlock + bsdiffHeader->ControlBlockLength;
+				var extraBlock = differenceBlock + bsdiffHeader->DifferenceBlockLength;
+
+				var patchBuffer = new byte[bsdiffHeader->PatchedFileSize];
+
+				fixed (byte* originalDataPointer = originalData)
+				fixed (byte* patchBufferPointer = patchBuffer)
+				{
+					var sourcePointer = originalDataPointer;
+					var destinationPointer = patchBufferPointer;
+					int sourceCount = originalData.Length;
+					int destinationCount = patchBuffer.Length;
+
+					while (destinationCount != 0)
+					{
+						uint differenceLength = *controlBlock++;
+						uint extraLength = *controlBlock++;
+						uint sourceOffset = *controlBlock++;
+
+						if (differenceLength > destinationCount) throw new InvalidDataException();
+						destinationCount = (int)(destinationCount - differenceLength);
+
+						// Apply the difference patch (Patched Data = Original data + Difference data)
+						for (; differenceLength-- != 0; destinationPointer++, sourcePointer++)
+						{
+							*destinationPointer = *differenceBlock++;
+							if (sourceCount > 0) *destinationPointer += *sourcePointer;
+						}
+
+						if (extraLength > destinationCount) throw new InvalidDataException();
+						destinationCount = (int)(destinationCount - extraLength);
+
+						// Apply the extra data patch (New data)
+						for (; extraLength-- != 0; ) *destinationPointer++ = *extraBlock++;
+
+						sourcePointer += (sourceOffset & 0x80000000) != 0 ? unchecked((int)(0x80000000 - sourceOffset)) : (int)sourceOffset;
+					}
+				}
+
+				return patchBuffer;
+			}
+		}
+
+		private unsafe byte[] UnpackRle()
+		{
+			uint length;
+
+			if (Read((byte*)&length, 4) != 4) throw new EndOfStreamException();
+
+			var decompressionBuffer = new byte[length];
+
+			int i = 0;
+
+			while (i < length)
+			{
+				int @byte = ReadByte();
+
+				if (@byte == -1) goto Finish;
+
+				if ((@byte & 0x80) != 0)
+				{
+					for (int j = (@byte & 0x7F) + 1; j-- != 0 && i < length; )
+					{
+						@byte = ReadByte();
+
+						if (@byte == -1) goto Finish;
+
+						decompressionBuffer[i++] = (byte)@byte;
+					}
+				}
+				else i += @byte + 1;
+			}
+
+		Finish: ;
+			return decompressionBuffer;
 		}
 
 		public sealed override bool CanRead { get { return true; } }
 		public sealed override bool CanWrite { get { return false; } }
 		public sealed override bool CanSeek { get { return true; } }
 
-		public override long Position
+		public sealed override long Position
 		{
 			get { return position; }
 			set
 			{
+				if (position < 0 || position > length) throw new ArgumentOutOfRangeException("value");
 				position = (int)value;
 				UpdateBuffer();
 			}
@@ -379,17 +488,14 @@ namespace CrystalMpq
 		{
 			switch (origin)
 			{
-				case SeekOrigin.Begin:
-					position = (int)offset;
-					break;
-				case SeekOrigin.Current:
-					position += (int)offset;
-					break;
-				case SeekOrigin.End:
-					position = (int)(Length + offset);
-					break;
+				case SeekOrigin.Begin: position = (int)offset; break;
+				case SeekOrigin.Current: position += (int)offset; break;
+				case SeekOrigin.End: position = (int)(Length + offset); break;
+				default: throw new ArgumentOutOfRangeException("origin");
 			}
+
 			UpdateBuffer();
+
 			return position;
 		}
 
@@ -409,7 +515,7 @@ namespace CrystalMpq
 		{
 			if (position < 0 || position >= length) return;
 
-			int newBlock = (int)(position / file.Archive.BlockSize);
+			int newBlock = (int)(position / blockBuffer.Length);
 
 			if (currentBlock != newBlock)
 			{
@@ -417,13 +523,13 @@ namespace CrystalMpq
 				currentBlock = newBlock;
 			}
 
-			readBufferOffset = (int)(position % file.Archive.BlockSize);
+			readBufferOffset = (int)(position % blockBuffer.Length);
 		}
 
 		private unsafe void ReadBlock(int block)
 		{
 			int length = (int)(fileHeader[block + 1] - fileHeader[block]);
-			bool compressed = !(length == file.Archive.BlockSize || (length == last && block == fileHeader.Length - 2));
+			bool compressed = !(length == file.Archive.BlockSize || ((uint)length == last && block == fileHeader.Length - 2));
 			var buffer = compressed ? compressedBuffer : blockBuffer;
 
 			file.Archive.ReadBlock(buffer, 0, offset + fileHeader[block], length);
@@ -436,13 +542,11 @@ namespace CrystalMpq
 			}
 #if DEBUG
 			// This is useful for debugging decompression algorithms
-			// We clear buffer with 0 to see what happens
+			// We clear the buffer with 0 to see what happens
 			if (compressed)
 			{
-				for (int i = length; i < compressedBuffer.Length; i++)
-					compressedBuffer[i] = 0;
-				for (int i = 0; i < blockBuffer.Length; i++)
-					blockBuffer[i] = 0;
+				Array.Clear(compressedBuffer, 0, compressedBuffer.Length);
+				Array.Clear(blockBuffer, 0, blockBuffer.Length);
 			}
 #endif
 			if (compressed)

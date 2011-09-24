@@ -11,9 +11,6 @@
 using System;
 using System.IO;
 using System.IO.Compression;
-#if DEBUG
-using System.Diagnostics;
-#endif
 #if USE_SHARPZIPLIB
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using ICSharpCode.SharpZipLib.BZip2;
@@ -38,11 +35,11 @@ namespace CrystalMpq
 			return 0;
 		}
 
-		public static void DecompressBlock(byte[] inBuffer, int inLength, byte[] outBuffer, bool multi)
+		public static int DecompressBlock(byte[] inBuffer, int inLength, byte[] outBuffer, bool multi)
 		{
 			byte[] tempBuffer;
 
-			if (!multi) DclCompression.DecompressBlock(inBuffer, 0, inLength, outBuffer);
+			if (!multi) return DclCompression.DecompressBlock(inBuffer, 0, inLength, outBuffer);
 			else // Examinate first byte for finding compression methods used
 			{
 				switch (inBuffer[0])
@@ -53,56 +50,52 @@ namespace CrystalMpq
 #if USE_SHARPZIPLIB // Use SharpZipLib's Deflate implementation
 						Inflater.Reset(); // The first property read will initialize the field…
 						inflater.SetInput(inBuffer, 1, inLength - 1);
-						inflater.Inflate(outBuffer);
+						return inflater.Inflate(outBuffer);
 #else // Use .NET 2.0's built-in inflate algorithm
 						using (var inStream = new MemoryStream(inBuffer, 3, inLength - 7, false, false))
 						using (var outStream = new DeflateStream(inStream, CompressionMode.Decompress))
 							outStream.Read(outBuffer, 0, outBuffer.Length);
 #endif
-						break;
 					case 0x08: // PKWare DCL (Implode/Explode)
-						DclCompression.DecompressBlock(inBuffer, 1, inLength - 1, outBuffer);
-						break;
+						return DclCompression.DecompressBlock(inBuffer, 1, inLength - 1, outBuffer);
 					case 0x10: // BZip2
 #if USE_SHARPZIPLIB // Use SharpZipLib for decompression
 						using (var inStream = new MemoryStream(inBuffer, 1, inLength - 1, false, false))
 						using (var outStream = new BZip2InputStream(inStream))
-							outStream.Read(outBuffer, 0, outBuffer.Length);
+							return outStream.Read(outBuffer, 0, outBuffer.Length);
 #else
 						throw new UnsupportedCompressionException("BZip2");
 #endif
-						break;
 					case 0x12: // LZMA
 						using (var inStream = new MemoryStream(inBuffer, 1, inLength - 1, false, false))
 						using (var outStream = new MemoryStream(outBuffer, true))
+						{
 							lzmaDecoder.Code(inStream, outStream, inStream.Length, outStream.Length, null);
-						break;
+							return checked((int)outStream.Position);
+						}
 					case 0x20: // Sparse
-						SparseCompression.DecompressBlock(inBuffer, 1, inLength - 1, outBuffer);
-						break;
+						return SparseCompression.DecompressBlock(inBuffer, 1, inLength - 1, outBuffer);
 					case 0x22: // Sparse + Deflate
 #if USE_SHARPZIPLIB // Use SharpZipLib's Deflate implementation
 						Inflater.Reset(); // The first property read will initialize the field…
 						inflater.SetInput(inBuffer, 1, inLength - 1);
 						tempBuffer = Utility.GetSharedBuffer(outBuffer.Length);
-						SparseCompression.DecompressBlock(tempBuffer, 0, inflater.Inflate(tempBuffer), outBuffer);
+						return SparseCompression.DecompressBlock(tempBuffer, 0, inflater.Inflate(tempBuffer), outBuffer);
 #else // Use .NET 2.0's built-in inflate algorithm
 						using (var inStream = new MemoryStream(inBuffer, 3, inLength - 7, false, false))
 						using (var inoutStream = new DeflateStream(inStream, CompressionMode.Decompress))
 						using (var outStream = new SparseInputStream(inoutStream))
-							outStream.Read(outBuffer, 0, outBuffer.Length);
+							return outStream.Read(outBuffer, 0, outBuffer.Length);
 #endif
-						break;
 					case 0x30: // Sparse + BZip2
 #if USE_SHARPZIPLIB // Use SharpZipLib for decompression
 						using (var inStream = new MemoryStream(inBuffer, 1, inLength - 1, false, false))
 						using (var inoutStream = new BZip2InputStream(inStream))
 						using (var outStream = new SparseInputStream(inoutStream))
-							outStream.Read(outBuffer, 0, outBuffer.Length);
+							return outStream.Read(outBuffer, 0, outBuffer.Length);
 #else
 						throw new UnsupportedCompressionException("Sparse + BZip2");
 #endif
-						break;
 					case 0x40: // Mono IMA ADPCM
 						throw new CompressionNotSupportedException("Mono IMA ADPCM");
 					case 0x41: // Mono IMA ADPCM + Huffman

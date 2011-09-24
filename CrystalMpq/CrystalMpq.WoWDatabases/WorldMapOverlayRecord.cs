@@ -19,22 +19,20 @@ namespace CrystalMpq.WoWDatabases
 	[DebuggerDisplay("WorldMapOverlayRecord: Id={Id}, DataName={DataName}")]
 	public struct WorldMapOverlayRecord
 	{
-		[Id] public int Id;
-		public int WorldMapArea;
-		public int Area1;
-		public int Area2;
-		public int Area3;
-		public int Area4;
-		public int Unknown1;
-		public int Unknown2;
-		public string DataName;
-		public int Width;
-		public int Height;
-		public int Left;
-		public int Top;
-		public int BoxTop;
-		public int BoxLeft;
-		public int BoxBottom;
-		public int BoxRight;
+		/* 000 */ [Id] public int Id;
+		/* 001 */ public int WorldMapArea;
+		/* 002 */ public int Area1;
+		/* 003 */ public int Area2;
+		/* 004 */ public int Area3;
+		/* 005 */ public int Area4;
+		/* 006 */ public string DataName;
+		/* 007 */ public int Width;
+		/* 008 */ public int Height;
+		/* 009 */ public int Left;
+		/* 010 */ public int Top;
+		/* 011 */ public int BoxTop;
+		/* 012 */ public int BoxLeft;
+		/* 013 */ public int BoxBottom;
+		/* 014 */ public int BoxRight;
 	}
 }
