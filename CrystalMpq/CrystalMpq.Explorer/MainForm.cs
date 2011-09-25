@@ -316,13 +316,15 @@ namespace CrystalMpq.Explorer
 						languagePackDialog.LanguagePack = languagePack;
 
 				if (wowInstallation.LanguagePacks.Count > 1)
-					if (languagePackDialog.ShowDialog(this) != DialogResult.OK)
-						return;
+					if (languagePackDialog.ShowDialog(this) != DialogResult.OK) return;
 
 				ClearView();
 				fileSystem = wowInstallation.CreateFileSystem(languagePackDialog.LanguagePack, false, true);
 				SetTitle(wowInstallation.Path);
 				FillTreeView();
+
+				saveAsToolStripMenuItem.Enabled = true;
+				saveAsToolStripButton.Enabled = true;
 			}
 			catch (Exception e) { ErrorDialog(e.Message); }
 			finally { UseWaitCursor = false; }
