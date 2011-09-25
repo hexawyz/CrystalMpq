@@ -41,7 +41,7 @@ namespace CrystalMpq.Explorer.Viewers
 			this.menuStrip = new System.Windows.Forms.MenuStrip();
 			this.mainToolStrip = new System.Windows.Forms.ToolStrip();
 			this.statusStrip = new System.Windows.Forms.StatusStrip();
-			this.listView = new CrystalMpq.Explorer.DoubleBufferedListView();
+			this.listView = new CrystalMpq.Explorer.EnhancedListView();
 			this.SuspendLayout();
 			// 
 			// menuStrip
@@ -71,6 +71,7 @@ namespace CrystalMpq.Explorer.Viewers
 			// listView
 			// 
 			this.listView.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.listView.ExplorerStyle = true;
 			this.listView.Location = new System.Drawing.Point(0, 0);
 			this.listView.MultiSelect = false;
 			this.listView.Name = "listView";
@@ -99,7 +100,7 @@ namespace CrystalMpq.Explorer.Viewers
 
 		#endregion
 
-		private DoubleBufferedListView listView;
+		private EnhancedListView listView;
 		private System.Windows.Forms.MenuStrip menuStrip;
 		private System.Windows.Forms.ToolStrip mainToolStrip;
 		private System.Windows.Forms.StatusStrip statusStrip;

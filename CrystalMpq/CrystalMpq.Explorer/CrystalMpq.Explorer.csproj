@@ -137,10 +137,13 @@
     <Compile Include="AssociationEditionForm.Designer.cs">
       <DependentUpon>AssociationEditionForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="DoubleBufferedViews.cs">
+    <Compile Include="EnhancedListViews.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="EncodingConverter.cs" />
+    <Compile Include="EnhancedTreeView.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="ExtractionProgressionDialog.cs" />
     <Compile Include="ExtractionProgressionForm.cs">
       <SubType>Form</SubType>
@@ -158,6 +161,7 @@
     <Compile Include="ExtractionSettingsForm.Designer.cs">
       <DependentUpon>ExtractionSettingsForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="NativeMethods.cs" />
     <Compile Include="OptionsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -268,7 +272,7 @@
       <DependentUpon>DirectoryViewer.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Viewers\FindTextForm.fr.resx">
-			<SubType>Designer</SubType>
+      <SubType>Designer</SubType>
       <DependentUpon>FindTextForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Viewers\FindTextForm.resx">
@@ -288,7 +292,7 @@
       <DependentUpon>NodePropertiesForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Viewers\TextViewer.fr.resx">
-			<SubType>Designer</SubType>
+      <SubType>Designer</SubType>
       <DependentUpon>TextViewer.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Viewers\TextViewer.resx">
