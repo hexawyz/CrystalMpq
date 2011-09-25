@@ -265,7 +265,7 @@ namespace CrystalMpq.Explorer
 			// 
 			// extractToolStripMenuItem
 			// 
-			this.extractToolStripMenuItem.Image = global::CrystalMpq.Explorer.Properties.Resources.ExportToolbarIcon;
+			this.extractToolStripMenuItem.Image = global::CrystalMpq.Explorer.Properties.Resources.SaveToolbarIcon;
 			this.extractToolStripMenuItem.Name = "extractToolStripMenuItem";
 			resources.ApplyResources(this.extractToolStripMenuItem, "extractToolStripMenuItem");
 			this.extractToolStripMenuItem.Click += new System.EventHandler(this.saveAsToolStripMenuItem_Click);

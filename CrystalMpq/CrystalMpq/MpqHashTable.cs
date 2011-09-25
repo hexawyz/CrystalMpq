@@ -49,6 +49,36 @@ namespace CrystalMpq
 
 		#endregion
 
+		#region HashEntryEnumerator Structure
+
+		public struct HashEntryEnumerator : IEnumerator<HashEntry>
+		{
+			private HashEntry[] entries;
+			private int index;
+
+			public HashEntryEnumerator(HashEntry[] entries)
+			{
+				this.entries = entries;
+				this.index = -1;
+			}
+
+			public void Dispose() { this.entries = null; }
+
+			public HashEntry Current { get { return entries[index]; } }
+			object IEnumerator.Current { get { return entries[index]; } }
+
+			public bool MoveNext()
+			{
+				if (index >= entries.Length) return false;
+
+				return ++index < entries.Length;
+			}
+
+			public void Reset() { this.index = -1; }
+		}
+
+		#endregion
+
 		public static unsafe MpqHashTable FromData(byte[] buffer, int dataLength, int tableLength)
 		{
 			var entries = new HashEntry[tableLength];
@@ -84,8 +114,8 @@ namespace CrystalMpq
 		{
 			get
 			{
-				if (index < 0 || index > capacity)
-					throw new ArgumentOutOfRangeException("index");
+				if (index < 0 || index > capacity) throw new ArgumentOutOfRangeException("index");
+
 				return entries[index];
 			}
 		}
@@ -96,34 +126,33 @@ namespace CrystalMpq
 
 		internal void SetEntry(int index, uint hashA, uint hashB, int locale, int block)
 		{
-			if (index < 0 || index > entries.Length)
-				throw new ArgumentOutOfRangeException("index");
+			if (index < 0 || index > entries.Length) throw new ArgumentOutOfRangeException("index");
+
 			entries[index] = new HashEntry(hashA, hashB, locale, block);
 		}
 
 		public int[] FindMulti(string filename)
 		{
-			uint hash, hashA, hashB, start, index;
-			List<int> matches;
+			var matches = new List<int>();
+			uint hash = Encryption.Hash(filename, 0);
+			uint hashA = Encryption.Hash(filename, 0x100);
+			uint hashB = Encryption.Hash(filename, 0x200);
+			uint start = hash % capacity;
+			uint index = start;
 
-			matches = new List<int>();
-			hash = Encryption.Hash(filename, 0);
-			hashA = Encryption.Hash(filename, 0x100);
-			hashB = Encryption.Hash(filename, 0x200);
-			start = hash % capacity;
-			index = start;
 			do
 			{
 				// Stop on invalid entry
-				if (!entries[index].IsValid)
-					break;
+				if (!entries[index].IsValid) break;
+
 				if (entries[index].Test(hashA, hashB))
 					matches.Add(entries[index].Block);
+
 				// If we find an invalid entry, then we end the research
-				if (++index >= capacity)
-					index = 0;
+				if (++index >= capacity) index = 0;
 			}
 			while (index != start);
+
 			return matches.ToArray();
 		}
 
@@ -131,20 +160,18 @@ namespace CrystalMpq
 
 		public int Find(string filename, int lcid)
 		{
-			uint hash, hashA, hashB, start, index;
-			List<HashEntry> matches;
+			var matches = new List<HashEntry>();
+			uint hash = Encryption.Hash(filename, 0);
+			uint hashA = Encryption.Hash(filename, 0x100);
+			uint hashB = Encryption.Hash(filename, 0x200);
+			uint start = hash % capacity;
+			uint index = start;
 
-			matches = new List<HashEntry>();
-			hash = Encryption.Hash(filename, 0);
-			hashA = Encryption.Hash(filename, 0x100);
-			hashB = Encryption.Hash(filename, 0x200);
-			start = hash % capacity;
-			index = start;
 			do
 			{
 				// Stop on invalid entry
-				if (!entries[index].IsValid)
-					break;
+				if (!entries[index].IsValid) break;
+
 				if (entries[index].Test(hashA, hashB))
 				{
 					if (entries[index].Locale == lcid)
@@ -152,18 +179,17 @@ namespace CrystalMpq
 					else
 						matches.Add(entries[index]);
 				}
-				if (++index >= capacity)
-					index = 0;
+
+				if (++index >= capacity) index = 0;
 			}
 			while (index != start);
-			if (matches.Count == 0)
-				return -1;
-			else if (matches.Count == 1)
-				return matches[0].Block;
+
+			if (matches.Count == 0) return -1;
+			else if (matches.Count == 1) return matches[0].Block;
 			else
 				foreach (HashEntry entry in matches)
-					if (entry.Locale == 0)
-						return entry.Block;
+					if (entry.Locale == 0) return entry.Block;
+
 			return -1;
 		}
 
@@ -184,8 +210,7 @@ namespace CrystalMpq
 		{
 			HashEntry entry;
 
-			if (!TryFindEntry(block, out entry) || !entry.IsValid)
-				throw new InvalidFileReferenceException();
+			if (!TryFindEntry(block, out entry) || !entry.IsValid) throw new InvalidFileReferenceException();
 			else return entry.Locale;
 		}
 
@@ -198,7 +223,7 @@ namespace CrystalMpq
 
 			array = new bool[blockTableSize];
 			counter = 0;
-			foreach (HashEntry entry in entries)
+			foreach (var entry in entries)
 			{
 				if (!entry.IsValid) continue;
 				if (entry.Block >= blockTableSize || array[entry.Block] != false)
@@ -210,12 +235,8 @@ namespace CrystalMpq
 			return counter <= blockTableSize;
 		}
 
-		public IEnumerator<HashEntry> GetEnumerator()
-		{
-			for (int i = 0; i < entries.Length; i++)
-				yield return entries[i];
-		}
-
-		IEnumerator IEnumerable.GetEnumerator() { return entries.GetEnumerator(); }
+		public HashEntryEnumerator GetEnumerator() { return new HashEntryEnumerator(entries); }
+		IEnumerator<HashEntry> IEnumerable<HashEntry>.GetEnumerator() { return new HashEntryEnumerator(entries); }
+		IEnumerator IEnumerable.GetEnumerator() { return new HashEntryEnumerator(entries); }
 	}
 }
