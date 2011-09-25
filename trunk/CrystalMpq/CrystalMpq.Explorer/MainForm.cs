@@ -94,6 +94,7 @@ namespace CrystalMpq.Explorer
 			LoadPlugins();
 			ResolveAssociations();
 			LoadIcons();
+			AdjustStyles();
 			ApplySettings();
 		}
 
@@ -203,21 +204,19 @@ namespace CrystalMpq.Explorer
 
 		#endregion
 
-		private Icon GetSmallIcon(Icon icon)
+		private void AdjustStyles()
 		{
-			if (icon.Size == new Size(16, 16))
-				return icon;
-			else
-				return new Icon(icon, new Size(16, 16));
+			if (NativeMethods.IsVista)
+			{
+				treeView.HotTracking = true;
+				treeView.FullRowSelect = true;
+				treeView.ShowLines = false;
+			}
 		}
 
-		private Icon GetLargeIcon(Icon icon)
-		{
-			if (icon.Size == new Size(32, 32))
-				return icon;
-			else
-				return new Icon(icon, new Size(32, 32));
-		}
+		private Icon GetSmallIcon(Icon icon) { return icon.Size == new Size(16, 16) ? icon : new Icon(icon, new Size(16, 16)); }
+
+		private Icon GetLargeIcon(Icon icon) { return icon.Size == new Size(32, 32) ? icon : new Icon(icon, new Size(32, 32)); }
 
 		private void AddIcons(Icon baseIcon)
 		{

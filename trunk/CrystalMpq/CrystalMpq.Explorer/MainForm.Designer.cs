@@ -44,7 +44,7 @@ namespace CrystalMpq.Explorer
 			this.statusStrip = new System.Windows.Forms.StatusStrip();
 			this.fileNameToolStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
 			this.splitContainer = new System.Windows.Forms.SplitContainer();
-			this.treeView = new CrystalMpq.Explorer.DoubleBufferedTreeView();
+			this.treeView = new CrystalMpq.Explorer.EnhancedTreeView();
 			this.file16ImageList = new System.Windows.Forms.ImageList(this.components);
 			this.menuStrip = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -126,6 +126,8 @@ namespace CrystalMpq.Explorer
 			// treeView
 			// 
 			resources.ApplyResources(this.treeView, "treeView");
+			this.treeView.ExplorerStyle = true;
+			this.treeView.FadePlusMinus = true;
 			this.treeView.ImageList = this.file16ImageList;
 			this.treeView.Name = "treeView";
 			this.treeView.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeView_AfterSelect);
@@ -331,7 +333,7 @@ namespace CrystalMpq.Explorer
 		private System.Windows.Forms.StatusStrip statusStrip;
 		private System.Windows.Forms.OpenFileDialog openFileDialog;
 		private System.Windows.Forms.SplitContainer splitContainer;
-		private DoubleBufferedTreeView treeView;
+		private EnhancedTreeView treeView;
 		private System.Windows.Forms.ContextMenuStrip fileContextMenuStrip;
 		private System.Windows.Forms.ToolStripMenuItem extractToolStripMenuItem;
 		private System.Windows.Forms.SaveFileDialog saveFileDialog;
