@@ -294,11 +294,11 @@ namespace CrystalMpq.Explorer
 
 				SetTitle(filename);
 				FillTreeView();
+
+				saveAsToolStripMenuItem.Enabled = true;
+				saveAsToolStripButton.Enabled = true;
 			}
-			catch (Exception e)
-			{
-				ErrorDialog(e.Message);
-			}
+			catch (Exception e) { ErrorDialog(e.Message); }
 		}
 
 		private void OpenWoWFileSystem()
@@ -723,10 +723,8 @@ namespace CrystalMpq.Explorer
 		{
 			var file = treeView.SelectedNode.Tag as MpqFile;
 
-			if (file != null)
-				InteractiveExtractFile(file);
-			else
-				InteractiveExtractNodes(new[] { treeView.SelectedNode });
+			if (file != null) InteractiveExtractFile(file);
+			else InteractiveExtractNodes(new[] { treeView.SelectedNode });
 		}
 
 		private void exitToolStripMenuItem_Click(object sender, EventArgs e)

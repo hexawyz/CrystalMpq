@@ -199,7 +199,7 @@
     <value>treeView</value>
   </data>
   <data name="&gt;&gt;treeView.Type" xml:space="preserve">
-    <value>CrystalMpq.Explorer.DoubleBufferedTreeView, CrystalMpqExplorer, Version=1.5.0.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>CrystalMpq.Explorer.DoubleBufferedTreeView, CrystalMpqExplorer, Version=1.7.0.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;treeView.Parent" xml:space="preserve">
     <value>splitContainer.Panel1</value>
@@ -376,7 +376,7 @@
     <value>&amp;File</value>
   </data>
   <data name="optionsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>152, 22</value>
+    <value>125, 22</value>
   </data>
   <data name="optionsToolStripMenuItem.Text" xml:space="preserve">
     <value>&amp;Options…</value>
@@ -442,7 +442,7 @@
     <value>3, 24</value>
   </data>
   <data name="mainToolStrip.Size" type="System.Drawing.Size, System.Drawing">
-    <value>81, 25</value>
+    <value>112, 25</value>
   </data>
   <data name="mainToolStrip.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>

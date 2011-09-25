@@ -284,7 +284,7 @@ namespace CrystalMpq
 
 			// Read Block Table
 			files = ReadBlockTable(buffer, blockTableSize, blockTableOffset, blockTableCompressedSize);
-			foreach (MpqHashTable.HashEntry entry in hashTable) // Bind hash table entries to block table entries
+			foreach (var entry in hashTable) // Bind hash table entries to block table entries
 				if (entry.IsValid && entry.Block >= 0 && entry.Block < blockTableSize)
 					files[entry.Block].BindHashTableEntry(entry);
 
