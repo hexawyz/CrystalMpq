@@ -343,9 +343,10 @@ namespace CrystalMpq
 			fixed (byte* bufferPointer = buffer)
 			{
 				uint* blockTableDataPointer = (uint*)bufferPointer;
+				int uintCount = tableLength << 2; // One table entry is 4 [u]int…
 
-				// One table entry is 4 [u]int…
-				Encryption.Decrypt(bufferPointer, MpqArchive.BlockTableHash, 4 * tableLength);
+				if (!BitConverter.IsLittleEndian) Utility.SwapBytes(blockTableDataPointer, uintCount);
+				Encryption.Decrypt(blockTableDataPointer, MpqArchive.BlockTableHash, uintCount);
 
 				files = new MpqFile[tableLength];
 				for (int i = 0; i < tableLength; i++)

@@ -86,9 +86,10 @@ namespace CrystalMpq
 			fixed (byte* bufferPointer = buffer)
 			{
 				uint* hashTableDataPointer = (uint*)bufferPointer;
+				int uintCount = tableLength << 2; // One table entry is 4 [u]int…
 
-				// One table entry is 4 [u]int…
-				Encryption.Decrypt(bufferPointer, MpqArchive.HashTableHash, 4 * tableLength);
+				if (!BitConverter.IsLittleEndian) Utility.SwapBytes(hashTableDataPointer, uintCount);
+				Encryption.Decrypt(hashTableDataPointer, MpqArchive.HashTableHash, uintCount);
 
 				for (int i = 0; i < entries.Length; i++) // Fill MpqHashTable object
 					entries[i] = new HashEntry(*hashTableDataPointer++, *hashTableDataPointer++, (int)*hashTableDataPointer++, (int)*hashTableDataPointer++);

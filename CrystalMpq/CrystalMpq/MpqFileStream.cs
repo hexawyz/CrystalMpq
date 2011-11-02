@@ -135,10 +135,10 @@ namespace CrystalMpq
 				if (singleUnit)
 					this.fileHeader = new uint[] { 0, compressedSize };
 				else if (compressed)
-					this.fileHeader = ReadBlockOffsets(file.Archive, this.seed, this.offset, (int)((length - 1) / file.Archive.BlockSize + 2));
+					this.fileHeader = ReadBlockOffsets(file.Archive, this.seed, this.offset, (int)((length + file.Archive.BlockSize - 1) / file.Archive.BlockSize + 1));
 				else
 				{
-					this.fileHeader = new uint[(int)((length - 1) / file.Archive.BlockSize) + 2];
+					this.fileHeader = new uint[(int)(length + file.Archive.BlockSize - 1) / file.Archive.BlockSize + 1];
 					this.fileHeader[0] = 0;
 					for (int i = 1; i < this.fileHeader.Length; i++)
 					{
@@ -148,12 +148,12 @@ namespace CrystalMpq
 				}
 				
 				// Treat the files smaller than the block size as single unit. (But only now that we've read the file header)
-				singleUnit |= length <= file.Archive.BlockSize; 
-					
+				singleUnit |= length <= file.Archive.BlockSize;
+
 				this.blockBuffer = new byte[singleUnit ? length : (uint)file.Archive.BlockSize];
 				if (compressed) this.compressedBuffer = new byte[singleUnit ? compressedSize : (uint)file.Archive.BlockSize];
-				this.lastBlockLength = this.length % (uint)blockBuffer.Length;
-				if (this.lastBlockLength == 0) this.lastBlockLength = (uint)blockBuffer.Length;
+				this.lastBlockLength = this.length > 0 ? this.length % (uint)this.blockBuffer.Length : 0;
+				if (this.lastBlockLength == 0) this.lastBlockLength = (uint)this.blockBuffer.Length;
 				this.currentBlock = -1;
 
 				UpdateBuffer();
@@ -165,11 +165,11 @@ namespace CrystalMpq
 					this.blockBuffer = ApplyPatch(patchInfoHeader.Value, baseStream);
 					// Once the patch has been applied, transform this stream into a mere memory stream. (The same as with single unit files, in fact)
 					this.compressedBuffer = null;
-					this.fileHeader = new uint[] { 0, (uint)blockBuffer.Length };
+					this.fileHeader = new uint[] { 0, (uint)this.blockBuffer.Length };
 					this.position = 0;
 					this.currentBlock = 0;
 					this.readBufferOffset = 0;
-					this.length = (uint)blockBuffer.Length;
+					this.length = (uint)this.blockBuffer.Length;
 				}
 			}
 			finally { if (baseStream != null) baseStream.Dispose(); }
@@ -191,7 +191,8 @@ namespace CrystalMpq
 			var sharedBuffer = Utility.GetSharedBuffer(sizeof(PatchInfoHeader));
 
 			// No buffer should ever be smaller than 28 bytes… right ?
-			if (archive.ReadBlock(sharedBuffer, 0, offset, 28) != 28) throw new EndOfStreamException(); // It's weird if we could not read the whole 28 bytes… (At worse, we should have read trash data)
+			if (archive.ReadBlock(sharedBuffer, 0, offset, 28) != 28)
+				throw new EndOfStreamException(ErrorMessages.GetString("PatchInfoHeaderEndOfStream")); // It's weird if we could not read the whole 28 bytes… (At worse, we should have read trash data)
 
 			var patchInfoHeader = new PatchInfoHeader();
 
@@ -199,7 +200,7 @@ namespace CrystalMpq
 			patchInfoHeader.Flags = (uint)sharedBuffer[4] | (uint)sharedBuffer[5] << 8 | (uint)sharedBuffer[6] << 16 | (uint)sharedBuffer[7] << 24;
 			patchInfoHeader.PatchLength = (uint)sharedBuffer[8] | (uint)sharedBuffer[9] << 8 | (uint)sharedBuffer[10] << 16 | (uint)sharedBuffer[11] << 24;
 
-			// Let's assume the MD5 is not amndatory…
+			// Let's assume the MD5 is not mandatory…
 			if (patchInfoHeader.HeaderLength >= 28)
 				for (int i = 0; i < 16; i++) patchInfoHeader.PatchMD5[i] = sharedBuffer[12 + i];
 
@@ -217,6 +218,8 @@ namespace CrystalMpq
 
 			Buffer.BlockCopy(sharedBuffer, 0, offsets, 0, length);
 
+			if (!BitConverter.IsLittleEndian) Utility.SwapBytes(offsets);
+
 			// If hash is valid, decode the header
 			if (hash != 0) unchecked { Encryption.Decrypt(offsets, hash - 1); }
 
@@ -228,6 +231,7 @@ namespace CrystalMpq
 			PatchHeader patchHeader;
 
 			Read((byte*)&patchHeader, sizeof(PatchHeader));
+			if (!BitConverter.IsLittleEndian) Utility.SwapBytes((uint*)&patchHeader, sizeof(PatchHeader) >> 2);
 
 			if (patchHeader.Signature != 0x48435450 /* 'PTCH' */
 				|| patchHeader.PatchedFileSize != file.Size
@@ -252,6 +256,7 @@ namespace CrystalMpq
 				var chunkHeader = stackalloc uint[2];
 
 				if (Read((byte*)chunkHeader, 8) != 8) throw new EndOfStreamException();
+				if (!BitConverter.IsLittleEndian) Utility.SwapBytes(chunkHeader, 2);
 
 				if (chunkHeader[0] == 0x5F35444D /* 'MD5_' */)
 				{
@@ -269,6 +274,7 @@ namespace CrystalMpq
 					uint patchType;
 
 					if (Read((byte*)&patchType, 4) != 4) throw new EndOfStreamException();
+					if (!BitConverter.IsLittleEndian) patchType = Utility.SwapBytes(patchType);
 
 					uint patchLength = chunkHeader[1] - 12;
 
@@ -319,11 +325,15 @@ namespace CrystalMpq
 			{
 				var bsdiffHeader = (PatchBsdiff40Header*)patchDataPointer;
 
+				if (!BitConverter.IsLittleEndian) Utility.SwapBytes((ulong*)patchDataPointer, sizeof(PatchBsdiff40Header) >> 3);
+
 				if (bsdiffHeader->Signature != 0x3034464649445342 /* 'BSDIFF40' */) throw new InvalidDataException();
 
 				var controlBlock = (uint*)(patchDataPointer + sizeof(PatchBsdiff40Header));
 				var differenceBlock = (byte*)controlBlock + bsdiffHeader->ControlBlockLength;
 				var extraBlock = differenceBlock + bsdiffHeader->DifferenceBlockLength;
+
+				if (!BitConverter.IsLittleEndian) Utility.SwapBytes(controlBlock, bsdiffHeader->ControlBlockLength >> 2);
 
 				var patchBuffer = new byte[bsdiffHeader->PatchedFileSize];
 

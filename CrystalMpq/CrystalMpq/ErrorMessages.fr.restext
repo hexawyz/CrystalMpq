@@ -4,3 +4,4 @@ MpqVersionNotSupported=Le format MPQ version {0} n'est pas supporté.
 SeedNotFound=La clé de décryptage pour le fichier 0x{0:X4} n'a pas été trouvée.
 CompressionNotSupported_Name=La méthode de compression « {0} » n'est pas supportée à l'heure actuelle.
 CompressionNotSupported_Byte=La méthode de compression « {0:X2} » est inconnue.
+PatchInfoHeaderEndOfStream=La fin du fichier a été rencontrée avant d'avoir entièrement lu l'en-tête du patch.

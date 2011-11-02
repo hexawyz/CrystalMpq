@@ -80,17 +80,23 @@ namespace CrystalMpq
 		//    return hash;
 		//}
 
-		public static void Encrypt(uint[] data, uint hash)
+		public static unsafe void Encrypt(uint[] data, uint hash)
+		{
+			fixed (uint* dataPointer = data)
+				Encrypt(dataPointer, hash, data.Length);
+		}
+
+		public static unsafe void Encrypt(uint* data, uint hash, int length)
 		{
 			uint buffer, seed = 0xEEEEEEEE;
 
-			for (int i = 0; i < data.Length; i++)
+			for (int i = length; i-- != 0; )
 				unchecked
 				{
 					seed += precalc[0x400 + hash & 0xFF];
-					buffer = data[i];
+					buffer = *data;
 					seed += buffer + (seed << 5) + 3;
-					data[i] = buffer ^ (seed + hash);
+					*data++ = buffer ^ (seed + hash);
 					hash = (hash >> 11) | (0x11111111 + ((hash ^ 0x7FF) << 21));
 				}
 		}
@@ -107,30 +113,41 @@ namespace CrystalMpq
 				Decrypt(dataPointer, hash, length);
 		}
 
-		public static unsafe void Decrypt(byte[] data, uint hash)
-		{
-			fixed (byte* dataPointer = data)
-				Decrypt(dataPointer, hash, data.Length >> 2);
-		}
+		public static unsafe void Decrypt(byte[] data, uint hash) { Decrypt(data, hash, data.Length); }
 
 		public static unsafe void Decrypt(byte[] data, uint hash, int length)
 		{
 			fixed (byte* dataPointer = data)
-				Decrypt(dataPointer, hash, length >> 2);
+				if (BitConverter.IsLittleEndian) Decrypt((uint*)dataPointer, hash, length >> 2);
+				else DecryptWithEndianSwap((uint*)dataPointer, hash, length >> 2);
 		}
 
-		public static unsafe void Decrypt(void *data, uint hash, int length)
+		public static unsafe void Decrypt(uint* data, uint hash, int length)
 		{
 			uint buffer, temp = 0xEEEEEEEE;
-			uint* dataPointer = (uint*)data;
 
-			for (int i = 0; i < length; i++)
+			for (int i = length; i-- != 0; )
 				unchecked
 				{
 					temp += precalc[0x400 + (hash & 0xFF)];
-					buffer = *dataPointer ^ (temp + hash);
+					buffer = *data ^ (temp + hash);
 					temp += buffer + (temp << 5) + 3;
-					*dataPointer++ = buffer;
+					*data++ = buffer;
+					hash = (hash >> 11) | (0x11111111 + ((hash ^ 0x7FF) << 21));
+				}
+		}
+
+		public static unsafe void DecryptWithEndianSwap(uint* data, uint hash, int length)
+		{
+			uint buffer, temp = 0xEEEEEEEE;
+
+			for (int i = length; i-- != 0; )
+				unchecked
+				{
+					temp += precalc[0x400 + (hash & 0xFF)];
+					buffer = Utility.SwapBytes(*data) ^ (temp + hash);
+					temp += buffer + (temp << 5) + 3;
+					*data++ = Utility.SwapBytes(buffer);
 					hash = (hash >> 11) | (0x11111111 + ((hash ^ 0x7FF) << 21));
 				}
 		}

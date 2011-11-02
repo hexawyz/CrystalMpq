@@ -104,5 +104,51 @@ namespace CrystalMpq
 
 			return new string(buffer);
 		}
+
+		public static void SwapBytes(uint[] buffer)
+		{
+			for (int i = 0; i < buffer.Length; i++)
+				buffer[i] = SwapBytes(buffer[i]);
+		}
+
+		public unsafe static void SwapBytes(uint* buffer, int length)
+		{
+			for (int i = 0; i < length; i++)
+				buffer[i] = SwapBytes(buffer[i]);
+		}
+
+		public unsafe static void SwapBytes(uint* buffer, ulong length)
+		{
+			for (ulong i = 0; i < length; i++)
+				buffer[i] = SwapBytes(buffer[i]);
+		}
+
+		public static uint SwapBytes(uint value) { return (value >> 24) | (value >> 8) & 0x0000FF00 | (value << 8) & 0x00FF0000 | (value << 24); }
+
+		public static void SwapBytes(ulong[] buffer)
+		{
+			for (int i = 0; i < buffer.Length; i++)
+				buffer[i] = SwapBytes(buffer[i]);
+		}
+
+		public unsafe static void SwapBytes(ulong* buffer, int length)
+		{
+			for (int i = 0; i < length; i++)
+				buffer[i] = SwapBytes(buffer[i]);
+		}
+
+		public static ulong SwapBytes(ulong value)
+		{
+			return (value >> 56) |
+				(value >> 40) & 0x000000000000FF00 |
+				(value >> 24) & 0x0000000000FF0000 |
+				(value >> 8) & 0x00000000FF000000 |
+				(value << 8) & 0x000000FF00000000 |
+				(value << 24) & 0x0000FF0000000000 |
+				(value << 40) & 0x00FF000000000000 |
+				(value << 56);
+		}
+
+		public static uint SwapBytesIfNeeded(uint value) { return BitConverter.IsLittleEndian ? value : SwapBytes(value); }
 	}
 }
