@@ -15,5 +15,6 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyTitle("CrystalMpq")]
 [assembly: AssemblyDescription("MPQ reading/writing Library for .NET")]
 [assembly: AssemblyProduct("CrystalMpq")]
+[assembly: CLSCompliant(true)]
 
 [assembly: AssemblyVersion("1.7.0.0")]

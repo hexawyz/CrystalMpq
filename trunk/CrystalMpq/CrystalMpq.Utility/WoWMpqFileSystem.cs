@@ -33,13 +33,7 @@ namespace CrystalMpq.Utility
 
 			public void Dispose() { }
 
-			public WoWArchive Current
-			{
-				get
-				{
-					return archiveArray[index];
-				}
-			}
+			public WoWArchive Current { get { return archiveArray[index]; } }
 
 			object System.Collections.IEnumerator.Current { get { return Current; } }
 
@@ -146,6 +140,12 @@ namespace CrystalMpq.Utility
 
 			EventHandler<ResolveStreamEventArgs> baseFileResolver = ResolveBaseFile;
 			foreach (var archiveEntry in archiveArray) archiveEntry.Archive.ResolveBaseFile += baseFileResolver;
+		}
+
+		public void Dispose()
+		{
+			foreach (var wowArchive in wowArchiveArray)
+				wowArchive.Archive.Dispose();
 		}
 
 		public string Locale { get { return locale; } }

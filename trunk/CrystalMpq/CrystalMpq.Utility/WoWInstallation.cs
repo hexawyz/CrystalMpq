@@ -220,7 +220,7 @@ namespace CrystalMpq.Utility
 		#region Archive Detection Functions
 
 		/// <summary>Finds the archives associated with this <see cref="WoWInstallation"/>.</summary>
-		/// <remarks>This implementation will find archives for the new Cataclysm instlaltions, not the old ones.</remarks>
+		/// <remarks>This implementation will find archives for the new Cataclysm installations, not the old ones.</remarks>
 		private static WoWArchiveInformation[] FindArchives(string dataPath)
 		{
 			var archiveList = new List<WoWArchiveInformation>();

@@ -259,52 +259,56 @@ namespace CrystalMpq
 			// Check the ASCII encoding flag
 			if (b == 0) ascii = false; // Don't use ASCII encoding
 			else if (b == 1) ascii = true; // Use ASCII encoding
-			else throw new ArchiveCorruptException();
+			else throw new InvalidDataException();
 
 			b = inBuffer[index++];
-			if (b < 4 || b > 6) throw new ArchiveCorruptException();
+			if (b < 4 || b > 6) throw new InvalidDataException();
 
 			int dictSize = 0x40 << b; // Calculate dictionnary size
 			int lowOffsetSize = b;
 
 			var bitBuffer = new BitBuffer(inBuffer, index, count - 2);
 
-			int i = 0;
-
-			while (i < outBuffer.Length && !bitBuffer.Eof)
+			try
 			{
-				int t = bitBuffer.GetBit();
+				int i = 0;
 
-				if (t == 0) // Litteral
+				while (i < outBuffer.Length && !bitBuffer.Eof)
 				{
-					// Depending on the compression mode, this can either be a raw byte or a coded ASCII character
-					t = ascii ? DecodeValue(bitBuffer, asciiTree) : bitBuffer.GetByte();
+					int t = bitBuffer.GetBit();
 
-					outBuffer[i++] = (byte)t;
+					if (t == 0) // Litteral
+					{
+						// Depending on the compression mode, this can either be a raw byte or a coded ASCII character
+						t = ascii ? DecodeValue(ref bitBuffer, asciiTree) : bitBuffer.GetByte();
+
+						outBuffer[i++] = (byte)t;
+					}
+					else // Length/Offset Pair
+					{
+						// Get the length
+						int length = DecodeValue(ref bitBuffer, lengthTree);
+						if (length == 519) break; // Length 519 means end of stream
+
+						// Get the offset
+						int offsetHigh = DecodeValue(ref bitBuffer, offsetTree);
+						int offset = length == 2 ?
+							i - ((offsetHigh << 2) | bitBuffer.GetBits(2)) - 1 :
+							i - ((offsetHigh << lowOffsetSize) | bitBuffer.GetBits(lowOffsetSize)) - 1;
+
+						if (offset < 0) throw new InvalidDataException();
+
+						// Copy
+						while (length-- != 0) outBuffer[i++] = outBuffer[offset++];
+					}
 				}
-				else // Length/Offset Pair
-				{
-					// Get the length
-					int length = DecodeValue(bitBuffer, lengthTree);
-					if (length == 519) break; // Length 519 means end of stream
 
-					// Get the offset
-					int offsetHigh = DecodeValue(bitBuffer, offsetTree);
-					int offset = length == 2 ?
-						i - ((offsetHigh << 2) | bitBuffer.GetBits(2)) - 1 :
-						i - ((offsetHigh << lowOffsetSize) | bitBuffer.GetBits(lowOffsetSize)) - 1;
-
-					if (offset < 0) throw new InvalidDataException();
-
-					// Copy
-					while (length-- != 0) outBuffer[i++] = outBuffer[offset++];
-				}
+				return i;
 			}
-
-			return i;
+			finally { bitBuffer.Dispose(); }
 		}
 
-		private static int DecodeValue(BitBuffer bitBuffer, Node node)
+		private static int DecodeValue(ref BitBuffer bitBuffer, Node node)
 		{
 			// This cannot cause an infinite loop if the tables are correct.
 			while (node.Value == -1) node = node[bitBuffer.GetBit()];

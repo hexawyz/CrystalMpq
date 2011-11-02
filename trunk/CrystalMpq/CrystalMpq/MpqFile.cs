@@ -14,19 +14,17 @@ using System.Threading;
 
 namespace CrystalMpq
 {
-	/// <summary>
-	/// This class represents a file in a MPQArchive
-	/// </summary>
+	/// <summary>This class represents a file stored in an <see cref="MpqArchive"/>.</summary>
 	public sealed class MpqFile
 	{
 		private MpqArchive owner;
 		private MpqHashTable.HashEntry hashEntry;
 		private string name;
 		private long offset;
-		uint compressedSize;
-		uint uncompressedSize;
-		MpqFileFlags flags;
-		uint seed;
+		private uint compressedSize;
+		private uint uncompressedSize;
+		private MpqFileFlags flags;
+		private uint seed;
 		private int index;
 		private bool listed;
 
@@ -58,14 +56,14 @@ namespace CrystalMpq
 			// TODO: Improve the name caching mechanism (Global hash table for MPQ archives ?)
 			if (cache || (flags & MpqFileFlags.Encrypted) != 0)
 				this.seed = ComputeSeed(name);
-			if (cache || IsPatch) this.name = name; // Always cache the filename if the file si a patch… This is needed for base file lookup.
+			if (cache || IsPatch) this.name = name; // Always cache the filename if the file is a patch… This is needed for base file lookup.
 			if (cache) this.listed = listed;
 		}
 
 		private static uint ComputeSeed(string filename)
 		{
 			// Calculate the seed based on the file name and not the full path.
-			// I really don't know why but it worked with the full path for a lot of files...
+			// I really don't know why but it worked with the full path for a lot of files…
 			// But now it's fixed at least
 			int index = filename.LastIndexOf('\\');
 			return Encryption.Hash(index >= 0 ? filename.Substring(index + 1) : filename, 0x300);
@@ -74,7 +72,7 @@ namespace CrystalMpq
 		/// <summary>Gets the archive to whom this file belongs.</summary>
 		public MpqArchive Archive { get { return owner; } }
 
-		/// <summary>Gets the name for this file, or null if the filename is unknown.</summary>
+		/// <summary>Gets the name for this file, or null if the filename is not known.</summary>
 		public string Name { get { return name; } }
 
 		/// <summary>Gets the offset of this file in the archive.</summary>
@@ -109,23 +107,15 @@ namespace CrystalMpq
 		/// <remarks>In the current impelmentation, this index is also the index of the file in the archive's block table.</remarks>
 		public int Index { get { return index; } }
 
-		/// <summary>Gets a value indicating whether this file is compressed.</summary>
-		public bool Compressed
-		{
-			get
-			{
-				if (((MpqFileFlags)flags & MpqFileFlags.Compressed) != 0)
-					return true;
-				else
-					return false;
-			}
-		}
-
+		/// <summary>Gets the seed associated with this file.</summary>
+		/// <remarks>The seed is a value that is used internally to decrypt some files.</remarks>
+		/// <value>The seed associated with this file.</value>
 		internal uint Seed { get { return seed; } }
 
 		/// <summary>Gets a value indicating whether the file was found in the list file of the archive.</summary>
 		/// <remarks>This can only be true if the list file was parsed.</remarks>
-		public bool Listed { get { return listed; } }
+		/// <value><c>true</c> if this instance is listed; otherwise, <c>false</c>.</value>
+		public bool IsListed { get { return listed; } }
 
 		/// <summary>Opens the file for reading.</summary>
 		/// <returns>Returns a Stream object which can be used to read data in the file.</returns>

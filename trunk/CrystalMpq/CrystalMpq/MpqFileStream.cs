@@ -432,7 +432,7 @@ namespace CrystalMpq
 		public unsafe sealed override int Read(byte[] buffer, int offset, int count)
 		{
 			if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException("offset");
-			if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException("count");
+			if (count < 0 || checked(offset + count) > buffer.Length) throw new ArgumentOutOfRangeException("count");
 
 			fixed (byte* bufferPointer = buffer)
 				return Read(bufferPointer + offset, count);

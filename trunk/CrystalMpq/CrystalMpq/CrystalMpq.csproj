@@ -115,12 +115,7 @@
     <Compile Include="7zip\Compress\RangeCoder\RangeCoderBit.cs" />
     <Compile Include="7zip\Compress\RangeCoder\RangeCoderBitTree.cs" />
     <Compile Include="7zip\ICoder.cs" />
-    <Compile Include="ArchiveCorruptException.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="ArchiveInvalidException.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="ErrorMessages.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -136,19 +131,13 @@
     <Compile Include="Encryption.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="InvalidMpqVersionException.cs" />
+    <Compile Include="MpqVersionNotSupportedException.cs" />
     <Compile Include="ResolveStreamEventArgs.cs" />
     <Compile Include="SeedNotFoundException.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="HuffmanTree.cs" />
-    <Compile Include="InvalidFileReferenceException.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="MpqArchive.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="MpqException.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MpqFile.cs">
@@ -164,7 +153,7 @@
     <Compile Include="MpqFileStream.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="CompressionNotSupportedException.cs">
+    <Compile Include="MpqCompressionNotSupportedException.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="SparseCompression.cs" />
@@ -174,6 +163,9 @@
   <ItemGroup>
     <Content Include="7zip\ReadMe.txt" />
     <Content Include="HuffmanOld.txt" />
+    <None Include="ICSharpCode.SharpZipLib\Changes.txt" />
+    <None Include="ICSharpCode.SharpZipLib\COPYING.txt" />
+    <None Include="ICSharpCode.SharpZipLib\ICSharpCode.SharpZipLib.dll" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -196,6 +188,12 @@
     <None Include="..\CrystalMpq.snk">
       <Link>CrystalMpq.snk</Link>
     </None>
+    <EmbeddedResource Include="ErrorMessages.restext" />
+    <EmbeddedResource Include="ErrorMessages.fr.restext" />
+    <None Include="ICSharpCode.SharpZipLib\installGAC.bat" />
+    <None Include="ICSharpCode.SharpZipLib\ReadMe.rtf" />
+    <None Include="ICSharpCode.SharpZipLib\SharpZipLib.chm" />
+    <None Include="ICSharpCode.SharpZipLib\uninstallGAC.bat" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

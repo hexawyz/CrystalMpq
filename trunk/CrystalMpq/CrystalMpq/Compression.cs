@@ -19,7 +19,7 @@ using LZMA = SevenZip.Compression.LZMA;
 
 namespace CrystalMpq
 {
-	internal sealed class Compression
+	internal static class Compression
 	{
 #if USE_SHARPZIPLIB
 		[ThreadStatic]
@@ -45,7 +45,7 @@ namespace CrystalMpq
 				switch (inBuffer[0])
 				{
 					case 0x01: // Huffman
-						throw new CompressionNotSupportedException("Hufman");
+						throw new MpqCompressionNotSupportedException(0x01, "Huffman");
 					case 0x02: // Zlib (Deflate/Inflate)
 #if USE_SHARPZIPLIB // Use SharpZipLib's Deflate implementation
 						Inflater.Reset(); // The first property read will initialize the field…
@@ -64,7 +64,7 @@ namespace CrystalMpq
 						using (var outStream = new BZip2InputStream(inStream))
 							return outStream.Read(outBuffer, 0, outBuffer.Length);
 #else
-						throw new UnsupportedCompressionException("BZip2");
+						throw new CompressionNotSupportedException("BZip2");
 #endif
 					case 0x12: // LZMA
 						using (var inStream = new MemoryStream(inBuffer, 1, inLength - 1, false, false))
@@ -94,28 +94,24 @@ namespace CrystalMpq
 						using (var outStream = new SparseInputStream(inoutStream))
 							return outStream.Read(outBuffer, 0, outBuffer.Length);
 #else
-						throw new UnsupportedCompressionException("Sparse + BZip2");
+						throw new CompressionNotSupportedException("Sparse + BZip2");
 #endif
 					case 0x40: // Mono IMA ADPCM
-						throw new CompressionNotSupportedException("Mono IMA ADPCM");
+						throw new MpqCompressionNotSupportedException(0x40, "Mono IMA ADPCM");
 					case 0x41: // Mono IMA ADPCM + Huffman
-						throw new CompressionNotSupportedException("Mono IMA ADPCM + Huffman");
+						throw new MpqCompressionNotSupportedException(0x41, "Mono IMA ADPCM + Huffman");
 					case 0x48: // Mono IMA ADPCM + Implode
-						throw new CompressionNotSupportedException("Mono IMA ADPCM + Implode");
+						throw new MpqCompressionNotSupportedException(0x48, "Mono IMA ADPCM + Implode");
 					case 0x80: // Stereo IMA ADPCM
-						throw new CompressionNotSupportedException("Stereo IMA ADPCM");
+						throw new MpqCompressionNotSupportedException(0x80, "Stereo IMA ADPCM");
 					case 0x81: // Stereo IMA ADPCM + Huffman
-						throw new CompressionNotSupportedException("Stereo IMA ADPCM + Huffman");
+						throw new MpqCompressionNotSupportedException(0x81, "Stereo IMA ADPCM + Huffman");
 					case 0x88: // Stereo IMA ADPCM + Implode
-						throw new CompressionNotSupportedException("Stereo IMA ADPCM + Implode");
+						throw new MpqCompressionNotSupportedException(0x88, "Stereo IMA ADPCM + Implode");
 					default:
-						throw new CompressionNotSupportedException(inBuffer[0]);
+						throw new MpqCompressionNotSupportedException(inBuffer[0]);
 				}
 			}
-		}
-
-		private Compression()
-		{
 		}
 	}
 }

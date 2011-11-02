@@ -12,16 +12,11 @@ using System;
 
 namespace CrystalMpq
 {
-	/// <summary>
-	/// Thrown when the seed for a file is unknown.
-	/// </summary>
-	/// <remarks>
-	/// The seed is needed for reading encrypted files.
-	/// </remarks>
-	public sealed class SeedNotFoundException : MpqException
+	/// <summary>Thrown when the seed for a file is not known.</summary>
+	/// <remarks>The seed is needed for reading encrypted files.</remarks>
+	public sealed class SeedNotFoundException : Exception
 	{
-		internal SeedNotFoundException(int block) : base("Seed not found for file 0x" + block.ToString("X"))
-		{
-		}
+		internal SeedNotFoundException(int block)
+			: base(string.Format(ErrorMessages.GetString("SeedNotFound"), block)) { }
 	}
 }

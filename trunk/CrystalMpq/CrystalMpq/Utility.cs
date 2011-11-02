@@ -10,7 +10,7 @@ namespace CrystalMpq
 		[ThreadStatic]
 		private static byte[] sharedBuffer;
 
-		/// <summary>Gets a buffer of at least <paramref name="minLength"/> bytes./summary>
+		/// <summary>Gets a buffer of at least <paramref name="minLength"/> bytes.</summary>
 		/// <remarks>
 		/// While actively using the buffer, you must <c>make sure</c> to not call any other method using the same shared buffer.
 		/// Also, no references to the buffer should be leaked after the method requesting the buffer has returned.
@@ -95,8 +95,6 @@ namespace CrystalMpq
 
 		public static unsafe string FourCCToString(uint fourCC)
 		{
-			if (fourCC == null) throw new ArgumentNullException();
-
 			var buffer = stackalloc char[4];
 
 			buffer[0] = (char)(fourCC & 0xFF);

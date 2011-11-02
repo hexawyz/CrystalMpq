@@ -9,29 +9,48 @@
 #endregion
 
 using System;
+using System.Runtime.InteropServices;
 
 namespace CrystalMpq
 {
-	internal class BitBuffer
+	/// <summary>Represents a bit buffer.</summary>
+	/// <remarks>
+	/// This structure is designed for internal use in CrystalMpq.
+	/// Incorrect usage of the structure will lead to bugs or even worse, memory leaks.
+	/// The structure shall always be initialized using this constructor.
+	/// Once created, there shall never be more than one living copy of the structure.
+	/// The structure shall always be passed as a reference parameter and never as a value parameter.
+	/// Once the structure have been used for its purposes, it shall be released using the <see cref="Dispose"/> method.
+	/// After the structure has been disposed, the instance shall never be used again.
+	/// </remarks>
+	internal unsafe struct BitBuffer : IDisposable
 	{
-		private byte[] buffer;
+		private readonly GCHandle bufferHandle;
+		private readonly byte* bufferPointer;
 		private int pos, count, length;
 		private byte b;
 
-		/// <summary>
-		/// Initializes a new instance of the class BitBuffer
-		/// </summary>
+		/// <summary>Initializes a new instance of the <see cref="BitBuffer"/> struct.</summary>
+		/// <remarks>The structure shall always be initialized using this constructor.</remarks>
 		/// <param name="buffer">Array of bit containing the data</param>
 		/// <param name="index">Position of data in the array</param>
 		/// <param name="count">Size of data in the array</param>
-		public BitBuffer(byte[] buffer, int index, int count)
+		internal BitBuffer(byte[] buffer, int index, int count)
 		{
-			this.buffer = buffer;
+			// Since we'll be dealing with unsafe code, we should do the bounds checking at least once to ensure nothing bad will happen.
+			if (buffer == null) throw new ArgumentNullException("buffer");
+			if (index < 0 || index > buffer.Length) throw new ArgumentOutOfRangeException("index");
+			if (count < 0 || checked(index + count) > buffer.Length) throw new ArgumentOutOfRangeException("count");
+
+			this.bufferHandle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+			this.bufferPointer = (byte*)this.bufferHandle.AddrOfPinnedObject();
 			this.count = 8;
 			this.pos = index;
 			this.length = index + count;
-			b = buffer[this.pos++];
+			this.b = buffer[this.pos++];
 		}
+
+		public void Dispose() { this.bufferHandle.Free(); }
 
 		public int GetBit()
 		{
@@ -39,7 +58,7 @@ namespace CrystalMpq
 
 			if (count-- == 0)
 			{
-				if (pos < length) b = buffer[pos++];
+				if (pos < length) b = bufferPointer[pos++];
 				else return 0;
 				count = 7;
 			}
@@ -77,7 +96,7 @@ namespace CrystalMpq
 				if (this.count == 0)
 				{
 					if (pos < length)
-						b = buffer[pos++];
+						b = bufferPointer[pos++];
 					else
 						return r;
 					this.count = 8;

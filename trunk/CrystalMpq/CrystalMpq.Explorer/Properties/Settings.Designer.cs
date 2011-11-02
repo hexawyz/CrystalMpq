@@ -68,9 +68,11 @@ namespace CrystalMpq.Explorer.Properties {
             "xplorer.AudioVideo, Version=2.5.0.0, Culture=neutral, PublicKeyToken=null</strin" +
             "g>\r\n  <string>.mp3|CrystalMpq.Explorer.AudioVideo.MediaPlayer, CrystalMpq.Explor" +
             "er.AudioVideo, Version=2.5.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n " +
-            " <string>.avi|CrystalMpq.Explorer.AudioVideo.MediaPlayer, CrystalMpq.Explorer.Au" +
-            "dioVideo, Version=2.5.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n</Arra" +
-            "yOfString>")]
+            " <string>.ogg|CrystalMpq.Explorer.AudioVideo.MediaPlayer, CrystalMpq.Explorer.Au" +
+            "dioVideo, Version=2.5.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n  <str" +
+            "ing>.avi|CrystalMpq.Explorer.AudioVideo.MediaPlayer, CrystalMpq.Explorer.AudioVi" +
+            "deo, Version=2.5.0.0, Culture=neutral, PublicKeyToken=null</string>\r\n</ArrayOfSt" +
+            "ring>")]
         public global::System.Collections.Specialized.StringCollection ViewerAssociations {
             get {
                 return ((global::System.Collections.Specialized.StringCollection)(this["ViewerAssociations"]));

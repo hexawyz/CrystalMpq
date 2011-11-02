@@ -70,8 +70,14 @@ namespace CrystalMpq.Utility
 			archiveCollection = new MpqArchiveCollection(this);
 		}
 
+		public void Dispose()
+		{
+			foreach (var archive in archiveList)
+				archive.Dispose();
+		}
+
 		/// <summary>Gets the collection of <see cref="MpqArchive"/>.</summary>
-		/// <remarks>Archives should be added to this list for being searched.</remarks>
+		/// <remarks>Archives should be added to this collection for being searched.</remarks>
 		/// <value>The archive list.</value>
 		public MpqArchiveCollection Archives { get { return archiveCollection; } }
 		IList<MpqArchive> IMpqFileSystem.Archives { get { return archiveCollection; } }

@@ -27,7 +27,7 @@ namespace CrystalMpq
 			if (outBuffer == null) throw new ArgumentNullException("outBuffer");
 
 			if (offset < 0 || offset > inBuffer.Length) throw new ArgumentOutOfRangeException("offset");
-			if (count < 0 || offset + count > inBuffer.Length) throw new ArgumentOutOfRangeException("count");
+			if (count < 0 || checked(offset + count) > inBuffer.Length) throw new ArgumentOutOfRangeException("count");
 
 			fixed (byte* inBufferPointer = inBuffer, outBufferPointer = outBuffer)
 				return DecompressBlock(inBufferPointer + offset, count, outBufferPointer, outBuffer.Length);

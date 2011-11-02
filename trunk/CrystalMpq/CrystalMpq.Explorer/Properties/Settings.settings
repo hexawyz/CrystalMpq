@@ -28,6 +28,7 @@
   &lt;string&gt;.dbc|CrystalMpq.Explorer.BaseViewers.ClientDatabaseViewer, CrystalMpq.Explorer.BaseViewers, Version=1.5.0.0, Culture=neutral, PublicKeyToken=null&lt;/string&gt;
   &lt;string&gt;.wav|CrystalMpq.Explorer.AudioVideo.MediaPlayer, CrystalMpq.Explorer.AudioVideo, Version=2.5.0.0, Culture=neutral, PublicKeyToken=null&lt;/string&gt;
   &lt;string&gt;.mp3|CrystalMpq.Explorer.AudioVideo.MediaPlayer, CrystalMpq.Explorer.AudioVideo, Version=2.5.0.0, Culture=neutral, PublicKeyToken=null&lt;/string&gt;
+  &lt;string&gt;.ogg|CrystalMpq.Explorer.AudioVideo.MediaPlayer, CrystalMpq.Explorer.AudioVideo, Version=2.5.0.0, Culture=neutral, PublicKeyToken=null&lt;/string&gt;
   &lt;string&gt;.avi|CrystalMpq.Explorer.AudioVideo.MediaPlayer, CrystalMpq.Explorer.AudioVideo, Version=2.5.0.0, Culture=neutral, PublicKeyToken=null&lt;/string&gt;
 &lt;/ArrayOfString&gt;</Value>
     </Setting>
