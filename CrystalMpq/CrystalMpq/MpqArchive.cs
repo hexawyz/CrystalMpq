@@ -21,7 +21,7 @@ namespace CrystalMpq
 	/// This class is used to read MPQ archives.
 	/// It gives you access to all files contained in the archive.
 	/// </summary>
-	public sealed class MpqArchive
+	public sealed class MpqArchive : IDisposable
 	{
 		#region MpqFileCollection Class
 
@@ -113,14 +113,26 @@ namespace CrystalMpq
 		}
 
 		/// <summary>Initializes a new instance of the <see cref="MpqArchive"/> class.</summary>
-		/// <remarks>The listfile will be parsed if present.</remarks>
+		/// <remarks>
+		/// The file is opened for read access and shares read access.
+		/// For safety, it is impossible to write to the file as long as it is open.
+		/// If you wish to allow write access to the file (at your own risk), please use one of the constructors taking a <see cref="Stream"/>.
+		/// The listfile will be parsed if present in the archive.
+		/// </remarks>
 		/// <param name="filename">The MPQ archive's filename.</param>
+		/// <exception cref="InvalidDataException">The specified file is not a valid MPQ archive, or the archive is corrupt.</exception>
 		public MpqArchive(string filename)
 			: this(filename, true) { }
 
 		/// <summary>Initializes a new instance of the <see cref="MpqArchive"/> class.</summary>
+		/// <remarks>
+		/// The file is opened for read access and shares read access.
+		/// For safety, it is impossible to write to the file as long as it is open.
+		/// If you wish to allow write access to the file (at your own risk), please use one of the constructors taking a <see cref="Stream"/>.
+		/// </remarks>
 		/// <param name="filename">The MPQ archive's filename.</param>
 		/// <param name="parseListFile">Determines if the listfile will be parsed.</param>
+		/// <exception cref="InvalidDataException">The specified file is not a valid MPQ archive, or the archive is corrupt.</exception>
 		public MpqArchive(string filename, bool parseListFile)
 			: this()
 		{
@@ -131,12 +143,14 @@ namespace CrystalMpq
 		/// <summary>Initializes a new instance of the <see cref="MpqArchive"/> class.</summary>
 		/// <remarks>The listfile will be parsed if present.</remarks>
 		/// <param name="stream">A <see cref="Stream"/> containing the MPQ archive.</param>
+		/// <exception cref="InvalidDataException">The specified stream does not contain a valid MPQ archive, or the archive is corrupt.</exception>
 		public MpqArchive(Stream stream)
 			: this(stream, true) { }
 
 		/// <summary>Initializes a new instance of the <see cref="MpqArchive"/> class.</summary>
 		/// <param name="stream">A <see cref="Stream"/> containing the MPQ archive.</param>
 		/// <param name="parseListFile">Determines if the listfile will be parsed.</param>
+		/// <exception cref="InvalidDataException">The specified stream does not contain a valid MPQ archive, or the archive is corrupt.</exception>
 		public MpqArchive(Stream stream, bool parseListFile)
 			: this()
 		{
@@ -146,6 +160,8 @@ namespace CrystalMpq
 		}
 
 		#endregion
+
+		public void Dispose() { lock (syncRoot) reader.Close(); }
 
 		private void OpenInternal(Stream stream, bool parseListFile)
 		{
@@ -166,34 +182,35 @@ namespace CrystalMpq
 				archiveOffset = stream.Position;
 				reader = new BinaryReader(stream);
 				if (reader.ReadUInt32() != MpqSignature)
-					throw new ArchiveInvalidException();
+					throw new InvalidDataException(ErrorMessages.GetString("InvalidData"));
 				headerSize = reader.ReadUInt32();
 				archiveSize = reader.ReadUInt32();
 				// MPQ format detection
 				// Unknown MPQ version will raise an error… This seems like a safe idea.
-				switch (reader.ReadUInt16()) // Read MPQ format
+				ushort mpqVersion = reader.ReadUInt16();
+				switch (mpqVersion) // Read MPQ format
 				{
 					case 0: // Original MPQ format
 						archiveFormat = MpqFormat.Original;
-						if (headerSize < 0x20) throw new ArchiveCorruptException();
+						if (headerSize < 0x20) throw new InvalidDataException(ErrorMessages.GetString("InvalidArchiveHeader"));
 						break;
 					case 1: // Extended MPQ format (WoW Burning Crusade)
 						archiveFormat = MpqFormat.BurningCrusade;
-						if (headerSize < 0x2C) throw new ArchiveCorruptException();
+						if (headerSize < 0x2C) throw new InvalidDataException(ErrorMessages.GetString("InvalidArchiveHeader"));
 						break;
 					case 2: // Enhanced MPQ format (Take 1)
 						archiveFormat = MpqFormat.CataclysmFirst;
 						// Header may not contain any additional field than BC extended MPQ format.
 						// However, if additional fields are present, the header should be at least 68 bytes long.
 						if (headerSize < 0x2C || (headerSize > 0x2C && headerSize < 0x44))
-							throw new ArchiveCorruptException();
+							throw new InvalidDataException(ErrorMessages.GetString("InvalidArchiveHeader"));
 						break;
 					case 3: // Enhanced MPQ format (Take 2)
 						archiveFormat = MpqFormat.CataclysmSecond;
-						if (headerSize < 0xD0) throw new ArchiveCorruptException();
+						if (headerSize < 0xD0) throw new InvalidDataException(ErrorMessages.GetString("InvalidArchiveHeader"));
 						break;
 					default:
-						throw new InvalidMpqVersionException();
+						throw new MpqVersionNotSupportedException(mpqVersion);
 				}
 				blockSize = 0x200 << reader.ReadUInt16(); // Calculate block size
 				hashTableOffset = reader.ReadUInt32(); // Get Hash Table Offset
@@ -269,22 +286,20 @@ namespace CrystalMpq
 				if (!CheckOffset((uint)headerSize)
 					|| !CheckOffset(hashTableOffset) || !CheckOffset(blockTableOffset)
 					|| hashTableSize < 0 || blockTableSize < 0 || hashTableSize < blockTableSize)
-					throw new ArchiveCorruptException();
+					throw new InvalidDataException(ErrorMessages.GetString("InvalidArchiveHeader"));
 			}
 
 			// Read Tables
 			var buffer = new byte[4 * sizeof(uint) * Math.Max(hashTableSize, blockTableSize)]; // Shared read buffer
 
 			// Read Hash Table
-			hashTable = ReadHashTable(buffer, hashTableSize, hashTableOffset, hashTableCompressedSize);
-#if ENFORCE_SAFETY
-			if (!hashTable.CheckIntegrity(blockTableSize)) // Check HashTable Integrity (Could be too restrictive, correct if needed)
-				throw new ArchiveCorruptException();
-#endif
+			ReadHashTable(buffer, hashTableSize, hashTableOffset, hashTableCompressedSize);
 
 			// Read Block Table
-			files = ReadBlockTable(buffer, blockTableSize, blockTableOffset, blockTableCompressedSize);
-			foreach (var entry in hashTable) // Bind hash table entries to block table entries
+			ReadBlockTable(buffer, blockTableSize, blockTableOffset, blockTableCompressedSize);
+
+			// Bind hash table entries to block table entries
+			foreach (var entry in hashTable)
 				if (entry.IsValid && entry.Block >= 0 && entry.Block < blockTableSize)
 					files[entry.Block].BindHashTableEntry(entry);
 
@@ -297,7 +312,7 @@ namespace CrystalMpq
 
 		private bool CheckOffset(long offset) { return offset >= 0 && offset < archiveSize; }
 
-		private MpqHashTable ReadHashTable(byte[] buffer, int tableLength, long offset, long dataLength)
+		private void ReadHashTable(byte[] buffer, int tableLength, long offset, long dataLength)
 		{
 			// Stream.Read only takes an int length for now, and it is unlikely that the hash table will exceed 2GB.
 			// But like always, who knows what might happen in the future… Better check for overflow and crash nicely ! ;)
@@ -307,12 +322,15 @@ namespace CrystalMpq
 			if (reader.Read(buffer, 0, dataLength2) != dataLength)
 				throw new EndOfStreamException();
 
-			var hashTable = MpqHashTable.FromData(buffer, dataLength2, tableLength);
+			hashTable = MpqHashTable.FromData(buffer, dataLength2, tableLength);
 
-			return hashTable;
+#if ENFORCE_SAFETY
+			if (!hashTable.CheckIntegrity(blockTableSize)) // Check HashTable Integrity (Could be too restrictive, correct if needed)
+				throw new ArchiveCorruptException();
+#endif
 		}
 
-		private unsafe MpqFile[] ReadBlockTable(byte[] buffer, int tableLength, long offset, long dataLength)
+		private unsafe void ReadBlockTable(byte[] buffer, int tableLength, long offset, long dataLength)
 		{
 			// Stream.Read only takes an int length for now, and it is unlikely that the block table will exceed 2GB.
 			// But like always, who knows what might happen in the future… Better check for overflow and crash nicely ! ;)
@@ -329,11 +347,9 @@ namespace CrystalMpq
 				// One table entry is 4 [u]int…
 				Encryption.Decrypt(bufferPointer, MpqArchive.BlockTableHash, 4 * tableLength);
 
-				var files = new MpqFile[tableLength];
+				files = new MpqFile[tableLength];
 				for (int i = 0; i < tableLength; i++)
 					files[i] = new MpqFile(this, i, *blockTableDataPointer++, *blockTableDataPointer++, *blockTableDataPointer++, *blockTableDataPointer++);
-
-				return files;
 			}
 		}
 

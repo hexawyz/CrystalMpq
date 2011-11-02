@@ -114,7 +114,7 @@ namespace CrystalMpq
 		{
 			get
 			{
-				if (index < 0 || index > capacity) throw new ArgumentOutOfRangeException("index");
+				if (index < 0 || index >= capacity) throw new ArgumentOutOfRangeException("index");
 
 				return entries[index];
 			}
@@ -204,14 +204,6 @@ namespace CrystalMpq
 
 			result = HashEntry.Invalid;
 			return false;
-		}
-
-		public int GetLocale(int block)
-		{
-			HashEntry entry;
-
-			if (!TryFindEntry(block, out entry) || !entry.IsValid) throw new InvalidFileReferenceException();
-			else return entry.Locale;
 		}
 
 		public void SetPreferredCulture(int lcid) { preferredCulture = lcid; }

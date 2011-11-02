@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace CrystalMpq.Utility
 {
-	public interface IMpqFileSystem
+	public interface IMpqFileSystem : IDisposable
 	{
 		MpqFile FindFile(string filename);
 

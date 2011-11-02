@@ -78,7 +78,6 @@ namespace CrystalMpq.Explorer
 			pluginsHost = new PluginHost(this);
 			InitializeComponent();
 			Text = Resources.AppTitle;
-			fileSystem = new MpqFileSystem();
 			languagePackDialog = new LanguagePackDialog();
 			extractionSettingsDialog = new ExtractionSettingsDialog();
 			extractionSettingsDialog.DestinationDirectory = Settings.Default.ExtractionDirectory;
@@ -282,14 +281,17 @@ namespace CrystalMpq.Explorer
 		{
 			ClearView();
 
+			if (fileSystem != null) fileSystem.Dispose();
+			fileSystem = null;
+
 			try
 			{
-				var mpqFileSystem = fileSystem as MpqFileSystem;
 
-				if (mpqFileSystem == null) fileSystem = mpqFileSystem = new MpqFileSystem();
-				else mpqFileSystem.Archives.Clear();
+				var mpqFileSystem = new MpqFileSystem();
 
 				mpqFileSystem.Archives.Add(new MpqArchive(filename));
+
+				fileSystem = mpqFileSystem;
 
 				SetTitle(filename);
 				FillTreeView();
@@ -303,7 +305,12 @@ namespace CrystalMpq.Explorer
 		private void OpenWoWFileSystem()
 		{
 			UseWaitCursor = true;
+
 			Application.DoEvents();
+
+			if (fileSystem != null) fileSystem.Dispose();
+			fileSystem = null;
+
 			try
 			{
 				var wowInstallation = WoWInstallation.Find();
@@ -366,11 +373,7 @@ namespace CrystalMpq.Explorer
 
 				foreach (var file in archive.Files)
 				{
-#if EXPERIMENTAL
 					if (file.Name != null && file.Name.Length > 0 && (file.Flags & MpqFileFlags.Deleted) == 0)
-#else
-					if (file.FileName != null && file.FileName.Length > 0)
-#endif
 					{
 						if (archiveCount > 1 && file.Name == "(listfile)") continue;
 

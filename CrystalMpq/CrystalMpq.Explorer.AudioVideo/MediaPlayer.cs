@@ -26,24 +26,24 @@ namespace CrystalMpq.Explorer.AudioVideo
 {
 	public sealed partial class MediaPlayer : FileViewer
 	{
-		IGraphBuilder graphBuilder;
-		IMediaControl mediaControl;
-		IMediaSeeking mediaSeeking;
-		IMediaEventEx mediaEvent;
-		AMSeekingSeekingCapabilities seekingCapabilities;
+		private IGraphBuilder graphBuilder;
+		private IMediaControl mediaControl;
+		private IMediaSeeking mediaSeeking;
+		private IMediaEventEx mediaEvent;
+		private AMSeekingSeekingCapabilities seekingCapabilities;
 
-		IBaseFilter vmr9;
-		IVMRFilterConfig9 filterConfig;
-		IVMRSurfaceAllocatorNotify9 surfaceAllocatorNotify;
-		IVMRMixerControl9 mixerControl;
+		private IBaseFilter vmr9;
+		private IVMRFilterConfig9 filterConfig;
+		private IVMRSurfaceAllocatorNotify9 surfaceAllocatorNotify;
+		private IVMRMixerControl9 mixerControl;
 
-		const int WM_APP = 0x8000;
-		const int WM_GRAPHNOTIFY = WM_APP + 1;
-		const int timeScalingFactor = 100000; // Units of 100 nanoseconds
+		private const int WM_APP = 0x8000;
+		private const int WM_GRAPHNOTIFY = WM_APP + 1;
+		private const int timeScalingFactor = 100000; // Units of 100 nanoseconds
 
-		string tempFileName;
-		bool updating, hasVideo, fileDeleted;
-		Image playIcon, pauseIcon;
+		private string tempFileName;
+		private bool updating, hasVideo, fileDeleted;
+		private Image playIcon, pauseIcon;
 
 		public MediaPlayer(IHost host)
 			: base(host)
@@ -78,10 +78,10 @@ namespace CrystalMpq.Explorer.AudioVideo
 		private void CreateGraph()
 		{
 			graphBuilder = (IGraphBuilder)new FilterGraph();
+			graphBuilder.RenderFile(tempFileName, null);
 			mediaControl = (IMediaControl)graphBuilder;
 			mediaSeeking = (IMediaSeeking)graphBuilder;
 			mediaEvent = (IMediaEventEx)graphBuilder;
-			graphBuilder.RenderFile(tempFileName, null);
 			//var filter = new MpqFileSourceFilter(File);
 			//DsError.ThrowExceptionForHR(graphBuilder.AddFilter(filter, filter.Name));
 			//DsError.ThrowExceptionForHR(graphBuilder.Render(filter.OutputPin));
@@ -189,8 +189,8 @@ namespace CrystalMpq.Explorer.AudioVideo
 		{
 			Stream inputStream;
 
-			DeleteFile();
 			DisposeGraph();
+			DeleteFile();
 			if (File != null)
 			{
 				using (inputStream = File.Open())
@@ -276,15 +276,14 @@ namespace CrystalMpq.Explorer.AudioVideo
 
 			updating = true;
 
-			if (mediaSeeking != null)
+			if (mediaSeeking != null && trackBar.Enabled)
 			{
 				long currentPosition;
 
 				mediaSeeking.GetCurrentPosition(out currentPosition);
 				trackBar.Value = checked((int)(currentPosition / timeScalingFactor));
 			}
-			else
-				trackBar.Value = 0;
+			else trackBar.Value = 0;
 
 			updating = false;
 		}
