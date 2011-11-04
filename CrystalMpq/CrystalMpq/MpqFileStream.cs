@@ -103,7 +103,7 @@ namespace CrystalMpq
 						// So, for detecting them, we'll use the same method as in stormlib. We'll try to read the patch header to know is the patch is compressed or not.
 
 						// By the way, we cannot detect whether the patch is compressed or not if it is encrypted.
-						if (file.IsEncrypted) throw new InvalidDataException();
+						if (file.IsEncrypted) throw new InvalidDataException(ErrorMessages.GetString("PatchInfoHeaderInvalidData"));
 
 						// Try to read the patch header in the data following the information header and adjust the compressed size dependign on the result:
 						// Since we are “sure” of the uncompressed size (given in the patch header), there is no point in compression if the compressed data isn't even one byte less.
@@ -233,9 +233,9 @@ namespace CrystalMpq
 			Read((byte*)&patchHeader, sizeof(PatchHeader));
 			if (!BitConverter.IsLittleEndian) Utility.SwapBytes((uint*)&patchHeader, sizeof(PatchHeader) >> 2);
 
-			if (patchHeader.Signature != 0x48435450 /* 'PTCH' */
-				|| patchHeader.PatchedFileSize != file.Size
-				|| baseStream.Length != patchHeader.OriginalFileSize) throw new InvalidDataException();
+			if (patchHeader.Signature != 0x48435450 /* 'PTCH' */) throw new InvalidDataException(ErrorMessages.GetString("PatchHeaderInvalidSignature"));
+			if (patchHeader.PatchedFileSize != file.Size) throw new InvalidDataException(ErrorMessages.GetString("PatchHeaderInvalidFileSize"));
+			if (baseStream.Length != patchHeader.OriginalFileSize) throw new InvalidDataException(ErrorMessages.GetString("PatchHeaderInvalidBaseFileSize"));
 
 			// Once the initial tests are passed, we can load the whole patch in memory.
 			// This will take a big amount of memory, but will avoid having to unpack the file twice…
@@ -262,14 +262,14 @@ namespace CrystalMpq
 				{
 					if (Read((byte*)&md5ChunkData, sizeof(PatchMD5ChunkData)) != sizeof(PatchMD5ChunkData)) throw new EndOfStreamException();
 
-					if (!Utility.CompareData(originalHash, md5ChunkData.OrginialFileMD5)) throw new InvalidDataException("Base file MD5 verification failed.");
+					if (!Utility.CompareData(originalHash, md5ChunkData.OrginialFileMD5)) throw new InvalidDataException(ErrorMessages.GetString("PatchBaseFileMD5Failed"));
 
 					hasMD5 = true;
 				}
 				else if (chunkHeader[0] == 0x4D524658 /* 'XFRM' */)
 				{
 					// This may not be a real problem, however, let's not handle this case for now… (May fail because of the stupid bogus patches…)
-					if (chunkPosition + chunkHeader[1] != Length) throw new InvalidDataException("The XFRM chunk is not the last one in the patch file.");
+					if (chunkPosition + chunkHeader[1] != Length) throw new InvalidDataException(ErrorMessages.GetString("PatchXfrmChunkError"));
 
 					uint patchType;
 
@@ -288,12 +288,12 @@ namespace CrystalMpq
 					{
 						var patchedHash = md5.ComputeHash(patchedData);
 
-						if (!Utility.CompareData(patchedHash, md5ChunkData.PatchedFileMD5)) throw new InvalidDataException("Patched file MD5 verification failed.");
+						if (!Utility.CompareData(patchedHash, md5ChunkData.PatchedFileMD5)) throw new InvalidDataException("PatchFinalFileMD5Failed");
 					}
 
 					return patchedData;
 				}
-				else throw new InvalidDataException("Unknown chunk encountered in patch file: '" + Utility.FourCCToString(chunkHeader[0]) + "'");
+				else throw new InvalidDataException(string.Format(ErrorMessages.GetString("PatchUnknownChunk"), Utility.FourCCToString(chunkHeader[0])));
 
 				Seek(chunkPosition + chunkHeader[1], SeekOrigin.Begin);
 			}
@@ -301,7 +301,7 @@ namespace CrystalMpq
 
 		private byte[] ApplyCopyPatch(ref PatchInfoHeader patchInfoHeader, ref PatchHeader patchHeader, uint patchLength, byte[] originalData)
 		{
-			if (patchLength != patchHeader.PatchedFileSize) throw new InvalidDataException("Inconsistent file size");
+			if (patchLength != patchHeader.PatchedFileSize) throw new InvalidDataException("CopyPatchInvalidSize");
 
 			var patchedData = patchLength == originalData.Length ? originalData : new byte[patchLength];
 
@@ -327,7 +327,7 @@ namespace CrystalMpq
 
 				if (!BitConverter.IsLittleEndian) Utility.SwapBytes((ulong*)patchDataPointer, sizeof(PatchBsdiff40Header) >> 3);
 
-				if (bsdiffHeader->Signature != 0x3034464649445342 /* 'BSDIFF40' */) throw new InvalidDataException();
+				if (bsdiffHeader->Signature != 0x3034464649445342 /* 'BSDIFF40' */) throw new InvalidDataException(ErrorMessages.GetString("Bsd0PatchHeaderInvalidSignature"));
 
 				var controlBlock = (uint*)(patchDataPointer + sizeof(PatchBsdiff40Header));
 				var differenceBlock = (byte*)controlBlock + bsdiffHeader->ControlBlockLength;
@@ -351,7 +351,7 @@ namespace CrystalMpq
 						uint extraLength = *controlBlock++;
 						uint sourceOffset = *controlBlock++;
 
-						if (differenceLength > destinationCount) throw new InvalidDataException();
+						if (differenceLength > destinationCount) throw new InvalidDataException(ErrorMessages.GetString("Bsd0PatchInvalidData"));
 						destinationCount = (int)(destinationCount - differenceLength);
 
 						// Apply the difference patch (Patched Data = Original data + Difference data)
@@ -361,7 +361,7 @@ namespace CrystalMpq
 							if (sourceCount > 0) *destinationPointer += *sourcePointer;
 						}
 
-						if (extraLength > destinationCount) throw new InvalidDataException();
+						if (extraLength > destinationCount) throw new InvalidDataException(ErrorMessages.GetString("Bsd0PatchInvalidData"));
 						destinationCount = (int)(destinationCount - extraLength);
 
 						// Apply the extra data patch (New data)
