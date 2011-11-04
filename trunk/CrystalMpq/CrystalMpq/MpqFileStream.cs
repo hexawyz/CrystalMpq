@@ -534,15 +534,7 @@ namespace CrystalMpq
 				// Therefore we just leave "length" here as a parameter and bits 0..1 will be cut
 				Encryption.Decrypt(buffer, seed + (uint)block, length);
 			}
-#if DEBUG
-			// This is useful for debugging decompression algorithms
-			// We clear the buffer with 0 to see what happens
-			if (compressed)
-			{
-				Array.Clear(compressedBuffer, 0, compressedBuffer.Length);
-				Array.Clear(blockBuffer, 0, blockBuffer.Length);
-			}
-#endif
+
 			if (compressed)
 			{
 				int byteCount;

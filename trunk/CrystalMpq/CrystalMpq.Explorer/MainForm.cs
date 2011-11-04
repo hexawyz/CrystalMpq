@@ -299,7 +299,7 @@ namespace CrystalMpq.Explorer
 				saveAsToolStripMenuItem.Enabled = true;
 				saveAsToolStripButton.Enabled = true;
 			}
-			catch (Exception e) { ErrorDialog(e.Message); }
+			catch (Exception ex) { ErrorDialog(ex.ToString()); }
 		}
 
 		private void OpenWoWFileSystem()
@@ -332,7 +332,7 @@ namespace CrystalMpq.Explorer
 				saveAsToolStripMenuItem.Enabled = true;
 				saveAsToolStripButton.Enabled = true;
 			}
-			catch (Exception e) { ErrorDialog(e.Message); }
+			catch (Exception ex) { ErrorDialog(ex.ToString()); }
 			finally { UseWaitCursor = false; }
 		}
 
@@ -522,7 +522,7 @@ namespace CrystalMpq.Explorer
 					while (length == 4096);
 				}
 			}
-			catch (Exception ex) { ErrorDialog(ex.Message); }
+			catch (Exception ex) { ErrorDialog(ex.ToString()); }
 		}
 
 		private void InteractiveExtractNodes(TreeNode[] nodes)
@@ -671,7 +671,7 @@ namespace CrystalMpq.Explorer
 										}
 										catch (Exception ex)
 										{
-											ErrorDialog(ex.Message);
+											ErrorDialog(ex.ToString());
 											return;
 										}
 									}
@@ -809,7 +809,7 @@ namespace CrystalMpq.Explorer
 						SetViewer(fileViewer);
 						fileViewer.File = file;
 					}
-					catch (Exception ex) { ErrorDialog(ex.Message); }
+					catch (Exception ex) { ErrorDialog(ex.ToString()); }
 				}
 				else
 					SetViewer(null);
