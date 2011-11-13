@@ -23,49 +23,88 @@ namespace CrystalMpq
 	/// </summary>
 	public sealed class MpqArchive : IDisposable
 	{
+		#region MpqFileEnumerator Structure
+
+		public struct MpqFileEnumerator : IEnumerator<MpqFile>
+		{
+			private MpqFile[] files;
+			private int index;
+
+			internal MpqFileEnumerator(MpqFile[] files)
+			{
+				this.files = files;
+				this.index = -1;
+			}
+
+			public MpqFile Current { get { return files[index]; } }
+
+			object IEnumerator.Current { get { return Current; } }
+
+			public void Dispose() { files = null; }
+
+			public bool MoveNext() { return index < files.Length && ++index < files.Length; }
+
+			public void Reset() { index = -1; }
+		}
+
+		#endregion
+
 		#region MpqFileCollection Class
 
 		/// <summary>Represents a collection of <see cref="MpqFile"/> in an <see cref="MpqArchive"/>.</summary>
-		public class MpqFileCollection : IEnumerable<MpqFile>
+		public sealed class MpqFileCollection : IList<MpqFile>
 		{
-			private MpqArchive owner;
+			private MpqArchive archive;
 
-			internal MpqFileCollection(MpqArchive owner)
+			internal MpqFileCollection(MpqArchive archive)
 			{
-				if (owner == null)
-					throw new ArgumentNullException("owner");
-				this.owner = owner;
+				if (archive == null) throw new ArgumentNullException("archive");
+
+				this.archive = archive;
 			}
 
 			/// <summary>Gets a file from the collection.</summary>
 			/// <param name="index">Index of the desired <see cref="MpqFile"/> item.</param>
 			/// <returns>Returns the <see cref="MpqFile"/> at the specified index.</returns>
-			public MpqFile this[int index]
+			public MpqFile this[int index] { get { return archive.files[index]; } }
+
+			MpqFile IList<MpqFile>.this[int index]
 			{
-				get
-				{
-					if (index < 0 || index > owner.files.Length)
-						throw new ArgumentOutOfRangeException("index");
-					return owner.files[index];
-				}
+				get { return this[index]; }
+				set { throw new NotSupportedException(); }
 			}
 
 			/// <summary>Gets the number of <see cref="MpqFile"/> items in the collection.</summary>
-			public long Count { get { return owner.files.Length; } }
+			public int Count { get { return archive.files.Length; } }
 
-			#region IEnumerable Implementation
+			bool ICollection<MpqFile>.IsReadOnly { get { return true; } }
 
-			IEnumerator IEnumerable.GetEnumerator() { return owner.files.GetEnumerator(); }
+			#region Update Methods
+
+			void ICollection<MpqFile>.Add(MpqFile item) { throw new NotSupportedException(); }
+			void IList<MpqFile>.Insert(int index, MpqFile item) { throw new NotSupportedException(); }
+
+			bool ICollection<MpqFile>.Remove(MpqFile item) { throw new NotSupportedException(); }
+			void IList<MpqFile>.RemoveAt(int index) { throw new NotSupportedException(); }
+
+			void ICollection<MpqFile>.Clear() { throw new NotSupportedException(); }
+
+			#endregion
+
+			#region Enumeration Methods
 
 			/// <summary>Gets an enumerator for the collection.</summary>
 			/// <returns>Returns an enumerator for the current collection.</returns>
-			public IEnumerator<MpqFile> GetEnumerator()
-			{
-				for (int i = 0; i < owner.files.Length; i++)
-					yield return owner.files[i];
-			}
+			public MpqFileEnumerator GetEnumerator() { return new MpqFileEnumerator(archive.files); }
+			IEnumerator<MpqFile> IEnumerable<MpqFile>.GetEnumerator() { return GetEnumerator(); }
+			IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
 
 			#endregion
+
+			bool ICollection<MpqFile>.Contains(MpqFile item) { return ((IList<MpqFile>)archive.files).Contains(item); }
+			int IList<MpqFile>.IndexOf(MpqFile item) { return ((IList<MpqFile>)archive.files).IndexOf(item); }
+
+			void ICollection<MpqFile>.CopyTo(MpqFile[] array, int arrayIndex) { archive.files.CopyTo(array, arrayIndex); }
 		}
 
 		#endregion
@@ -131,12 +170,14 @@ namespace CrystalMpq
 		/// If you wish to allow write access to the file (at your own risk), please use one of the constructors taking a <see cref="Stream"/>.
 		/// </remarks>
 		/// <param name="filename">The MPQ archive's filename.</param>
-		/// <param name="parseListFile">Determines if the listfile will be parsed.</param>
+		/// <param name="shouldParseListFile">Determines if the listfile will be parsed.</param>
 		/// <exception cref="InvalidDataException">The specified file is not a valid MPQ archive, or the archive is corrupt.</exception>
-		public MpqArchive(string filename, bool parseListFile)
+		public MpqArchive(string filename, bool shouldParseListFile)
 			: this()
 		{
-			OpenInternal(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read), parseListFile);
+			if (filename == null) throw new ArgumentNullException("filename");
+
+			OpenInternal(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read), shouldParseListFile);
 			this.filename = filename;
 		}
 
@@ -149,21 +190,32 @@ namespace CrystalMpq
 
 		/// <summary>Initializes a new instance of the <see cref="MpqArchive"/> class.</summary>
 		/// <param name="stream">A <see cref="Stream"/> containing the MPQ archive.</param>
-		/// <param name="parseListFile">Determines if the listfile will be parsed.</param>
+		/// <param name="shouldParseListFile">Determines if the listfile will be parsed.</param>
 		/// <exception cref="InvalidDataException">The specified stream does not contain a valid MPQ archive, or the archive is corrupt.</exception>
-		public MpqArchive(Stream stream, bool parseListFile)
+		public MpqArchive(Stream stream, bool shouldParseListFile)
 			: this()
 		{
-			OpenInternal(stream, parseListFile);
+			OpenInternal(stream, shouldParseListFile);
 			var fileStream = stream as FileStream;
 			this.filename = fileStream != null ? fileStream.Name : "";
 		}
 
 		#endregion
 
-		public void Dispose() { lock (syncRoot) reader.Close(); }
+		public void Dispose() { Close(); }
 
-		private void OpenInternal(Stream stream, bool parseListFile)
+		public void Close()
+		{
+			if (reader != null)
+				lock (syncRoot)
+				{
+					if (reader != null)
+						reader.Close();
+					reader = null;
+				}
+		}
+
+		private void OpenInternal(Stream stream, bool shouldParseListFile)
 		{
 			// MPQ offsets can be 32 bits, 48 bits or 64 bits depending on the MPQ version used…
 			long hashTableOffset, hashTableCompressedSize;
@@ -299,15 +351,15 @@ namespace CrystalMpq
 			ReadBlockTable(buffer, blockTableSize, blockTableOffset, blockTableCompressedSize);
 
 			// Bind hash table entries to block table entries
-			foreach (var entry in hashTable)
-				if (entry.IsValid && entry.Block >= 0 && entry.Block < blockTableSize)
-					files[entry.Block].BindHashTableEntry(entry);
+			//foreach (var entry in hashTable)
+			//    if (entry.IsValid && entry.Block >= 0 && entry.Block < blockTableSize)
+			//        files[entry.Block].BindHashTableEntry(entry);
 
 			// When possible, find and parse the listfile…
-			TryFilename("(listfile)");
-			listFile = FindFile("(listfile)", 0);
+			//TryFilename("(listfile)");
+			listFile = FindFile("(listfile)");
 			if (listFile == null) return;
-			if (parseListFile) ParseListFile();
+			if (shouldParseListFile) ParseListFile();
 		}
 
 		private bool CheckOffset(long offset) { return offset >= 0 && offset < archiveSize; }
@@ -412,6 +464,38 @@ namespace CrystalMpq
 		/// <param name="filename">The filename you want to try</param>
 		public void TryFilename(string filename) { TryFilename(filename, false); }
 
+		/// <summary>Opens a file with the specified filename.</summary>
+		/// <remarks>
+		/// This function will only open the first result found.
+		/// Modern MPQ archives should never contain more than one entry with the same filename.
+		/// This method is perfectly safe for modern games such as WoW, SII or D3.
+		/// </remarks>
+		/// <param name="filename">The filename of the file to open.</param>
+		/// <returns>An <see cref="MpqFileStream"/> instance.</returns>
+		/// <exception cref="FileNotFoundException">No file with the specified name could be found in the archive.</exception>
+		public MpqFileStream OpenFile(string filename)
+		{
+			var file = FindFile(filename);
+
+			if (file == null || file.IsDeleted) throw new FileNotFoundException();
+
+			return file.Open();
+		}
+
+		/// <summary>Opens a file with the specified filename and LCID.</summary>
+		/// <param name="filename">The filename of the file to open.</param>
+		/// <param name="lcid">The LCID of file to open.</param>
+		/// <returns>An <see cref="MpqFileStream"/> instance.</returns>
+		/// <exception cref="FileNotFoundException">No file with the specified name could be found in the archive.</exception>
+		public MpqFileStream OpenFile(string filename, int lcid)
+		{
+			var file = FindFile(filename);
+
+			if (file == null || file.IsDeleted) throw new FileNotFoundException();
+
+			return file.Open();
+		}
+
 		/// <summary>Finds files with the specified filename.</summary>
 		/// <remarks>
 		/// This function will return all <see cref="MpqFile"/>s matching the given filename.
@@ -419,6 +503,7 @@ namespace CrystalMpq
 		/// </remarks>
 		/// <param name="filename">The filename of the files to find.</param>
 		/// <returns>Returns an array of <see cref="MpqFile"/>, containing zero or more <see cref="MpqFile"/>.</returns>
+		[Obsolete]
 		public MpqFile[] FindFiles(string filename)
 		{
 			int[] blocks = hashTable.FindMulti(filename);
@@ -429,28 +514,11 @@ namespace CrystalMpq
 			return files;
 		}
 
-		/// <summary>Finds one file the specified filename.</summary>
-		/// <remarks>This function will only return the first result found.</remarks>
-		/// <param name="filename">The filename of the file to find.</param>
-		/// <returns>Returns an <see cref="MpqFile"/> object if file is found, or <c>null</c> otherwise.</returns>
-		public MpqFile FindFile(string filename)
-		{
-			int block = hashTable.Find(filename);
-
-			if (block >= 0)
-			{
-				var file = files[block];
-				
-				file.OnNameDetected(filename);
-				return file;
-			}
-			else return null;
-		}
-
 		/// <summary>Finds one file the specified filename and LCID.</summary>
 		/// <param name="filename">The filename of the file to find.</param>
 		/// <param name="lcid">The LCID of file to find.</param>
 		/// <returns>Returns an <see cref="MpqFile"/> object if file is found, or <c>null</c> otherwise.</returns>
+		[Obsolete]
 		public MpqFile FindFile(string filename, int lcid)
 		{
 			int block = hashTable.Find(filename, lcid);
@@ -465,9 +533,28 @@ namespace CrystalMpq
 			else return null;
 		}
 
+		/// <summary>Finds a file with the specified filename.</summary>
+		/// <remarks>This function will only return the first result found.</remarks>
+		/// <param name="filename">The filename of the file to find.</param>
+		/// <returns>Returns an <see cref="MpqFile"/> object if file is found, or <c>null</c> otherwise.</returns>
+		public MpqFile FindFile(string filename)
+		{
+			int block = hashTable.Find(filename);
+
+			if (block >= 0)
+			{
+				var file = files[block];
+
+				file.OnNameDetected(filename);
+				return file;
+			}
+			else return null;
+		}
+
 		/// <summary>Sets the preferred culture to use when searching files in the archive.</summary>
 		/// <remarks>It might happen that a given file exists for different culture in the same MPQ archive, but it is more likely that your MPQ archive is already localized itself…</remarks>
-		/// <param name="lcid">The LCID for the desired culture</param>
+		/// <param name="lcid">The LCID for the desired culture.</param>
+		[Obsolete]
 		public void SetPreferredCulture(int lcid) { hashTable.SetPreferredCulture(lcid); }
 
 		/// <summary>Resolves the data corresponding to the base file of a given patch <see cref="MpqFile"/>.</summary>

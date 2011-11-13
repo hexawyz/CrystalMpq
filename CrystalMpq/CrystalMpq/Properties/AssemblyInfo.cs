@@ -13,8 +13,8 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: AssemblyTitle("CrystalMpq")]
-[assembly: AssemblyDescription("MPQ reading/writing Library for .NET")]
+[assembly: AssemblyDescription("MPQ reading Library for .NET")]
 [assembly: AssemblyProduct("CrystalMpq")]
 [assembly: CLSCompliant(true)]
 
-[assembly: AssemblyVersion("1.7.0.0")]
+[assembly: AssemblyVersion("1.7.2.0")]

@@ -10,13 +10,10 @@
 
 using System;
 using System.Reflection;
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
-[assembly: AssemblyTitle("CrystalMpq.Utility")]
-[assembly: AssemblyDescription("Utility library for use with CrystalMpq")]
+[assembly: AssemblyTitle("CrystalMpq MPQ File Extractor")]
+[assembly: AssemblyDescription("Command-line utility for extracting files contained inside MPQ archives.")]
 [assembly: AssemblyProduct("CrystalMpq")]
 
-[assembly: ComVisible(false)]
-[assembly: Guid("522190a5-37e5-4b39-810e-e51f015ce129")]
-
-[assembly: AssemblyVersion("2.1.0.0")]
+[assembly: AssemblyVersion("0.1.0.0")]

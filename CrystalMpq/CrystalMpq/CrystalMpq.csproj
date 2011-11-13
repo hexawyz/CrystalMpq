@@ -116,6 +116,8 @@
     <Compile Include="7zip\Compress\RangeCoder\RangeCoderBitTree.cs" />
     <Compile Include="7zip\ICoder.cs" />
     <Compile Include="ErrorMessages.cs" />
+    <Compile Include="MpqBlockEntry.cs" />
+    <Compile Include="MpqHashEntry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

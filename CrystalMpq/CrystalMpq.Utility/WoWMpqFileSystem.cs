@@ -204,7 +204,7 @@ namespace CrystalMpq.Utility
 			{
 				var file = FindFile(archive, filename);
 
-				if (file != null) return file;
+				if (file != null) return !file.IsDeleted ? file : null;
 			}
 			return null;
 		}

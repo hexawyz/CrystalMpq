@@ -341,19 +341,19 @@ namespace CrystalMpq.Utility
 
 		/// <summary>Creates a MpqFileSystem using the specified language pack.</summary>
 		/// <param name="languagePack">The language pack.</param>
-		/// <param name="parseListFiles">if set to <c>true</c> the list files will be parsed.</param>
+		/// <param name="shouldParseListFiles">if set to <c>true</c> the list files will be parsed.</param>
 		/// <returns>The newly created MpqFileSystem.</returns>
-		public WoWMpqFileSystem CreateFileSystem(LanguagePack languagePack, bool parseListFiles)
+		public WoWMpqFileSystem CreateFileSystem(LanguagePack languagePack, bool shouldParseListFiles)
 		{
-			return CreateFileSystem(languagePack, true, parseListFiles);
+			return CreateFileSystem(languagePack, true, shouldParseListFiles);
 		}
 
 		/// <summary>Creates a MpqFileSystem using the specified language pack.</summary>
 		/// <param name="languagePack">The language pack.</param>
 		/// <param name="enforceCultureCheck">if set to <c>true</c> the culture checks will be enforced.</param>
-		/// <param name="parseListFiles">if set to <c>true</c> the list files will be parsed.</param>
+		/// <param name="shouldParseListFiles">if set to <c>true</c> the list files will be parsed.</param>
 		/// <returns>The newly created MpqFileSystem.</returns>
-		public WoWMpqFileSystem CreateFileSystem(LanguagePack languagePack, bool enforceCultureCheck, bool parseListFiles)
+		public WoWMpqFileSystem CreateFileSystem(LanguagePack languagePack, bool enforceCultureCheck, bool shouldParseListFiles)
 		{
 			if (languagePack == null)
 				throw new ArgumentNullException("languagePack");
@@ -378,7 +378,7 @@ namespace CrystalMpq.Utility
 			{
 				var archiveInformation = archiveInformationList[i];
 
-				wowArchiveArray[i] = new WoWArchive(new MpqArchive(IOPath.Combine((archiveInformation.Kind & WoWArchiveKind.Global) == WoWArchiveKind.LanguagePack ? languagePack.Path : DataPath, archiveInformation.Filename), parseListFiles), archiveInformation.Kind);
+				wowArchiveArray[i] = new WoWArchive(new MpqArchive(IOPath.Combine((archiveInformation.Kind & WoWArchiveKind.Global) == WoWArchiveKind.LanguagePack ? languagePack.Path : DataPath, archiveInformation.Filename), shouldParseListFiles), archiveInformation.Kind);
 			}
 
 			return new WoWMpqFileSystem(wowArchiveArray, IOPath.GetFileName(languagePack.Path));

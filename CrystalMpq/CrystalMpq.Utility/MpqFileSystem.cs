@@ -60,14 +60,25 @@ namespace CrystalMpq.Utility
 		}
 
 		private readonly List<MpqArchive> archiveList;
-
 		private readonly MpqArchiveCollection archiveCollection;
+		private readonly bool shouldRetrieveDeletedFiles;
 
 		/// <summary>Initializes a new instance of the <see cref="MpqFileSystem"/> class.</summary>
-		public MpqFileSystem()
+		/// <remarks>
+		/// MPQ patches have the possibility to delete files, making them unavailable in further versions.
+		/// This constructor will enforce the restriction and prevent you from getting access to deleted files.
+		/// The files marked as deleted are likely to go away after a major game update, so accessing them is not recommended.
+		/// If you really need to get access to those files, you can use the other constructor and access them as if they were never deleted.
+		/// </remarks>
+		public MpqFileSystem() : this(false) { }
+
+		/// <summary>Initializes a new instance of the <see cref="MpqFileSystem"/> class.</summary>
+		/// <param name="shouldRetrieveDeletedFiles">if set to <see langword="true"/>, files deleted in a patch will be retrieved.</param>
+		public MpqFileSystem(bool shouldRetrieveDeletedFiles)
 		{
-			archiveList = new List<MpqArchive>();
-			archiveCollection = new MpqArchiveCollection(this);
+			this.archiveList = new List<MpqArchive>();
+			this.archiveCollection = new MpqArchiveCollection(this);
+			this.shouldRetrieveDeletedFiles = shouldRetrieveDeletedFiles;
 		}
 
 		public void Dispose()
@@ -108,15 +119,48 @@ namespace CrystalMpq.Utility
 			}
 		}
 
+		[Obsolete]
 		public MpqFile[] FindFiles(string filename)
 		{
 			foreach (var archive in archiveList)
 			{
 				var files = archive.FindFiles(filename);
 
-				if (files.Length > 0) return files;
+				if (files.Length > 0)
+				{
+					int deletedFileCount = 0;
+
+					foreach (var file in files)
+						if ((file.Flags & MpqFileFlags.Deleted) != 0)
+							deletedFileCount++;
+
+					if (deletedFileCount == 0) return files;
+					else if (deletedFileCount == files.Length) break;
+
+					var existingFiles = new MpqFile[files.Length - deletedFileCount];
+
+					int i = 0;
+
+					foreach (var file in files)
+						if ((file.Flags & MpqFileFlags.Deleted) == 0)
+							existingFiles[i++] = file;
+
+					return existingFiles;
+				}
 			}
 			return new MpqFile[0];
+		}
+
+		[Obsolete]
+		public MpqFile FindFile(string filename, int lcid)
+		{
+			foreach (var archive in archiveList)
+			{
+				var file = archive.FindFile(filename, lcid);
+
+				if (file != null) return !file.IsDeleted ? file : null;
+			}
+			return null;
 		}
 
 		public MpqFile FindFile(string filename)
@@ -125,18 +169,7 @@ namespace CrystalMpq.Utility
 			{
 				var file = archive.FindFile(filename);
 
-				if (file != null) return file;
-			}
-			return null;
-		}
-
-		public MpqFile FindFile(string filename, int lcid)
-		{
-			foreach (var archive in archiveList)
-			{
-				var file = archive.FindFile(filename, lcid);
-
-				if (file != null) return file;
+				if (file != null) return !file.IsDeleted ? file : null;
 			}
 			return null;
 		}
