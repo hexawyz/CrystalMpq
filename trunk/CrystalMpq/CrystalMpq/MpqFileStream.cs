@@ -89,7 +89,10 @@ namespace CrystalMpq
 
 				if (file.IsPatch)
 				{
-					if ((baseStream = baseStream ?? file.Archive.ResolveBaseFileInternal(file)) == null) throw new FileNotFoundException("The base file of the patch could not be resolved.");
+					// Resolving the base file this early may be a waste if the patch ever happens to be a COPY patch… Anyway, it allows for checking the base file's integrity.
+					// But seriously, what's the point in COPY patches anyway ? Aren't those just like regular MPQ files, only with added (useless) weight ?
+					if ((baseStream = baseStream ?? file.Archive.ResolveBaseFileInternal(file)) == null)
+						throw new FileNotFoundException(string.Format(ErrorMessages.GetString("PatchBaseFileNotFound"), file.Name));
 
 					patchInfoHeader = ReadPatchInfoHeader(file.Archive, file.Offset);
 
@@ -111,7 +114,7 @@ namespace CrystalMpq
 						compressedSize = patchInfoHeader.Value.PatchLength - ((compressed = !TestPatchHeader(file.Archive, offset)) ? (uint)1 : 0);
 
 						// It appears that the single unit flag is also lying on some patch entries. Files reported as blocky (such as some of the cataclysm mp3) are in fact single unit…
-						// Forcing ths single unit flag to true when the file is compressed seems to be a good solution. Also, we may (or not :p) save a bit of memory by using blocks for uncompressed files.
+						// Forcing this single unit flag to true when the file is compressed seems to be a good solution. Also, we may (or not :p) save a bit of memory by using blocks for uncompressed files.
 						singleUnit = compressed;
 					}
 				}
@@ -125,7 +128,7 @@ namespace CrystalMpq
 
 				if (file.IsEncrypted)
 				{
-					if (file.Seed == 0) throw new SeedNotFoundException(file.Index);
+					if (file.Seed == 0) throw new SeedNotFoundException(file.BlockIndex);
 					else this.seed = file.Seed;
 
 					if ((file.Flags & MpqFileFlags.PositionEncrypted) != 0)

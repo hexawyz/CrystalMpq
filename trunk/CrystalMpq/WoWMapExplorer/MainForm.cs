@@ -280,7 +280,9 @@ namespace WoWMapExplorer
 
 		private BlpTexture LoadBlpTexture(string filename)
 		{
-			MpqFile file = wowFileSystem.FindFile(filename);
+			if (filename == null) throw new ArgumentNullException("filename");
+
+			var file = wowFileSystem.FindFile(filename);
 
 			if (file == null) throw new FileNotFoundException();
 
@@ -290,7 +292,9 @@ namespace WoWMapExplorer
 
 		private Bitmap LoadBlpTextureAsBitmap(string filename)
 		{
-			MpqFile file = wowFileSystem.FindFile(filename);
+			if (filename == null) throw new ArgumentNullException("filename");
+
+			var file = wowFileSystem.FindFile(filename);
 
 			if (file == null) throw new FileNotFoundException();
 
@@ -531,8 +535,9 @@ namespace WoWMapExplorer
 						for (int i = 0; i < textureCount; i++)
 							try
 							{
-								using (var texture = LoadBlpTextureAsBitmap(path + overlay.DataName + (i + 1) + ".blp"))
-									g.DrawImageUnscaled(texture, x + 256 * (i % colCount), y + 256 * (i / colCount));
+								if (overlay.DataName != null && overlay.DataName.Length > 0)
+									using (var texture = LoadBlpTextureAsBitmap(path + overlay.DataName + (i + 1) + ".blp"))
+										g.DrawImageUnscaled(texture, x + 256 * (i % colCount), y + 256 * (i / colCount));
 							}
 							catch { }
 					}

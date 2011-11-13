@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.WoWDatabases", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.Utility.Windows.Forms", "CrystalMpq.Utility.Windows.Forms\CrystalMpq.Utility.Windows.Forms.csproj", "{E16A1D77-E293-4E26-A1EB-CD90C37A3913}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.FileExtractor", "CrystalMpq.FileExtractor\CrystalMpq.FileExtractor.csproj", "{AC731901-55F0-4DB0-ABB8-A8EDA67B0FAA}"
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
@@ -80,9 +82,7 @@ Global
 		{87333C7F-09FB-416B-BC90-4708D9D3DB09}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{87333C7F-09FB-416B-BC90-4708D9D3DB09}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4DE7F455-535E-40A7-BAE1-83CA4DCA363A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4DE7F455-535E-40A7-BAE1-83CA4DCA363A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4DE7F455-535E-40A7-BAE1-83CA4DCA363A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4DE7F455-535E-40A7-BAE1-83CA4DCA363A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -91,6 +91,10 @@ Global
 		{E16A1D77-E293-4E26-A1EB-CD90C37A3913}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E16A1D77-E293-4E26-A1EB-CD90C37A3913}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E16A1D77-E293-4E26-A1EB-CD90C37A3913}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC731901-55F0-4DB0-ABB8-A8EDA67B0FAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC731901-55F0-4DB0-ABB8-A8EDA67B0FAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC731901-55F0-4DB0-ABB8-A8EDA67B0FAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC731901-55F0-4DB0-ABB8-A8EDA67B0FAA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

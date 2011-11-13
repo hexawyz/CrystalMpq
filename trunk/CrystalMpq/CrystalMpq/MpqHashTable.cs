@@ -17,46 +17,16 @@ using System.Runtime.InteropServices;
 
 namespace CrystalMpq
 {
-	internal class MpqHashTable : IEnumerable<MpqHashTable.HashEntry>
+	internal struct MpqHashTable : IEnumerable<MpqHashEntry>
 	{
-		#region HashEntry Class
-
-		public struct HashEntry
-		{
-			public static readonly HashEntry Invalid = new HashEntry();
-
-			private uint hashA;
-			private uint hashB;
-			private int locale;
-			private int block;
-
-			public HashEntry(uint hashA, uint hashB, int locale, int block)
-			{
-				this.hashA = hashA;
-				this.hashB = hashB;
-				this.locale = locale;
-				this.block = block;
-			}
-
-			public bool Test(uint hashA, uint hashB) { return hashA == this.hashA && hashB == this.hashB; }
-
-			public int Locale { get { return locale; } }
-
-			public int Block { get { return block; } }
-
-			public bool IsValid { get { return block != -1 && hashA != 0xFFFFFFFF && hashA != 0xFFFFFFFF; } }
-		}
-
-		#endregion
-
 		#region HashEntryEnumerator Structure
 
-		public struct HashEntryEnumerator : IEnumerator<HashEntry>
+		public struct HashEntryEnumerator : IEnumerator<MpqHashEntry>
 		{
-			private HashEntry[] entries;
+			private MpqHashEntry[] entries;
 			private int index;
 
-			public HashEntryEnumerator(HashEntry[] entries)
+			public HashEntryEnumerator(MpqHashEntry[] entries)
 			{
 				this.entries = entries;
 				this.index = -1;
@@ -64,7 +34,7 @@ namespace CrystalMpq
 
 			public void Dispose() { this.entries = null; }
 
-			public HashEntry Current { get { return entries[index]; } }
+			public MpqHashEntry Current { get { return entries[index]; } }
 			object IEnumerator.Current { get { return entries[index]; } }
 
 			public bool MoveNext()
@@ -81,7 +51,7 @@ namespace CrystalMpq
 
 		public static unsafe MpqHashTable FromData(byte[] buffer, int dataLength, int tableLength)
 		{
-			var entries = new HashEntry[tableLength];
+			var entries = new MpqHashEntry[tableLength];
 
 			fixed (byte* bufferPointer = buffer)
 			{
@@ -92,45 +62,27 @@ namespace CrystalMpq
 				Encryption.Decrypt(hashTableDataPointer, MpqArchive.HashTableHash, uintCount);
 
 				for (int i = 0; i < entries.Length; i++) // Fill MpqHashTable object
-					entries[i] = new HashEntry(*hashTableDataPointer++, *hashTableDataPointer++, (int)*hashTableDataPointer++, (int)*hashTableDataPointer++);
+					entries[i] = new MpqHashEntry(*hashTableDataPointer++, *hashTableDataPointer++, (int)*hashTableDataPointer++, (int)*hashTableDataPointer++);
 			}
 
 			return new MpqHashTable(entries);
 		}
 
-		private HashEntry[] entries;
-		private uint capacity;
+		private MpqHashEntry[] entries;
 		private int preferredCulture;
 
 		private MpqHashTable(int capacity)
-			: this(new HashEntry[capacity]) { }
+			: this(new MpqHashEntry[capacity]) { }
 
-		private MpqHashTable(HashEntry[] entries)
+		private MpqHashTable(MpqHashEntry[] entries)
 		{
-			this.capacity = (uint)entries.Length;
 			this.entries = entries;
+			this.preferredCulture = 0;
 		}
 
-		public HashEntry this[int index]
-		{
-			get
-			{
-				if (index < 0 || index >= capacity) throw new ArgumentOutOfRangeException("index");
+		public long Capacity { get { return entries.LongLength; } }
 
-				return entries[index];
-			}
-		}
-
-		public int this[string filename] { get { return Find(filename); } }
-
-		public long Capacity { get { return capacity; } }
-
-		internal void SetEntry(int index, uint hashA, uint hashB, int locale, int block)
-		{
-			if (index < 0 || index > entries.Length) throw new ArgumentOutOfRangeException("index");
-
-			entries[index] = new HashEntry(hashA, hashB, locale, block);
-		}
+		internal void SetEntry(int index, uint hashA, uint hashB, int locale, int block) { entries[index] = new MpqHashEntry(hashA, hashB, locale, block); }
 
 		public int[] FindMulti(string filename)
 		{
@@ -138,6 +90,7 @@ namespace CrystalMpq
 			uint hash = Encryption.Hash(filename, 0);
 			uint hashA = Encryption.Hash(filename, 0x100);
 			uint hashB = Encryption.Hash(filename, 0x200);
+			uint capacity = checked((uint)entries.LongLength);
 			uint start = hash % capacity;
 			uint index = start;
 
@@ -161,10 +114,13 @@ namespace CrystalMpq
 
 		public int Find(string filename, int lcid)
 		{
-			var matches = new List<HashEntry>();
+			uint? neutralEntryIndex = null;
+			uint? firstEntryIndex = null;
+
 			uint hash = Encryption.Hash(filename, 0);
 			uint hashA = Encryption.Hash(filename, 0x100);
 			uint hashB = Encryption.Hash(filename, 0x200);
+			uint capacity = checked((uint)entries.LongLength);
 			uint start = hash % capacity;
 			uint index = start;
 
@@ -177,34 +133,21 @@ namespace CrystalMpq
 				{
 					if (entries[index].Locale == lcid)
 						return entries[index].Block;
-					else
-						matches.Add(entries[index]);
+					else if (entries[index].Locale == 0)
+						neutralEntryIndex = index;
+					else if (firstEntryIndex == null)
+						firstEntryIndex = index;
 				}
 
 				if (++index >= capacity) index = 0;
 			}
 			while (index != start);
 
-			if (matches.Count == 0) return -1;
-			else if (matches.Count == 1) return matches[0].Block;
-			else
-				foreach (HashEntry entry in matches)
-					if (entry.Locale == 0) return entry.Block;
-
-			return -1;
-		}
-
-		private bool TryFindEntry(int block, out HashEntry result)
-		{
-			foreach (var entry in entries)
-				if (entry.Block == block)
-				{
-					result = entry;
-					return true;
-				}
-
-			result = HashEntry.Invalid;
-			return false;
+			return neutralEntryIndex != null ?
+				entries[neutralEntryIndex.Value].Block :
+				firstEntryIndex != null && lcid == 0 ?
+					entries[firstEntryIndex.Value].Block :
+					-1;
 		}
 
 		public void SetPreferredCulture(int lcid) { preferredCulture = lcid; }
@@ -229,7 +172,7 @@ namespace CrystalMpq
 		}
 
 		public HashEntryEnumerator GetEnumerator() { return new HashEntryEnumerator(entries); }
-		IEnumerator<HashEntry> IEnumerable<HashEntry>.GetEnumerator() { return new HashEntryEnumerator(entries); }
+		IEnumerator<MpqHashEntry> IEnumerable<MpqHashEntry>.GetEnumerator() { return new HashEntryEnumerator(entries); }
 		IEnumerator IEnumerable.GetEnumerator() { return new HashEntryEnumerator(entries); }
 	}
 }

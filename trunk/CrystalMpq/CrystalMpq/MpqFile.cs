@@ -17,8 +17,8 @@ namespace CrystalMpq
 	/// <summary>This class represents a file stored in an <see cref="MpqArchive"/>.</summary>
 	public sealed class MpqFile
 	{
-		private MpqArchive owner;
-		private MpqHashTable.HashEntry hashEntry;
+		private readonly MpqArchive owner;
+		//private MpqHashTable.HashEntry hashEntry;
 		private string name;
 		private long offset;
 		private uint compressedSize;
@@ -42,7 +42,7 @@ namespace CrystalMpq
 			this.listed = false;
 		}
 
-		internal void BindHashTableEntry(MpqHashTable.HashEntry hashEntry) { this.hashEntry = hashEntry; }
+		//internal void BindHashTableEntry(MpqHashTable.HashEntry hashEntry) { this.hashEntry = hashEntry; }
 
 		/// <summary>Called internally when the name has been detected.</summary>
 		/// <param name="name">Detected filename.</param>
@@ -100,12 +100,17 @@ namespace CrystalMpq
 		/// <value><c>true</c> if this file is a patch; otherwise, <c>false</c>.</value>
 		public bool IsPatch { get { return (flags & MpqFileFlags.Patch) != 0; } }
 
-		/// <summary>Gets the LCID associated with this file.</summary>
-		public int Lcid { get { return hashEntry.Locale; } }
+		/// <summary>Gets a value indicating whether this file has been deleted.</summary>
+		/// <remarks>The deleted status indicates that the file has been deleted in the current mpq patch archive.</remarks>
+		/// <value><c>true</c> if this file has been deleted; otherwise, <c>false</c>.</value>
+		public bool IsDeleted { get { return (flags & MpqFileFlags.Deleted) != 0; } }
 
-		/// <summary>Gets the index of the file in the collection.</summary>
-		/// <remarks>In the current impelmentation, this index is also the index of the file in the archive's block table.</remarks>
-		public int Index { get { return index; } }
+		/// <summary>Gets the LCID associated with this file.</summary>
+		//public int Lcid { get { return hashEntry.Locale; } }
+
+		/// <summary>Gets the index of the file in the block table.</summary>
+		/// <remarks>This property is for internal use only.</remarks>
+		internal int BlockIndex { get { return index; } }
 
 		/// <summary>Gets the seed associated with this file.</summary>
 		/// <remarks>The seed is a value that is used internally to decrypt some files.</remarks>
@@ -120,7 +125,12 @@ namespace CrystalMpq
 		/// <summary>Opens the file for reading.</summary>
 		/// <returns>Returns a Stream object which can be used to read data in the file.</returns>
 		/// <remarks>Files can only be opened once, so don't forget to close the stream after you've used it.</remarks>
-		public MpqFileStream Open() { return new MpqFileStream(this); }
+		public MpqFileStream Open() 
+		{
+			if (IsDeleted) throw new InvalidOperationException(ErrorMessages.GetString("MpqFileDeleted"));
+
+			return new MpqFileStream(this);
+		}
 
 		/// <summary>Opens a patched file for reading.</summary>
 		/// <param name="baseStream">A base stream.</param>
