@@ -118,7 +118,6 @@ namespace CrystalMpq
 
 		#endregion
 
-		private string filename;
 		private BinaryReader reader;
 		private long archiveOffset;
 		private long archiveSize;
@@ -126,6 +125,7 @@ namespace CrystalMpq
 		private int blockSize;
 		private MpqFormat archiveFormat;
 		private MpqHashTable hashTable;
+		internal MpqBlockTable blockTable;
 		private MpqFile[] files;
 		private MpqFileCollection fileCollection;
 		private MpqFile listFile;
@@ -145,10 +145,10 @@ namespace CrystalMpq
 
 		private MpqArchive()
 		{
-			syncRoot = new object();
-			resolveStreamEventArgs = new ResolveStreamEventArgs();
-			fileCollection = new MpqFileCollection(this);
-			listFileParsed = false;
+			this.syncRoot = new object();
+			this.resolveStreamEventArgs = new ResolveStreamEventArgs();
+			this.fileCollection = new MpqFileCollection(this);
+			this.listFileParsed = false;
 		}
 
 		/// <summary>Initializes a new instance of the <see cref="MpqArchive"/> class.</summary>
@@ -171,6 +171,7 @@ namespace CrystalMpq
 		/// </remarks>
 		/// <param name="filename">The MPQ archive's filename.</param>
 		/// <param name="shouldParseListFile">Determines if the listfile will be parsed.</param>
+		/// <param name="nameCache">The <see cref="MpqNameCache"/> to use for caching filenames.</param>
 		/// <exception cref="InvalidDataException">The specified file is not a valid MPQ archive, or the archive is corrupt.</exception>
 		public MpqArchive(string filename, bool shouldParseListFile)
 			: this()
@@ -178,7 +179,6 @@ namespace CrystalMpq
 			if (filename == null) throw new ArgumentNullException("filename");
 
 			OpenInternal(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read), shouldParseListFile);
-			this.filename = filename;
 		}
 
 		/// <summary>Initializes a new instance of the <see cref="MpqArchive"/> class.</summary>
@@ -193,12 +193,7 @@ namespace CrystalMpq
 		/// <param name="shouldParseListFile">Determines if the listfile will be parsed.</param>
 		/// <exception cref="InvalidDataException">The specified stream does not contain a valid MPQ archive, or the archive is corrupt.</exception>
 		public MpqArchive(Stream stream, bool shouldParseListFile)
-			: this()
-		{
-			OpenInternal(stream, shouldParseListFile);
-			var fileStream = stream as FileStream;
-			this.filename = fileStream != null ? fileStream.Name : "";
-		}
+			: this() { OpenInternal(stream, shouldParseListFile); }
 
 		#endregion
 
@@ -218,12 +213,12 @@ namespace CrystalMpq
 		private void OpenInternal(Stream stream, bool shouldParseListFile)
 		{
 			// MPQ offsets can be 32 bits, 48 bits or 64 bits depending on the MPQ version used…
-			long hashTableOffset, hashTableCompressedSize;
-			long blockTableOffset, blockTableCompressedSize;
-			long extendedBlockTableOffset, extendedBlockTableCompressedSize;
+			long hashTableOffset, hashTableCompressedSize, hashTableSize;
+			long blockTableOffset, blockTableCompressedSize, blockTableSize;
+			long highBlockTableOffset, highBlockTableCompressedSize, highBlockTableSize;
 			long enhancedHashTableOffset, enhancedHashTableCompressedSize;
 			long enhancedBlockTableOffset, enhancedBlockTableCompressedSize;
-			int hashTableSize, blockTableSize;
+			uint hashTableLength, blockTableLength;
 			uint rawChunkSize;
 
 			// We use a lot of "long" and "int" variables here, but data is likely stored as ulong and uint…
@@ -267,14 +262,16 @@ namespace CrystalMpq
 				blockSize = 0x200 << reader.ReadUInt16(); // Calculate block size
 				hashTableOffset = reader.ReadUInt32(); // Get Hash Table Offset
 				blockTableOffset = reader.ReadUInt32(); // Get Block Table Offset
-				hashTableSize = (int)reader.ReadUInt32(); // Get Hash Table Size
-				blockTableSize = (int)reader.ReadUInt32(); // Get Block Table Size
+				hashTableLength = reader.ReadUInt32(); // Get Hash Table Size
+				blockTableLength = reader.ReadUInt32(); // Get Block Table Size
 
 				// Assign the compressed size for the various tables.
 				// Since compression was non-existant with V1 & V2, we know the compressed size is the uncompressed size.
 				// If the compressed size is different as specified in V4, this will be overwritten later.
-				hashTableCompressedSize = 4 * sizeof(uint) * hashTableSize;
-				blockTableCompressedSize = 4 * sizeof(uint) * blockTableSize;
+				hashTableCompressedSize = 4 * sizeof(uint) * hashTableLength;
+				if (blockTableOffset > hashTableOffset && blockTableOffset - hashTableOffset < hashTableCompressedSize) // Compute compressed hash table length if needed
+					hashTableCompressedSize = blockTableOffset - hashTableOffset;
+				blockTableCompressedSize = 4 * sizeof(uint) * blockTableLength;
 
 				// Process additional values for "Burning Crusade" MPQ format
 				if (archiveFormat >= MpqFormat.BurningCrusade)
@@ -282,7 +279,8 @@ namespace CrystalMpq
 					ushort hashTableOffsetHigh, blockTableOffsetHigh;
 
 					// Read extended information
-					extendedBlockTableOffset = (long)reader.ReadUInt64();
+					highBlockTableOffset = (long)reader.ReadUInt64();
+					highBlockTableCompressedSize = highBlockTableOffset != 0 ? sizeof(uint) * blockTableLength : 0;
 					hashTableOffsetHigh = reader.ReadUInt16();
 					blockTableOffsetHigh = reader.ReadUInt16();
 					// Modify offsets accordingly
@@ -300,7 +298,7 @@ namespace CrystalMpq
 						{
 							hashTableCompressedSize = (long)reader.ReadUInt64();
 							blockTableCompressedSize = (long)reader.ReadUInt64();
-							extendedBlockTableCompressedSize = (long)reader.ReadUInt64();
+							highBlockTableCompressedSize = (long)reader.ReadUInt64();
 							enhancedHashTableCompressedSize = (long)reader.ReadUInt64();
 							enhancedBlockTableCompressedSize = (long)reader.ReadUInt64();
 
@@ -309,7 +307,7 @@ namespace CrystalMpq
 						else
 						{
 							// TODO: Compute the uncompresed size for the new enhanced tables of version 3… (Will have to check how to do that…)
-							extendedBlockTableCompressedSize = extendedBlockTableOffset > 0 ? sizeof(ushort) * blockTableSize : 0;
+							highBlockTableCompressedSize = highBlockTableOffset > 0 ? sizeof(ushort) * blockTableLength : 0;
 						}
 					}
 					else
@@ -318,12 +316,12 @@ namespace CrystalMpq
 						long oldArchiveSize = archiveSize;
 #endif
 						// Compute 64 bit archive size (Not sure whether this is actually needed, but just in case)
-						if (extendedBlockTableOffset > hashTableOffset && extendedBlockTableOffset > blockTableOffset)
-							archiveSize = extendedBlockTableOffset + sizeof(ushort) * blockTableSize;
+						if (highBlockTableOffset > hashTableOffset && highBlockTableOffset > blockTableOffset)
+							archiveSize = highBlockTableOffset + sizeof(ushort) * blockTableLength;
 						else if (blockTableOffset > hashTableOffset)
-							archiveSize = blockTableOffset + 4 * sizeof(uint) * blockTableSize;
+							archiveSize = blockTableOffset + 4 * sizeof(uint) * blockTableLength;
 						else
-							archiveSize = hashTableOffset + 4 * sizeof(uint) * hashTableSize;
+							archiveSize = hashTableOffset + 4 * sizeof(uint) * hashTableLength;
 #if DEBUG
 						Debug.Assert(oldArchiveSize >= archiveSize);
 #endif
@@ -331,24 +329,32 @@ namespace CrystalMpq
 				}
 				else
 				{
-					extendedBlockTableOffset = 0;
-					extendedBlockTableCompressedSize = 0;
+					highBlockTableOffset = 0;
+					highBlockTableCompressedSize = 0;
 				}
 
 				if (!CheckOffset((uint)headerSize)
 					|| !CheckOffset(hashTableOffset) || !CheckOffset(blockTableOffset)
-					|| hashTableSize < 0 || blockTableSize < 0 || hashTableSize < blockTableSize)
+					|| hashTableLength < blockTableLength)
 					throw new InvalidDataException(ErrorMessages.GetString("InvalidArchiveHeader"));
+
+				hashTableSize = 4 * sizeof(uint) * hashTableLength;
+				blockTableSize = 4 * sizeof(uint) * blockTableLength;
+				highBlockTableSize = highBlockTableOffset != 0 ? sizeof(ushort) * blockTableLength : 0;
 			}
 
-			// Read Tables
-			var buffer = new byte[4 * sizeof(uint) * Math.Max(hashTableSize, blockTableSize)]; // Shared read buffer
+			// Create buffers for table reading
+			var tableReadBuffer = hashTableSize < hashTableCompressedSize || blockTableSize < blockTableCompressedSize || highBlockTableCompressedSize < highBlockTableSize ?
+				new byte[Math.Max(Math.Max(hashTableCompressedSize, blockTableCompressedSize), highBlockTableCompressedSize)] :
+				null;
+
+			var tableBuffer = new byte[Math.Max(hashTableSize, blockTableSize)];
 
 			// Read Hash Table
-			ReadHashTable(buffer, hashTableSize, hashTableOffset, hashTableCompressedSize);
+			ReadHashTable(tableBuffer, hashTableLength, hashTableOffset, hashTableCompressedSize, tableReadBuffer);
 
 			// Read Block Table
-			ReadBlockTable(buffer, blockTableSize, blockTableOffset, blockTableCompressedSize);
+			ReadBlockTable(tableBuffer, blockTableLength, blockTableOffset, blockTableCompressedSize, highBlockTableOffset, highBlockTableCompressedSize, tableReadBuffer);
 
 			// Bind hash table entries to block table entries
 			//foreach (var entry in hashTable)
@@ -364,17 +370,81 @@ namespace CrystalMpq
 
 		private bool CheckOffset(long offset) { return offset >= 0 && offset < archiveSize; }
 
-		private void ReadHashTable(byte[] buffer, int tableLength, long offset, long dataLength)
+		/// <summary>Reads the encrypted <see cref="System.UInt32"/> table at the specified offset in the archive.</summary>
+		/// <remarks>
+		/// This method will place the bytes in their native order.
+		/// Reading must be done by pinning the buffer and accessing it as an <see cref="System.UInt32"/> buffer.
+		/// The only purpose of this method is to share code between the hash table and block table reading methods.
+		/// Because of its specific behavior, it should not be used anywhere else…
+		/// </remarks>
+		/// <param name="buffer">The destination buffer.</param>
+		/// <param name="tableLength">Length of the table in units of 16 bytes.</param>
+		/// <param name="tableOffset">The offset in the archive.</param>
+		/// <param name="dataLength">Length of the data to read.</param>
+		/// <param name="hash">The hash to use for decrypting the data.</param>
+		/// <param name="compressedReadBuffer">The compressed read buffer to use for holding temporary data.</param>
+		private unsafe void ReadEncryptedUInt32Table(byte[] buffer, long tableLength, long tableOffset, long dataLength, uint hash, byte[] compressedReadBuffer)
 		{
-			// Stream.Read only takes an int length for now, and it is unlikely that the hash table will exceed 2GB.
-			// But like always, who knows what might happen in the future… Better check for overflow and crash nicely ! ;)
-			int dataLength2 = checked((int)dataLength);
+			int uintCount = checked((int)(tableLength << 2));
+			long realDataLength = checked(sizeof(uint) * uintCount);
 
-			reader.BaseStream.Seek(archiveOffset + offset, SeekOrigin.Begin);
-			if (reader.Read(buffer, 0, dataLength2) != dataLength)
-				throw new EndOfStreamException();
+			bool isCompressed = dataLength < realDataLength;
+			// Stream.Read only takes an int length for now, and it is unlikely that the tables will ever exceed 2GB.
+			// But anyway, if this ever happens in the future the overflow check should ensure us that the program will crash nicely.
+			int dataLengthInt32 = checked((int)dataLength);
 
-			hashTable = MpqHashTable.FromData(buffer, dataLength2, tableLength);
+			reader.BaseStream.Seek(archiveOffset + tableOffset, SeekOrigin.Begin);
+			if (reader.Read(isCompressed ? compressedReadBuffer : buffer, 0, dataLengthInt32) != dataLengthInt32)
+				throw new EndOfStreamException(); // Throw an exception if we are not able to read as many bytes as we were told we could read…
+
+			fixed (byte* bufferPointer = buffer)
+			{
+				uint* tablePointer = (uint*)bufferPointer;
+
+				// If the data is compressed, we will have to swap endianness three times on big endian platforms, but it can't be helped.
+				// (Endiannes swap is done by the Encryption.Decrypt method automatically when passing a byte buffer.)
+				// However, if we don't have to decompress, endiannes swap is only done once, before decrypting.
+
+				if (isCompressed)
+				{
+					if (hash != 0) Encryption.Decrypt(compressedReadBuffer, hash, dataLengthInt32); // On big endian platforms : Read UInt32, Swap Bytes, Compute, Swap Bytes, Store UInt32
+					if (Compression.DecompressBlock(compressedReadBuffer, dataLengthInt32, buffer, true) != realDataLength)
+						throw new InvalidDataException(); // Only allow the exact amount of bytes as a result
+				}
+
+				if (!BitConverter.IsLittleEndian) Utility.SwapBytes(tablePointer, uintCount);
+
+				if (!isCompressed && hash != 0) Encryption.Decrypt(tablePointer, hash, uintCount);
+			}
+		}
+
+		private void ReadHighBlockTable(byte[] buffer, long tableLength, long tableOffset, long dataLength, byte[] compressedReadBuffer)
+		{
+			int ushortCount = checked((int)tableLength);
+			long realDataLength = checked(sizeof(ushort) * ushortCount);
+
+			bool isCompressed = dataLength < realDataLength;
+			// Stream.Read only takes an int length for now, and it is unlikely that the tables will ever exceed 2GB.
+			// But anyway, if this ever happens in the future the overflow check should ensure us that the program will crash nicely.
+			int dataLengthInt32 = checked((int)dataLength);
+
+			reader.BaseStream.Seek(archiveOffset + tableOffset, SeekOrigin.Begin);
+			if (reader.Read(isCompressed ? compressedReadBuffer : buffer, 0, dataLengthInt32) != dataLengthInt32)
+				throw new EndOfStreamException(); // Throw an exception if we are not able to read as many bytes as we were told we could read…
+
+			if (isCompressed)
+				if (Compression.DecompressBlock(compressedReadBuffer, dataLengthInt32, buffer, true) != realDataLength)
+					throw new InvalidDataException(); // Only allow the exact amount of bytes as a result
+
+			if (!BitConverter.IsLittleEndian) Utility.SwapBytes16(buffer);
+		}
+
+		private unsafe void ReadHashTable(byte[] buffer, long tableLength, long tableOffset, long dataLength, byte[] compressedReadBuffer)
+		{
+			ReadEncryptedUInt32Table(buffer, tableLength, tableOffset, dataLength, HashTableHash, compressedReadBuffer);
+
+			fixed (byte* bufferPointer = buffer)
+				hashTable = MpqHashTable.FromMemory((uint*)bufferPointer, tableLength);
 
 #if ENFORCE_SAFETY
 			if (!hashTable.CheckIntegrity(blockTableSize)) // Check HashTable Integrity (Could be too restrictive, correct if needed)
@@ -382,27 +452,33 @@ namespace CrystalMpq
 #endif
 		}
 
-		private unsafe void ReadBlockTable(byte[] buffer, int tableLength, long offset, long dataLength)
+		private unsafe void ReadBlockTable(byte[] buffer, long tableLength, long tableOffset, long dataLength, long highTableOffset, long highTableDataLength, byte[] compressedReadBuffer)
 		{
-			// Stream.Read only takes an int length for now, and it is unlikely that the block table will exceed 2GB.
-			// But like always, who knows what might happen in the future… Better check for overflow and crash nicely ! ;)
-			int dataLength2 = checked((int)dataLength);
+			byte[] highBuffer = null;
 
-			reader.BaseStream.Seek(archiveOffset + offset, SeekOrigin.Begin);
-			if (reader.Read(buffer, 0, dataLength2) != dataLength)
-				throw new EndOfStreamException();
+			ReadEncryptedUInt32Table(buffer, tableLength, tableOffset, dataLength, BlockTableHash, compressedReadBuffer);
+
+			if (highTableOffset != 0 && highTableDataLength != 0)
+				ReadHighBlockTable(highBuffer = new byte[sizeof(ushort) * tableLength], tableLength, highTableOffset, highTableDataLength, compressedReadBuffer);
+
+			uint fileCount;
 
 			fixed (byte* bufferPointer = buffer)
+			fixed (byte* highBufferPointer = highBuffer)
+				blockTable = MpqBlockTable.FromMemory((uint*)bufferPointer, (ushort*)highBufferPointer, tableLength, out fileCount);
+
+			CreateFiles(fileCount);
+		}
+
+		private void CreateFiles(uint fileCount)
+		{
+			files = new MpqFile[fileCount];
+
+			for (uint i = 0, blockIndex = 0; i < fileCount; i++)
 			{
-				uint* blockTableDataPointer = (uint*)bufferPointer;
-				int uintCount = tableLength << 2; // One table entry is 4 [u]int…
+				while ((blockTable.Entries[blockIndex].Flags & MpqFileFlags.Exists) == 0) blockIndex++;
 
-				if (!BitConverter.IsLittleEndian) Utility.SwapBytes(blockTableDataPointer, uintCount);
-				Encryption.Decrypt(blockTableDataPointer, MpqArchive.BlockTableHash, uintCount);
-
-				files = new MpqFile[tableLength];
-				for (int i = 0; i < tableLength; i++)
-					files[i] = new MpqFile(this, i, *blockTableDataPointer++, *blockTableDataPointer++, *blockTableDataPointer++, *blockTableDataPointer++);
+				files[i] = new MpqFile(this, blockIndex++);
 			}
 		}
 
@@ -450,7 +526,7 @@ namespace CrystalMpq
 #endif
 
 			for (int i = 0; i < blocks.Length; i++)
-				files[blocks[i]].OnNameDetected(filename, true, listed);
+				blockTable.Entries[blocks[i]].OnNameDetected(filename, true, listed);
 #if DEBUG
 			if (blocks.Length == 0) Debug.WriteLine("File \"" + filename + "\" not found in archive.");
 #endif
@@ -510,7 +586,10 @@ namespace CrystalMpq
 			MpqFile[] files = new MpqFile[blocks.Length];
 
 			for (int i = 0; i < blocks.Length; i++)
-				(files[i] = this.files[blocks[i]]).OnNameDetected(filename);
+			{
+				blockTable.Entries[blocks[i]].OnNameDetected(filename);
+				files[i] = files[blockTable.Entries[blocks[i]].FileIndex];
+			}
 			return files;
 		}
 
@@ -525,10 +604,9 @@ namespace CrystalMpq
 
 			if (block >= 0)
 			{
-				var file = files[block];
+				blockTable.Entries[block].OnNameDetected(filename);
 
-				file.OnNameDetected(filename);
-				return file;
+				return files[blockTable.Entries[block].FileIndex];
 			}
 			else return null;
 		}
@@ -543,10 +621,9 @@ namespace CrystalMpq
 
 			if (block >= 0)
 			{
-				var file = files[block];
+				blockTable.Entries[block].OnNameDetected(filename);
 
-				file.OnNameDetected(filename);
-				return file;
+				return files[blockTable.Entries[block].FileIndex];
 			}
 			else return null;
 		}

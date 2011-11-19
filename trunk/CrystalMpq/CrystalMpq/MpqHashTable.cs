@@ -26,7 +26,7 @@ namespace CrystalMpq
 			private MpqHashEntry[] entries;
 			private int index;
 
-			public HashEntryEnumerator(MpqHashEntry[] entries)
+			internal HashEntryEnumerator(MpqHashEntry[] entries)
 			{
 				this.entries = entries;
 				this.index = -1;
@@ -37,33 +37,19 @@ namespace CrystalMpq
 			public MpqHashEntry Current { get { return entries[index]; } }
 			object IEnumerator.Current { get { return entries[index]; } }
 
-			public bool MoveNext()
-			{
-				if (index >= entries.Length) return false;
-
-				return ++index < entries.Length;
-			}
+			public bool MoveNext() { return index < entries.Length && ++index < entries.Length; }
 
 			public void Reset() { this.index = -1; }
 		}
 
 		#endregion
 
-		public static unsafe MpqHashTable FromData(byte[] buffer, int dataLength, int tableLength)
+		internal static unsafe MpqHashTable FromMemory(uint* table, long tableLength)
 		{
 			var entries = new MpqHashEntry[tableLength];
 
-			fixed (byte* bufferPointer = buffer)
-			{
-				uint* hashTableDataPointer = (uint*)bufferPointer;
-				int uintCount = tableLength << 2; // One table entry is 4 [u]int…
-
-				if (!BitConverter.IsLittleEndian) Utility.SwapBytes(hashTableDataPointer, uintCount);
-				Encryption.Decrypt(hashTableDataPointer, MpqArchive.HashTableHash, uintCount);
-
-				for (int i = 0; i < entries.Length; i++) // Fill MpqHashTable object
-					entries[i] = new MpqHashEntry(*hashTableDataPointer++, *hashTableDataPointer++, (int)*hashTableDataPointer++, (int)*hashTableDataPointer++);
-			}
+			for (int i = 0; i < entries.Length; i++) // Fill MpqHashTable object
+				entries[i] = new MpqHashEntry(*table++, *table++, (int)*table++, (int)*table++);
 
 			return new MpqHashTable(entries);
 		}

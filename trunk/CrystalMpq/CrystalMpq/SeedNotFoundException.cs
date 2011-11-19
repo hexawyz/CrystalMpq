@@ -16,7 +16,7 @@ namespace CrystalMpq
 	/// <remarks>The seed is needed for reading encrypted files.</remarks>
 	public sealed class SeedNotFoundException : Exception
 	{
-		internal SeedNotFoundException(int block)
+		internal SeedNotFoundException(long block)
 			: base(string.Format(ErrorMessages.GetString("SeedNotFound"), block)) { }
 	}
 }
