@@ -117,6 +117,8 @@
     <Compile Include="7zip\ICoder.cs" />
     <Compile Include="ErrorMessages.cs" />
     <Compile Include="MpqBlockEntry.cs" />
+    <Compile Include="MpqBlockTable.cs" />
+    <Compile Include="MpqNameCache.cs" />
     <Compile Include="MpqHashEntry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>

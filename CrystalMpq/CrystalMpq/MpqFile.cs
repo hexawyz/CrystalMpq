@@ -15,112 +15,73 @@ using System.Threading;
 namespace CrystalMpq
 {
 	/// <summary>This class represents a file stored in an <see cref="MpqArchive"/>.</summary>
-	public sealed class MpqFile
+	public class MpqFile
 	{
-		private readonly MpqArchive owner;
-		//private MpqHashTable.HashEntry hashEntry;
-		private string name;
-		private long offset;
-		private uint compressedSize;
-		private uint uncompressedSize;
-		private MpqFileFlags flags;
-		private uint seed;
-		private int index;
-		private bool listed;
+		private readonly MpqArchive archive;
+		private uint blockIndex;
 
-		internal MpqFile(MpqArchive owner, int index, long offset, uint compressedSize, uint uncompressedSize, uint flags)
+		internal MpqFile(MpqArchive archive, uint index)
 		{
-			if (owner == null) throw new ArgumentNullException("owner");
-			this.owner = owner;
-			this.index = index;
-			this.offset = offset;
-			this.compressedSize = compressedSize;
-			this.uncompressedSize = uncompressedSize;
-			this.flags = unchecked((MpqFileFlags)flags);
-			this.name = "";
-			this.seed = 0;
-			this.listed = false;
+			if (archive == null) throw new ArgumentNullException("archive");
+
+			this.archive = archive;
+			this.blockIndex = index;
 		}
 
 		//internal void BindHashTableEntry(MpqHashTable.HashEntry hashEntry) { this.hashEntry = hashEntry; }
 
-		/// <summary>Called internally when the name has been detected.</summary>
-		/// <param name="name">Detected filename.</param>
-		/// <param name="cache">If set to <c>true</c>, remember the filename.</param>
-		/// <param name="listed">If set to <c>true</c>, the name was detected from the listfile.</param>
-		/// <remarks>Right now, the method will only update the seed when needed.</remarks>
-		internal void OnNameDetected(string name, bool cache = false, bool listed = false)
-		{
-			if (!string.IsNullOrEmpty(this.name)) return;
-
-			// TODO: Improve the name caching mechanism (Global hash table for MPQ archives ?)
-			if (cache || (flags & MpqFileFlags.Encrypted) != 0)
-				this.seed = ComputeSeed(name);
-			if (cache || IsPatch) this.name = name; // Always cache the filename if the file is a patch… This is needed for base file lookup.
-			if (cache) this.listed = listed;
-		}
-
-		private static uint ComputeSeed(string filename)
-		{
-			// Calculate the seed based on the file name and not the full path.
-			// I really don't know why but it worked with the full path for a lot of files…
-			// But now it's fixed at least
-			int index = filename.LastIndexOf('\\');
-			return Encryption.Hash(index >= 0 ? filename.Substring(index + 1) : filename, 0x300);
-		}
-
 		/// <summary>Gets the archive to whom this file belongs.</summary>
-		public MpqArchive Archive { get { return owner; } }
+		public MpqArchive Archive { get { return archive; } }
 
 		/// <summary>Gets the name for this file, or null if the filename is not known.</summary>
-		public string Name { get { return name; } }
+		public string Name { get { return archive.blockTable.Entries[blockIndex].Name; } }
 
 		/// <summary>Gets the offset of this file in the archive.</summary>
-		public long Offset { get { return offset; } }
+		public long Offset { get { return archive.blockTable.Entries[blockIndex].Offset; } }
 
 		/// <summary>Gets the size of this file.</summary>
-		public long Size { get { return uncompressedSize; } }
+		public long Size { get { return archive.blockTable.Entries[blockIndex].UncompressedSize; } }
 
 		/// <summary>Gets the compressed size of this file.</summary>
 		/// <remarks>If the file is not compressed, CompressedSize will return the same value than Size.</remarks>
-		public long CompressedSize {get { return compressedSize; } }
+		public long CompressedSize { get { return archive.blockTable.Entries[blockIndex].CompressedSize; } }
 
 		/// <summary>Gets the flags that apply to this file.</summary>
-		public MpqFileFlags Flags { get { return flags; } }
+		public MpqFileFlags Flags { get { return archive.blockTable.Entries[blockIndex].Flags; } }
 
 		/// <summary>Gets a value indicating whether this file is encrypted.</summary>
 		/// <value><c>true</c> if this file is encrypted; otherwise, <c>false</c>.</value>
-		public bool IsEncrypted { get { return (flags & MpqFileFlags.Encrypted) != 0; } }
+		public bool IsEncrypted { get { return (archive.blockTable.Entries[blockIndex].Flags & MpqFileFlags.Encrypted) != 0; } }
 
 		/// <summary>Gets a value indicating whether this file is compressed.</summary>
 		/// <value><c>true</c> if this file is compressed; otherwise, <c>false</c>.</value>
-		public bool IsCompressed { get { return (flags & MpqFileFlags.Compressed) != 0; } }
+		public bool IsCompressed { get { return (archive.blockTable.Entries[blockIndex].Flags & MpqFileFlags.Compressed) != 0; } }
 
 		/// <summary>Gets a value indicating whether this file is a patch.</summary>
 		/// <value><c>true</c> if this file is a patch; otherwise, <c>false</c>.</value>
-		public bool IsPatch { get { return (flags & MpqFileFlags.Patch) != 0; } }
+		public bool IsPatch { get { return (archive.blockTable.Entries[blockIndex].Flags & MpqFileFlags.Patch) != 0; } }
 
 		/// <summary>Gets a value indicating whether this file has been deleted.</summary>
 		/// <remarks>The deleted status indicates that the file has been deleted in the current mpq patch archive.</remarks>
 		/// <value><c>true</c> if this file has been deleted; otherwise, <c>false</c>.</value>
-		public bool IsDeleted { get { return (flags & MpqFileFlags.Deleted) != 0; } }
+		public bool IsDeleted { get { return (archive.blockTable.Entries[blockIndex].Flags & MpqFileFlags.Deleted) != 0; } }
 
-		/// <summary>Gets the LCID associated with this file.</summary>
+		///// <summary>Gets the LCID associated with this file.</summary>
 		//public int Lcid { get { return hashEntry.Locale; } }
 
 		/// <summary>Gets the index of the file in the block table.</summary>
 		/// <remarks>This property is for internal use only.</remarks>
-		internal int BlockIndex { get { return index; } }
+		internal uint BlockIndex { get { return blockIndex; } }
 
 		/// <summary>Gets the seed associated with this file.</summary>
 		/// <remarks>The seed is a value that is used internally to decrypt some files.</remarks>
 		/// <value>The seed associated with this file.</value>
-		internal uint Seed { get { return seed; } }
+		internal uint Seed { get { return archive.blockTable.Entries[blockIndex].Seed; } }
 
 		/// <summary>Gets a value indicating whether the file was found in the list file of the archive.</summary>
 		/// <remarks>This can only be true if the list file was parsed.</remarks>
 		/// <value><c>true</c> if this instance is listed; otherwise, <c>false</c>.</value>
-		public bool IsListed { get { return listed; } }
+		public bool IsListed { get { return archive.blockTable.Entries[blockIndex].Listed; } }
 
 		/// <summary>Opens the file for reading.</summary>
 		/// <returns>Returns a Stream object which can be used to read data in the file.</returns>
