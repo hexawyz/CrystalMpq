@@ -120,6 +120,7 @@
     <Compile Include="MpqBlockTable.cs" />
     <Compile Include="MpqNameCache.cs" />
     <Compile Include="MpqHashEntry.cs" />
+    <Compile Include="MpqUserDataStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

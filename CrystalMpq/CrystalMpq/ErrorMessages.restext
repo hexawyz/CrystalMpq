@@ -1,4 +1,6 @@
-﻿InvalidArchive=The data in the stream is not a valid MPQ archive.
+﻿SeekableStreamRequired=MPQ archives can only be read from a seekable stream.
+SeekingBeforeBegin=Cannot seek before the beginning of the stream.
+InvalidArchive=The data in the stream is not a valid MPQ archive.
 InvalidArchiveHeader=The MPQ archive has an invalid header.
 MpqVersionNotSupported=MPQ version {0} is not supported.
 SeedNotFound=The seed for file 0x{0:X4} was not found.

@@ -21,7 +21,7 @@ namespace CrystalMpq
 	/// This class is used to read MPQ archives.
 	/// It gives you access to all files contained in the archive.
 	/// </summary>
-	public sealed class MpqArchive : IDisposable
+	public sealed partial class MpqArchive : IDisposable
 	{
 		#region MpqFileEnumerator Structure
 
@@ -108,19 +108,21 @@ namespace CrystalMpq
 		}
 
 		#endregion
-		
+
 		#region Static Fields
 
 		internal static readonly uint HashTableHash = Encryption.Hash("(hash table)", 0x300);
 		internal static readonly uint BlockTableHash = Encryption.Hash("(block table)", 0x300);
-		internal const uint MpqSignature = 0x1A51504D;
+		internal const uint MpqArchiveSignature = 0x1A51504D;
 		internal const uint MpqUserDataSignature = 0x1B51504D;
 
 		#endregion
 
 		private BinaryReader reader;
-		private long archiveOffset;
-		private long archiveSize;
+		private long userDataOffset;
+		private long userDataLength;
+		private long archiveDataOffset;
+		private long archiveDataLength;
 		private long headerSize;
 		private int blockSize;
 		private MpqFormat archiveFormat;
@@ -220,18 +222,31 @@ namespace CrystalMpq
 			long enhancedBlockTableOffset, enhancedBlockTableCompressedSize;
 			uint hashTableLength, blockTableLength;
 			uint rawChunkSize;
+			uint signature;
+
+			if (!stream.CanSeek) throw new InvalidOperationException(ErrorMessages.GetString("SeekableStreamRequired"));
 
 			// We use a lot of "long" and "int" variables here, but data is likely stored as ulong and uint…
 			// So better test for overflow… Who knows what might happen in the future… ;)
 			// The "safe" pattern is to read as unsigned and cast to signed where oferflow is possible.
 			checked
 			{
-				archiveOffset = stream.Position;
+				archiveDataOffset = stream.Position;
 				reader = new BinaryReader(stream);
-				if (reader.ReadUInt32() != MpqSignature)
-					throw new InvalidDataException(ErrorMessages.GetString("InvalidData"));
+				signature = reader.ReadUInt32();
+				// The first part of the file may be MPQ user data. The next part should be regular MPQ archive data.
+				if (signature == MpqUserDataSignature)
+				{
+					userDataOffset = archiveDataOffset;
+					userDataLength = reader.ReadUInt32();
+					stream.Seek(reader.ReadUInt32() - 3 * sizeof(uint), SeekOrigin.Current);
+					archiveDataOffset = stream.Position;
+					signature = reader.ReadUInt32();
+				}
+				// Checking for MPQ archive signature
+				if (signature !=  MpqArchiveSignature) throw new InvalidDataException(ErrorMessages.GetString("InvalidData"));
 				headerSize = reader.ReadUInt32();
-				archiveSize = reader.ReadUInt32();
+				archiveDataLength = reader.ReadUInt32();
 				// MPQ format detection
 				// Unknown MPQ version will raise an error… This seems like a safe idea.
 				ushort mpqVersion = reader.ReadUInt16();
@@ -290,7 +305,7 @@ namespace CrystalMpq
 					// Handle MPQ version 3 (Cataclysm First)
 					if (archiveFormat >= MpqFormat.CataclysmFirst && headerSize >= 0x44)
 					{
-						archiveSize = (long)reader.ReadUInt64();
+						archiveDataLength = (long)reader.ReadUInt64();
 						enhancedBlockTableOffset = (long)reader.ReadUInt64();
 						enhancedHashTableOffset = (long)reader.ReadUInt64();
 
@@ -317,11 +332,11 @@ namespace CrystalMpq
 #endif
 						// Compute 64 bit archive size (Not sure whether this is actually needed, but just in case)
 						if (highBlockTableOffset > hashTableOffset && highBlockTableOffset > blockTableOffset)
-							archiveSize = highBlockTableOffset + sizeof(ushort) * blockTableLength;
+							archiveDataLength = highBlockTableOffset + sizeof(ushort) * blockTableLength;
 						else if (blockTableOffset > hashTableOffset)
-							archiveSize = blockTableOffset + 4 * sizeof(uint) * blockTableLength;
+							archiveDataLength = blockTableOffset + 4 * sizeof(uint) * blockTableLength;
 						else
-							archiveSize = hashTableOffset + 4 * sizeof(uint) * hashTableLength;
+							archiveDataLength = hashTableOffset + 4 * sizeof(uint) * hashTableLength;
 #if DEBUG
 						Debug.Assert(oldArchiveSize >= archiveSize);
 #endif
@@ -368,7 +383,7 @@ namespace CrystalMpq
 			if (shouldParseListFile) ParseListFile();
 		}
 
-		private bool CheckOffset(long offset) { return offset >= 0 && offset < archiveSize; }
+		private bool CheckOffset(long offset) { return offset >= 0 && offset < archiveDataLength; }
 
 		/// <summary>Reads the encrypted <see cref="System.UInt32"/> table at the specified offset in the archive.</summary>
 		/// <remarks>
@@ -393,7 +408,7 @@ namespace CrystalMpq
 			// But anyway, if this ever happens in the future the overflow check should ensure us that the program will crash nicely.
 			int dataLengthInt32 = checked((int)dataLength);
 
-			reader.BaseStream.Seek(archiveOffset + tableOffset, SeekOrigin.Begin);
+			reader.BaseStream.Seek(archiveDataOffset + tableOffset, SeekOrigin.Begin);
 			if (reader.Read(isCompressed ? compressedReadBuffer : buffer, 0, dataLengthInt32) != dataLengthInt32)
 				throw new EndOfStreamException(); // Throw an exception if we are not able to read as many bytes as we were told we could read…
 
@@ -428,7 +443,7 @@ namespace CrystalMpq
 			// But anyway, if this ever happens in the future the overflow check should ensure us that the program will crash nicely.
 			int dataLengthInt32 = checked((int)dataLength);
 
-			reader.BaseStream.Seek(archiveOffset + tableOffset, SeekOrigin.Begin);
+			reader.BaseStream.Seek(archiveDataOffset + tableOffset, SeekOrigin.Begin);
 			if (reader.Read(isCompressed ? compressedReadBuffer : buffer, 0, dataLengthInt32) != dataLengthInt32)
 				throw new EndOfStreamException(); // Throw an exception if we are not able to read as many bytes as we were told we could read…
 
@@ -482,11 +497,31 @@ namespace CrystalMpq
 			}
 		}
 
+		/// <summary>Gets a value indicating whether the current archive contains user data.</summary>
+		/// <value><see langword="true"/> if the current archive contains user data; otherwise, <see langword="false"/>.</value>
+		public bool HasUserData { get { return userDataLength > 0 || FindFile("(user data)") != null; } }
+
+		/// <summary>Gets the user data stream.</summary>
+		/// <returns>A <see cref="Stream"/> to be used for accessing user data.</returns>
+		public Stream GetUserDataStream()
+		{
+			if (userDataLength > 0) return new MpqUserDataStream(this);
+			else
+			{
+				var file = FindFile("(user data)");
+
+				if (file != null) return file.Open();
+			}
+
+			throw new InvalidOperationException();
+		}
+
 		/// <summary>Gets a value that indicate whether the current archive has a listfile.</summary>
 		/// <remarks>
 		/// Having a listfile is not required for an archive to be readable.
 		/// However, you need to know the filenames if you want to read the files.
 		/// </remarks>
+		/// <value><see langword="true"/> if the current archive has a listfile; otherwise, <see langword="false"/>.</value>
 		public bool HasListFile { get { return listFile != null; } }
 
 		/// <summary>Parses the listfile if it has not already been done.</summary>
@@ -648,11 +683,15 @@ namespace CrystalMpq
 			else return null;
 		}
 
-		internal int ReadBlock(byte[] buffer, int index, long offset, int length)
+		internal int ReadUserData(byte[] buffer, int index, long offset, int length) { return Read(buffer, index, userDataOffset + offset, length); }
+
+		internal int ReadArchiveData(byte[] buffer, int index, long offset, int length) { return Read(buffer, index, archiveDataOffset + offset, length); }
+
+		internal int Read(byte[] buffer, int index, long absoluteOffset, int length)
 		{
 			lock (syncRoot) // Allow multithreaded read access
 			{
-				reader.BaseStream.Seek(archiveOffset + offset, SeekOrigin.Begin);
+				reader.BaseStream.Seek(absoluteOffset, SeekOrigin.Begin);
 				return reader.Read(buffer, index, length);
 			}
 		}
@@ -664,7 +703,7 @@ namespace CrystalMpq
 		public MpqFileCollection Files { get { return fileCollection; } }
 
 		/// <summary>Gets the size of the MPQ archive.</summary>
-		public long FileSize { get { return archiveSize; } }
+		public long FileSize { get { return archiveDataLength; } }
 
 		/// <summary>Gets a flag indicating the format of the archive.</summary>
 		public MpqFormat Format { get { return archiveFormat; } }
