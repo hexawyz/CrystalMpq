@@ -158,7 +158,9 @@ namespace CrystalMpq.Utility
 			{
 				var file = archive.FindFile(filename, lcid);
 
-				if (file != null) return !file.IsDeleted ? file : null;
+				if (file != null)
+					if (!file.IsDeleted) return file;
+					else if (!shouldRetrieveDeletedFiles) return null;
 			}
 			return null;
 		}
@@ -169,7 +171,9 @@ namespace CrystalMpq.Utility
 			{
 				var file = archive.FindFile(filename);
 
-				if (file != null) return !file.IsDeleted ? file : null;
+				if (file != null)
+					if (!file.IsDeleted) return file;
+					else if (!shouldRetrieveDeletedFiles) return null;
 			}
 			return null;
 		}

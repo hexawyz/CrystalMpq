@@ -182,7 +182,7 @@ namespace CrystalMpq
 		{
 			var sharedBuffer = Utility.GetSharedBuffer(4);
 
-			if (archive.ReadBlock(sharedBuffer, 0, offset, 4) != 4) throw new EndOfStreamException();
+			if (archive.ReadArchiveData(sharedBuffer, 0, offset, 4) != 4) throw new EndOfStreamException();
 
 			return sharedBuffer[0] == 0x50 && sharedBuffer[1] == 0x54 && sharedBuffer[2] == 0x43 && sharedBuffer[3] == 0x48;
 		}
@@ -194,7 +194,7 @@ namespace CrystalMpq
 			var sharedBuffer = Utility.GetSharedBuffer(sizeof(PatchInfoHeader));
 
 			// No buffer should ever be smaller than 28 bytes… right ?
-			if (archive.ReadBlock(sharedBuffer, 0, offset, 28) != 28)
+			if (archive.ReadArchiveData(sharedBuffer, 0, offset, 28) != 28)
 				throw new EndOfStreamException(ErrorMessages.GetString("PatchInfoHeaderEndOfStream")); // It's weird if we could not read the whole 28 bytes… (At worse, we should have read trash data)
 
 			var patchInfoHeader = new PatchInfoHeader();
@@ -215,7 +215,7 @@ namespace CrystalMpq
 			int length = count * sizeof(uint);
 			var sharedBuffer = Utility.GetSharedBuffer(length);
 
-			if (archive.ReadBlock(sharedBuffer, 0, offset, length) != length) throw new EndOfStreamException();
+			if (archive.ReadArchiveData(sharedBuffer, 0, offset, length) != length) throw new EndOfStreamException();
 
 			var offsets = new uint[count];
 
@@ -529,7 +529,7 @@ namespace CrystalMpq
 			bool compressed = !(length == file.Archive.BlockSize || last && (uint)length == lastBlockLength);
 			var buffer = compressed ? compressedBuffer : blockBuffer;
 
-			file.Archive.ReadBlock(buffer, 0, offset + fileHeader[block], length);
+			file.Archive.ReadArchiveData(buffer, 0, offset + fileHeader[block], length);
 
 			if (file.IsEncrypted)
 			{
