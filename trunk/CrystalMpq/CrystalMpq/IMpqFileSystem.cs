@@ -9,16 +9,14 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 
-namespace CrystalMpq.Utility
+namespace CrystalMpq
 {
-	[Flags]
-	public enum WoWArchiveKind
+	public interface IMpqFileSystem : IDisposable
 	{
-		Regular = 0,
-		Base = 1,
-		LanguagePack = 2,
-		Global = 3,
-		Patch = 4
+		MpqFile FindFile(string filename);
+
+		IList<MpqArchive> Archives { get; }
 	}
 }

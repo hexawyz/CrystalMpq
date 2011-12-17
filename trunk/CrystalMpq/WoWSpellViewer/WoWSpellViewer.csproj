@@ -104,13 +104,13 @@
     <Compile Include="SpellValue.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CrystalMpq.Utility.Windows.Forms\CrystalMpq.Utility.Windows.Forms.csproj">
+    <ProjectReference Include="..\CrystalMpq.WoW.Windows.Forms\CrystalMpq.WoW.Windows.Forms.csproj">
       <Project>{E16A1D77-E293-4E26-A1EB-CD90C37A3913}</Project>
-      <Name>CrystalMpq.Utility.Windows.Forms</Name>
+      <Name>CrystalMpq.WoW.Windows.Forms</Name>
     </ProjectReference>
-    <ProjectReference Include="..\CrystalMpq.Utility\CrystalMpq.Utility.csproj">
+    <ProjectReference Include="..\CrystalMpq.WoW\CrystalMpq.WoW.csproj">
       <Project>{A81D6E00-66E6-42CC-91D5-B922E8928C3E}</Project>
-      <Name>CrystalMpq.Utility</Name>
+      <Name>CrystalMpq.WoW</Name>
     </ProjectReference>
     <ProjectReference Include="..\CrystalMpq.WoWDatabases\CrystalMpq.WoWDatabases.csproj">
       <Project>{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}</Project>

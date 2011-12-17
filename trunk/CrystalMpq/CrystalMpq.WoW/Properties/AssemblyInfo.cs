@@ -12,11 +12,11 @@ using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("CrystalMpq.Utility.Windows.Forms")]
-[assembly: AssemblyDescription("Utility library for use with CrystalMpq and Windows Forms")]
+[assembly: AssemblyTitle("CrystalMpq.WoW")]
+[assembly: AssemblyDescription("Support library for access of WoW MPQ archives with CrystalMpq.")]
 [assembly: AssemblyProduct("CrystalMpq")]
 
 [assembly: ComVisible(false)]
-[assembly: Guid("ce0c46de-7c45-43d4-911d-173dd975129e")]
+[assembly: Guid("522190a5-37e5-4b39-810e-e51f015ce129")]
 
-[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyVersion("2.2.0.0")]

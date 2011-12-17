@@ -9,14 +9,16 @@
 #endregion
 
 using System;
-using System.Reflection;
-using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("CrystalMpq.Utility")]
-[assembly: AssemblyDescription("Utility library for use with CrystalMpq")]
-[assembly: AssemblyProduct("CrystalMpq")]
-
-[assembly: ComVisible(false)]
-[assembly: Guid("522190a5-37e5-4b39-810e-e51f015ce129")]
-
-[assembly: AssemblyVersion("2.1.0.0")]
+namespace CrystalMpq.WoW
+{
+	[Flags]
+	public enum WoWArchiveKind
+	{
+		Regular = 0,
+		Base = 1,
+		LanguagePack = 2,
+		Global = 3,
+		Patch = 4
+	}
+}

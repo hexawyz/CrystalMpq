@@ -14,7 +14,7 @@ using System.Collections.ObjectModel;
 using System.Text;
 using CrystalMpq;
 
-namespace CrystalMpq.Utility
+namespace CrystalMpq.WoW
 {
 	/// <summary>Represents a file system composed of multiple MPQ archives.</summary>
 	/// <remarks>When searching a file, the first archives are always searched first.</remarks>

@@ -10,7 +10,7 @@
 
 using System;
 
-namespace CrystalMpq.Utility
+namespace CrystalMpq.WoW
 {
 	/// <summary>Represents an archive in a World of Warcraft installation.</summary>
 	public struct WoWArchive

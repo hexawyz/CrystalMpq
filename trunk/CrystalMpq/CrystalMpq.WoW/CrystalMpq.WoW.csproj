@@ -1,21 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{E16A1D77-E293-4E26-A1EB-CD90C37A3913}</ProjectGuid>
+    <ProjectGuid>{A81D6E00-66E6-42CC-91D5-B922E8928C3E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CrystalMpq.Utility.Windows.Forms</RootNamespace>
-    <AssemblyName>CrystalMpq.Utility.Windows.Forms</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <RootNamespace>CrystalMpq.WoW</RootNamespace>
+    <AssemblyName>CrystalMpq.WoW</AssemblyName>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
-    <UpgradeBackupLocation />
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -40,7 +40,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\bin\Debug\CrystalMpq.Utility.Windows.Forms.xml</DocumentationFile>
+    <DocumentationFile>..\bin\Debug\CrystalMpq.WoW.xml</DocumentationFile>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -50,7 +50,8 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\bin\Release\CrystalMpq.Utility.Windows.Forms.xml</DocumentationFile>
+    <DocumentationFile>..\bin\Release\CrystalMpq.WoW.xml</DocumentationFile>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup>
@@ -61,37 +62,39 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\AssemblyInfo.Common.cs">
       <Link>Properties\AssemblyInfo.Common.cs</Link>
     </Compile>
-    <Compile Include="LanguagePackDialog.cs" />
-    <Compile Include="LanguagePackPickerForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="LanguagePackPickerForm.Designer.cs">
-      <DependentUpon>LanguagePackPickerForm.cs</DependentUpon>
-    </Compile>
+    <Compile Include="CultureNotSupportedException.cs" />
+    <Compile Include="WoWInstallationKind.cs" />
+    <Compile Include="WoWLanguagePack.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="WoWArchive.cs" />
+    <Compile Include="WoWArchiveInformation.cs" />
+    <Compile Include="WoWArchiveKind.cs" />
+    <Compile Include="WoWInstallation.cs" />
+    <Compile Include="WoWMpqFileSystem.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="LanguagePackPickerForm.fr.resx">
-      <DependentUpon>LanguagePackPickerForm.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="LanguagePackPickerForm.resx">
-      <DependentUpon>LanguagePackPickerForm.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CrystalMpq.Utility\CrystalMpq.Utility.csproj">
-      <Project>{A81D6E00-66E6-42CC-91D5-B922E8928C3E}</Project>
-      <Name>CrystalMpq.Utility</Name>
+    <ProjectReference Include="..\CrystalMpq\CrystalMpq.csproj">
+      <Project>{B5A4A3C8-5F65-4112-B147-31E2AA1A1E9F}</Project>
+      <Name>CrystalMpq</Name>
+      <Private>False</Private>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.fr.resx" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -115,7 +118,7 @@
       <Link>CrystalMpq.snk</Link>
     </None>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

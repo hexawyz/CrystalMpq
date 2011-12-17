@@ -23,7 +23,7 @@ using CrystalMpq.DataFormats;
 using CrystalMpq.Explorer.Extensibility;
 using CrystalMpq.Explorer.Properties;
 using CrystalMpq.Explorer.Viewers;
-using CrystalMpq.Utility;
+using CrystalMpq.WoW;
 using System.Threading;
 #endregion
 

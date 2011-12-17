@@ -15,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.Explorer.Extensi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.Explorer", "CrystalMpq.Explorer\CrystalMpq.Explorer.csproj", "{60C14A78-1E0A-4F96-8A32-525213F5FD56}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.Utility", "CrystalMpq.Utility\CrystalMpq.Utility.csproj", "{A81D6E00-66E6-42CC-91D5-B922E8928C3E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.WoW", "CrystalMpq.WoW\CrystalMpq.WoW.csproj", "{A81D6E00-66E6-42CC-91D5-B922E8928C3E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.Explorer.BaseViewers", "CrystalMpq.Explorer.BaseViewers\CrystalMpq.Explorer.BaseViewers.csproj", "{960554AB-B9FF-4F05-83BD-B00FCAE420A6}"
 EndProject
@@ -31,7 +31,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WoWSpellViewer", "WoWSpellV
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.WoWDatabases", "CrystalMpq.WoWDatabases\CrystalMpq.WoWDatabases.csproj", "{4D8FDBDA-0AFD-4A16-BB9E-09CAB77D765D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.Utility.Windows.Forms", "CrystalMpq.Utility.Windows.Forms\CrystalMpq.Utility.Windows.Forms.csproj", "{E16A1D77-E293-4E26-A1EB-CD90C37A3913}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.WoW.Windows.Forms", "CrystalMpq.WoW.Windows.Forms\CrystalMpq.WoW.Windows.Forms.csproj", "{E16A1D77-E293-4E26-A1EB-CD90C37A3913}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalMpq.FileExtractor", "CrystalMpq.FileExtractor\CrystalMpq.FileExtractor.csproj", "{AC731901-55F0-4DB0-ABB8-A8EDA67B0FAA}"
 EndProject

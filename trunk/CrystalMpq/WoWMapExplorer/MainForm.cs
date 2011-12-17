@@ -20,7 +20,7 @@ using System.Drawing.Drawing2D;
 using System.Text;
 using System.Windows.Forms;
 using CrystalMpq;
-using CrystalMpq.Utility;
+using CrystalMpq.WoW;
 using CrystalMpq.DataFormats;
 using CrystalMpq.WoWDatabases;
 using System.IO;

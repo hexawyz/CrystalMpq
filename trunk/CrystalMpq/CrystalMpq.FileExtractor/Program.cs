@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using CrystalMpq;
-using CrystalMpq.Utility;
+using CrystalMpq.WoW;
 
 namespace CrystalMpq.FileExtractor
 {
