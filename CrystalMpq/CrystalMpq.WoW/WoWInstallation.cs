@@ -17,7 +17,7 @@ using System.Collections.ObjectModel;
 using Microsoft.Win32;
 using IOPath = System.IO.Path;
 
-namespace CrystalMpq.Utility
+namespace CrystalMpq.WoW
 {
 	/// <summary>Represents a WoW installation on the machine.</summary>
 	public sealed class WoWInstallation
@@ -31,7 +31,7 @@ namespace CrystalMpq.Utility
 
 			internal LanguagePackCollection(WoWInstallation wowInstallation) { this.wowInstallation = wowInstallation; }
 
-			/// <summary>Gets or sets the <see cref="CrystalMpq.Utility.WoWLanguagePack"/> at the specified index.</summary>
+			/// <summary>Gets or sets the <see cref="CrystalMpq.WoW.WoWLanguagePack"/> at the specified index.</summary>
 			/// <value></value>
 			public WoWLanguagePack this[int index]
 			{
@@ -360,7 +360,7 @@ namespace CrystalMpq.Utility
 			if (languagePack.WoWInstallation != this)
 				throw new ArgumentException();
 #pragma warning disable 618
-			if (enforceCultureCheck && installationKind == Utility.WoWInstallationKind.Classic && languagePack.DatabaseFieldIndex < 0)
+			if (enforceCultureCheck && installationKind == WoW.WoWInstallationKind.Classic && languagePack.DatabaseFieldIndex < 0)
 #pragma warning restore 618
 				throw new CultureNotSupportedException(languagePack.Culture);
 

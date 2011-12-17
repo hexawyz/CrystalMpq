@@ -117,8 +117,10 @@
     <Compile Include="7zip\ICoder.cs" />
     <Compile Include="ErrorMessages.cs" />
     <Compile Include="ExtensionAttribute.cs" />
+    <Compile Include="IMpqFileSystem.cs" />
     <Compile Include="MpqBlockEntry.cs" />
     <Compile Include="MpqBlockTable.cs" />
+    <Compile Include="MpqFileSystem.cs" />
     <Compile Include="MpqNameCache.cs" />
     <Compile Include="MpqHashEntry.cs" />
     <Compile Include="MpqUserDataStream.cs" />

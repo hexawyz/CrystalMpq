@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Globalization;
 
-namespace CrystalMpq.Utility
+namespace CrystalMpq.WoW
 {
 	/// <summary>This exception is thrown when a culture is not supported.</summary>
 	/// <remarks>Refer to the <see cref="Culture"/> field for information on the unsupported culture.</remarks>

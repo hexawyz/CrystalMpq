@@ -17,7 +17,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Globalization;
 
-namespace CrystalMpq.Utility
+namespace CrystalMpq.WoW
 {
 	partial class LanguagePackPickerForm : Form
 	{

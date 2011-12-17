@@ -8,7 +8,7 @@
 // or at this URL: http://www.microsoft.com/opensource/licenses.mspx#Ms-RL
 #endregion
 
-namespace CrystalMpq.Utility
+namespace CrystalMpq.WoW
 {
 	partial class LanguagePackPickerForm
 	{

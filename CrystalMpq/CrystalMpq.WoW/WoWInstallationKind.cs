@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CrystalMpq.Utility
+namespace CrystalMpq.WoW
 {
 	/// <summary>Represents the kind of installation.</summary>
 	public enum WoWInstallationKind

@@ -11,7 +11,7 @@
 using System;
 using System.Windows.Forms;
 
-namespace CrystalMpq.Utility
+namespace CrystalMpq.WoW
 {
 	public sealed class LanguagePackDialog : IDisposable
 	{

@@ -16,7 +16,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using IOPath = System.IO.Path;
 
-namespace CrystalMpq.Utility
+namespace CrystalMpq.WoW
 {
 	/// <summary>Represents a language pack in a <see cref="WoWInstallation"/>.</summary>
 	public sealed class WoWLanguagePack

@@ -61,9 +61,9 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CrystalMpq.Utility\CrystalMpq.Utility.csproj">
+    <ProjectReference Include="..\CrystalMpq.WoW\CrystalMpq.WoW.csproj">
       <Project>{A81D6E00-66E6-42CC-91D5-B922E8928C3E}</Project>
-      <Name>CrystalMpq.Utility</Name>
+      <Name>CrystalMpq.WoW</Name>
     </ProjectReference>
     <ProjectReference Include="..\CrystalMpq\CrystalMpq.csproj">
       <Project>{B5A4A3C8-5F65-4112-B147-31E2AA1A1E9F}</Project>
