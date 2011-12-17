@@ -29,7 +29,7 @@ namespace WoWSpellViewer
 	partial class MainForm : Form
 	{
 		WoWInstallation wowInstallation;
-		LanguagePack languagePack;
+		WoWLanguagePack languagePack;
 		WoWMpqFileSystem wowFileSystem;
 		KeyedClientDatabase<int, SpellRecord> spellDatabase;
 		KeyedClientDatabase<int, SpellIconRecord> spellIconDatabase;
@@ -37,7 +37,7 @@ namespace WoWSpellViewer
 		SpellInformation spellInformation;
 		int currentSpellIndex;
 
-		public MainForm(WoWInstallation wowInstallation, LanguagePack languagePack)
+		public MainForm(WoWInstallation wowInstallation, WoWLanguagePack languagePack)
 		{
 			InitializeComponent();
 			this.wowInstallation = wowInstallation;

@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 
 namespace CrystalMpq
 {
-	internal static class Utility
+	internal static class CommonMethods
 	{
 		[ThreadStatic]
 		private static byte[] sharedBuffer;
@@ -23,9 +23,9 @@ namespace CrystalMpq
 		[ThreadStatic]
 		private static MD5 sharedMD5;
 
-		/// <summary>Gets a shared <see cref="SharedMD5"/> implementation.</summary>
+		/// <summary>Gets a shared <see cref="MD5"/> implementation.</summary>
 		/// <remarks>The shared <see cref="MD5"/> object should be used with care, with the same rules as the shared buffer.</remarks>
-		/// <value>A <see cref="SharedMD5"/> object that can be used to compute a hash.</value>
+		/// <value>A <see cref="MD5"/> object that can be used to compute a hash.</value>
 		public static MD5 SharedMD5
 		{
 			get
@@ -35,6 +35,24 @@ namespace CrystalMpq
 				sharedMD5.Initialize();
 
 				return sharedMD5;
+			}
+		}
+
+		[ThreadStatic]
+		private static SHA1 sharedSHA1;
+
+		/// <summary>Gets a shared <see cref="SHA1"/> implementation.</summary>
+		/// <remarks>The shared <see cref="SHA1"/> object should be used with care, with the same rules as the shared buffer.</remarks>
+		/// <value>A <see cref="SHA1"/> object that can be used to compute a hash.</value>
+		public static SHA1 SharedSHA1
+		{
+			get
+			{
+				if (sharedSHA1 == null) sharedSHA1 = SHA1.Create();
+
+				sharedSHA1.Initialize();
+
+				return sharedSHA1;
 			}
 		}
 

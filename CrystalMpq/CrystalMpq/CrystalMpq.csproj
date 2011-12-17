@@ -45,7 +45,7 @@
     <BaseAddress>285212672</BaseAddress>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
-    <DefineConstants>TRACE;DEBUG;USE_SHARPZIPLIB</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;USE_SHARPZIPLIB;NET_FX_2</DefineConstants>
     <DocumentationFile>..\bin\Debug\CrystalMpq.xml</DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
@@ -64,7 +64,7 @@
     <BaseAddress>285212672</BaseAddress>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
-    <DefineConstants>TRACE;USE_SHARPZIPLIB</DefineConstants>
+    <DefineConstants>TRACE;USE_SHARPZIPLIB;NET_FX_2</DefineConstants>
     <DocumentationFile>..\bin\Release\CrystalMpq.xml</DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
@@ -116,6 +116,7 @@
     <Compile Include="7zip\Compress\RangeCoder\RangeCoderBitTree.cs" />
     <Compile Include="7zip\ICoder.cs" />
     <Compile Include="ErrorMessages.cs" />
+    <Compile Include="ExtensionAttribute.cs" />
     <Compile Include="MpqBlockEntry.cs" />
     <Compile Include="MpqBlockTable.cs" />
     <Compile Include="MpqNameCache.cs" />
@@ -163,11 +164,31 @@
     </Compile>
     <Compile Include="SparseCompression.cs" />
     <Compile Include="SparseInputStream.cs" />
-    <Compile Include="Utility.cs" />
+    <Compile Include="StreamEx.cs" />
+    <Compile Include="CommonMethods.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="7zip\ReadMe.txt" />
     <Content Include="HuffmanOld.txt" />
+    <EmbeddedResource Include="Keys\Blizzard Strong.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Keys\Blizzard Weak.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <Content Include="Keys\ReadMe.txt" />
+    <Content Include="Keys\StarCraft Map.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Keys\Warcraft 3 Map.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Keys\World of Warcraft Macintosh Patch.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Keys\World of Warcraft Survey.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="ICSharpCode.SharpZipLib\Changes.txt" />
     <None Include="ICSharpCode.SharpZipLib\COPYING.txt" />
     <None Include="ICSharpCode.SharpZipLib\ICSharpCode.SharpZipLib.dll" />

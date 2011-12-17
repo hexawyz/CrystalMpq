@@ -180,7 +180,7 @@ namespace CrystalMpq
 
 		private static unsafe bool TestPatchHeader(MpqArchive archive, long offset)
 		{
-			var sharedBuffer = Utility.GetSharedBuffer(4);
+			var sharedBuffer = CommonMethods.GetSharedBuffer(4);
 
 			if (archive.ReadArchiveData(sharedBuffer, 0, offset, 4) != 4) throw new EndOfStreamException();
 
@@ -191,7 +191,7 @@ namespace CrystalMpq
 		{
 			// Always get a buffer big enough, even if the extra bytes are not present…
 			// As of now (09/2011), the header should always be 28 bytes long, but this may change in the future…
-			var sharedBuffer = Utility.GetSharedBuffer(sizeof(PatchInfoHeader));
+			var sharedBuffer = CommonMethods.GetSharedBuffer(sizeof(PatchInfoHeader));
 
 			// No buffer should ever be smaller than 28 bytes… right ?
 			if (archive.ReadArchiveData(sharedBuffer, 0, offset, 28) != 28)
@@ -213,7 +213,7 @@ namespace CrystalMpq
 		private static unsafe uint[] ReadBlockOffsets(MpqArchive archive, uint hash, long offset, int count)
 		{
 			int length = count * sizeof(uint);
-			var sharedBuffer = Utility.GetSharedBuffer(length);
+			var sharedBuffer = CommonMethods.GetSharedBuffer(length);
 
 			if (archive.ReadArchiveData(sharedBuffer, 0, offset, length) != length) throw new EndOfStreamException();
 
@@ -221,7 +221,7 @@ namespace CrystalMpq
 
 			Buffer.BlockCopy(sharedBuffer, 0, offsets, 0, length);
 
-			if (!BitConverter.IsLittleEndian) Utility.SwapBytes(offsets);
+			if (!BitConverter.IsLittleEndian) CommonMethods.SwapBytes(offsets);
 
 			// If hash is valid, decode the header
 			if (hash != 0) unchecked { Encryption.Decrypt(offsets, hash - 1); }
@@ -234,7 +234,7 @@ namespace CrystalMpq
 			PatchHeader patchHeader;
 
 			Read((byte*)&patchHeader, sizeof(PatchHeader));
-			if (!BitConverter.IsLittleEndian) Utility.SwapBytes((uint*)&patchHeader, sizeof(PatchHeader) >> 2);
+			if (!BitConverter.IsLittleEndian) CommonMethods.SwapBytes((uint*)&patchHeader, sizeof(PatchHeader) >> 2);
 
 			if (patchHeader.Signature != 0x48435450 /* 'PTCH' */) throw new InvalidDataException(ErrorMessages.GetString("PatchHeaderInvalidSignature"));
 			if (patchHeader.PatchedFileSize != file.Size) throw new InvalidDataException(ErrorMessages.GetString("PatchHeaderInvalidFileSize"));
@@ -246,7 +246,7 @@ namespace CrystalMpq
 			var originalData = new byte[baseStream.Length];
 			if (baseStream.Read(originalData, 0, originalData.Length) != originalData.Length) throw new EndOfStreamException();
 
-			var md5 = Utility.SharedMD5;
+			var md5 = CommonMethods.SharedMD5;
 
 			var originalHash = md5.ComputeHash(originalData);
 
@@ -259,13 +259,13 @@ namespace CrystalMpq
 				var chunkHeader = stackalloc uint[2];
 
 				if (Read((byte*)chunkHeader, 8) != 8) throw new EndOfStreamException();
-				if (!BitConverter.IsLittleEndian) Utility.SwapBytes(chunkHeader, 2);
+				if (!BitConverter.IsLittleEndian) CommonMethods.SwapBytes(chunkHeader, 2);
 
 				if (chunkHeader[0] == 0x5F35444D /* 'MD5_' */)
 				{
 					if (Read((byte*)&md5ChunkData, sizeof(PatchMD5ChunkData)) != sizeof(PatchMD5ChunkData)) throw new EndOfStreamException();
 
-					if (!Utility.CompareData(originalHash, md5ChunkData.OrginialFileMD5)) throw new InvalidDataException(ErrorMessages.GetString("PatchBaseFileMD5Failed"));
+					if (!CommonMethods.CompareData(originalHash, md5ChunkData.OrginialFileMD5)) throw new InvalidDataException(ErrorMessages.GetString("PatchBaseFileMD5Failed"));
 
 					hasMD5 = true;
 				}
@@ -277,7 +277,7 @@ namespace CrystalMpq
 					uint patchType;
 
 					if (Read((byte*)&patchType, 4) != 4) throw new EndOfStreamException();
-					if (!BitConverter.IsLittleEndian) patchType = Utility.SwapBytes(patchType);
+					if (!BitConverter.IsLittleEndian) patchType = CommonMethods.SwapBytes(patchType);
 
 					uint patchLength = chunkHeader[1] - 12;
 
@@ -285,18 +285,18 @@ namespace CrystalMpq
 
 					if (patchType == 0x59504F43 /* 'COPY' */) patchedData = ApplyCopyPatch(ref patchInfoHeader, ref patchHeader, patchLength, originalData);
 					if (patchType == 0x30445342 /* 'BSD0' */) patchedData = ApplyBsd0Patch(ref patchInfoHeader, ref patchHeader, patchLength, originalData);
-					else throw new NotSupportedException("Unsupported patch type: '" + Utility.FourCCToString(chunkHeader[0]) + "'");
+					else throw new NotSupportedException("Unsupported patch type: '" + CommonMethods.FourCCToString(chunkHeader[0]) + "'");
 
 					if (hasMD5)
 					{
 						var patchedHash = md5.ComputeHash(patchedData);
 
-						if (!Utility.CompareData(patchedHash, md5ChunkData.PatchedFileMD5)) throw new InvalidDataException("PatchFinalFileMD5Failed");
+						if (!CommonMethods.CompareData(patchedHash, md5ChunkData.PatchedFileMD5)) throw new InvalidDataException("PatchFinalFileMD5Failed");
 					}
 
 					return patchedData;
 				}
-				else throw new InvalidDataException(string.Format(ErrorMessages.GetString("PatchUnknownChunk"), Utility.FourCCToString(chunkHeader[0])));
+				else throw new InvalidDataException(string.Format(ErrorMessages.GetString("PatchUnknownChunk"), CommonMethods.FourCCToString(chunkHeader[0])));
 
 				Seek(chunkPosition + chunkHeader[1], SeekOrigin.Begin);
 			}
@@ -328,7 +328,7 @@ namespace CrystalMpq
 			{
 				var bsdiffHeader = (PatchBsdiff40Header*)patchDataPointer;
 
-				if (!BitConverter.IsLittleEndian) Utility.SwapBytes((ulong*)patchDataPointer, sizeof(PatchBsdiff40Header) >> 3);
+				if (!BitConverter.IsLittleEndian) CommonMethods.SwapBytes((ulong*)patchDataPointer, sizeof(PatchBsdiff40Header) >> 3);
 
 				if (bsdiffHeader->Signature != 0x3034464649445342 /* 'BSDIFF40' */) throw new InvalidDataException(ErrorMessages.GetString("Bsd0PatchHeaderInvalidSignature"));
 
@@ -336,7 +336,7 @@ namespace CrystalMpq
 				var differenceBlock = (byte*)controlBlock + bsdiffHeader->ControlBlockLength;
 				var extraBlock = differenceBlock + bsdiffHeader->DifferenceBlockLength;
 
-				if (!BitConverter.IsLittleEndian) Utility.SwapBytes(controlBlock, bsdiffHeader->ControlBlockLength >> 2);
+				if (!BitConverter.IsLittleEndian) CommonMethods.SwapBytes(controlBlock, bsdiffHeader->ControlBlockLength >> 2);
 
 				var patchBuffer = new byte[bsdiffHeader->PatchedFileSize];
 

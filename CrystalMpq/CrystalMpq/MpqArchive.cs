@@ -14,6 +14,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace CrystalMpq
 {
@@ -21,7 +23,7 @@ namespace CrystalMpq
 	/// This class is used to read MPQ archives.
 	/// It gives you access to all files contained in the archive.
 	/// </summary>
-	public sealed partial class MpqArchive : IDisposable
+	public partial class MpqArchive : IDisposable
 	{
 		#region MpqFileEnumerator Structure
 
@@ -113,12 +115,17 @@ namespace CrystalMpq
 
 		internal static readonly uint HashTableHash = Encryption.Hash("(hash table)", 0x300);
 		internal static readonly uint BlockTableHash = Encryption.Hash("(block table)", 0x300);
+		internal const string ListFileName = "(listfile)";
+		internal const string AttributesFileName = "(attributes)";
+		internal const string WeakSignatureFileName = "(signature)";
+		internal const string UserDataFileName = "(user data)";
 		internal const uint MpqArchiveSignature = 0x1A51504D;
 		internal const uint MpqUserDataSignature = 0x1B51504D;
+		internal const uint MpqStrongSignatureSignature = 0x5349474E;
 
 		#endregion
 
-		private BinaryReader reader;
+		private Stream stream;
 		private long userDataOffset;
 		private long userDataLength;
 		private long archiveDataOffset;
@@ -132,6 +139,7 @@ namespace CrystalMpq
 		private MpqFileCollection fileCollection;
 		private MpqFile listFile;
 		private bool listFileParsed;
+		private bool hasStrongSignature;
 		private readonly ResolveStreamEventArgs resolveStreamEventArgs;
 		private readonly object syncRoot;
 
@@ -203,12 +211,12 @@ namespace CrystalMpq
 
 		public void Close()
 		{
-			if (reader != null)
+			if (stream != null)
 				lock (syncRoot)
 				{
-					if (reader != null)
-						reader.Close();
-					reader = null;
+					if (stream != null)
+						stream.Close();
+					stream = null;
 				}
 		}
 
@@ -231,25 +239,25 @@ namespace CrystalMpq
 			// The "safe" pattern is to read as unsigned and cast to signed where oferflow is possible.
 			checked
 			{
-				archiveDataOffset = stream.Position;
-				reader = new BinaryReader(stream);
-				signature = reader.ReadUInt32();
+				this.stream = stream;
+				archiveDataOffset = stream.Position; // We don't handle searching for MPQ data. The stream must already be positionned at the beginning of the MPQ data.
+				signature = stream.ReadUInt32();
 				// The first part of the file may be MPQ user data. The next part should be regular MPQ archive data.
 				if (signature == MpqUserDataSignature)
 				{
 					userDataOffset = archiveDataOffset;
-					userDataLength = reader.ReadUInt32();
-					stream.Seek(reader.ReadUInt32() - 3 * sizeof(uint), SeekOrigin.Current);
+					userDataLength = stream.ReadUInt32();
+					stream.Seek(stream.ReadUInt32() - 3 * sizeof(uint), SeekOrigin.Current);
 					archiveDataOffset = stream.Position;
-					signature = reader.ReadUInt32();
+					signature = stream.ReadUInt32();
 				}
 				// Checking for MPQ archive signature
 				if (signature !=  MpqArchiveSignature) throw new InvalidDataException(ErrorMessages.GetString("InvalidData"));
-				headerSize = reader.ReadUInt32();
-				archiveDataLength = reader.ReadUInt32();
+				headerSize = stream.ReadUInt32();
+				archiveDataLength = stream.ReadUInt32();
 				// MPQ format detection
 				// Unknown MPQ version will raise an error… This seems like a safe idea.
-				ushort mpqVersion = reader.ReadUInt16();
+				ushort mpqVersion = stream.ReadUInt16();
 				switch (mpqVersion) // Read MPQ format
 				{
 					case 0: // Original MPQ format
@@ -274,11 +282,11 @@ namespace CrystalMpq
 					default:
 						throw new MpqVersionNotSupportedException(mpqVersion);
 				}
-				blockSize = 0x200 << reader.ReadUInt16(); // Calculate block size
-				hashTableOffset = reader.ReadUInt32(); // Get Hash Table Offset
-				blockTableOffset = reader.ReadUInt32(); // Get Block Table Offset
-				hashTableLength = reader.ReadUInt32(); // Get Hash Table Size
-				blockTableLength = reader.ReadUInt32(); // Get Block Table Size
+				blockSize = 0x200 << stream.ReadUInt16(); // Calculate block size
+				hashTableOffset = stream.ReadUInt32(); // Get Hash Table Offset
+				blockTableOffset = stream.ReadUInt32(); // Get Block Table Offset
+				hashTableLength = stream.ReadUInt32(); // Get Hash Table Size
+				blockTableLength = stream.ReadUInt32(); // Get Block Table Size
 
 				// Assign the compressed size for the various tables.
 				// Since compression was non-existant with V1 & V2, we know the compressed size is the uncompressed size.
@@ -294,10 +302,10 @@ namespace CrystalMpq
 					ushort hashTableOffsetHigh, blockTableOffsetHigh;
 
 					// Read extended information
-					highBlockTableOffset = (long)reader.ReadUInt64();
+					highBlockTableOffset = (long)stream.ReadUInt64();
 					highBlockTableCompressedSize = highBlockTableOffset != 0 ? sizeof(uint) * blockTableLength : 0;
-					hashTableOffsetHigh = reader.ReadUInt16();
-					blockTableOffsetHigh = reader.ReadUInt16();
+					hashTableOffsetHigh = stream.ReadUInt16();
+					blockTableOffsetHigh = stream.ReadUInt16();
 					// Modify offsets accordingly
 					hashTableOffset |= (long)hashTableOffsetHigh << 32;
 					blockTableOffset |= (long)blockTableOffsetHigh << 32;
@@ -305,19 +313,19 @@ namespace CrystalMpq
 					// Handle MPQ version 3 (Cataclysm First)
 					if (archiveFormat >= MpqFormat.CataclysmFirst && headerSize >= 0x44)
 					{
-						archiveDataLength = (long)reader.ReadUInt64();
-						enhancedBlockTableOffset = (long)reader.ReadUInt64();
-						enhancedHashTableOffset = (long)reader.ReadUInt64();
+						archiveDataLength = (long)stream.ReadUInt64();
+						enhancedBlockTableOffset = (long)stream.ReadUInt64();
+						enhancedHashTableOffset = (long)stream.ReadUInt64();
 
 						if (archiveFormat >= MpqFormat.CataclysmSecond)
 						{
-							hashTableCompressedSize = (long)reader.ReadUInt64();
-							blockTableCompressedSize = (long)reader.ReadUInt64();
-							highBlockTableCompressedSize = (long)reader.ReadUInt64();
-							enhancedHashTableCompressedSize = (long)reader.ReadUInt64();
-							enhancedBlockTableCompressedSize = (long)reader.ReadUInt64();
+							hashTableCompressedSize = (long)stream.ReadUInt64();
+							blockTableCompressedSize = (long)stream.ReadUInt64();
+							highBlockTableCompressedSize = (long)stream.ReadUInt64();
+							enhancedHashTableCompressedSize = (long)stream.ReadUInt64();
+							enhancedBlockTableCompressedSize = (long)stream.ReadUInt64();
 
-							rawChunkSize = reader.ReadUInt32();
+							rawChunkSize = stream.ReadUInt32();
 						}
 						else
 						{
@@ -328,9 +336,9 @@ namespace CrystalMpq
 					else
 					{
 #if DEBUG
-						long oldArchiveSize = archiveSize;
+						long oldArchiveSize = archiveDataLength;
 #endif
-						// Compute 64 bit archive size (Not sure whether this is actually needed, but just in case)
+						// Compute 64 bit archive size (We don't really need it for MPQ reading, but for integrity checks, we do…)
 						if (highBlockTableOffset > hashTableOffset && highBlockTableOffset > blockTableOffset)
 							archiveDataLength = highBlockTableOffset + sizeof(ushort) * blockTableLength;
 						else if (blockTableOffset > hashTableOffset)
@@ -338,7 +346,7 @@ namespace CrystalMpq
 						else
 							archiveDataLength = hashTableOffset + 4 * sizeof(uint) * hashTableLength;
 #if DEBUG
-						Debug.Assert(oldArchiveSize >= archiveSize);
+						Debug.Assert(oldArchiveSize >= archiveDataLength);
 #endif
 					}
 				}
@@ -356,6 +364,14 @@ namespace CrystalMpq
 				hashTableSize = 4 * sizeof(uint) * hashTableLength;
 				blockTableSize = 4 * sizeof(uint) * blockTableLength;
 				highBlockTableSize = highBlockTableOffset != 0 ? sizeof(ushort) * blockTableLength : 0;
+
+				// Check for strong signature presence
+				if (stream.Length >= archiveDataOffset + archiveDataLength + 2052)
+				{
+					stream.Seek(archiveDataOffset + archiveDataLength, SeekOrigin.Begin);
+
+					hasStrongSignature = stream.ReadUInt32() == MpqStrongSignatureSignature;
+				}
 			}
 
 			// Create buffers for table reading
@@ -378,7 +394,7 @@ namespace CrystalMpq
 
 			// When possible, find and parse the listfile…
 			//TryFilename("(listfile)");
-			listFile = FindFile("(listfile)");
+			listFile = FindFile(ListFileName);
 			if (listFile == null) return;
 			if (shouldParseListFile) ParseListFile();
 		}
@@ -408,8 +424,8 @@ namespace CrystalMpq
 			// But anyway, if this ever happens in the future the overflow check should ensure us that the program will crash nicely.
 			int dataLengthInt32 = checked((int)dataLength);
 
-			reader.BaseStream.Seek(archiveDataOffset + tableOffset, SeekOrigin.Begin);
-			if (reader.Read(isCompressed ? compressedReadBuffer : buffer, 0, dataLengthInt32) != dataLengthInt32)
+			stream.Seek(archiveDataOffset + tableOffset, SeekOrigin.Begin);
+			if (stream.Read(isCompressed ? compressedReadBuffer : buffer, 0, dataLengthInt32) != dataLengthInt32)
 				throw new EndOfStreamException(); // Throw an exception if we are not able to read as many bytes as we were told we could read…
 
 			fixed (byte* bufferPointer = buffer)
@@ -427,7 +443,7 @@ namespace CrystalMpq
 						throw new InvalidDataException(); // Only allow the exact amount of bytes as a result
 				}
 
-				if (!BitConverter.IsLittleEndian) Utility.SwapBytes(tablePointer, uintCount);
+				if (!BitConverter.IsLittleEndian) CommonMethods.SwapBytes(tablePointer, uintCount);
 
 				if (!isCompressed && hash != 0) Encryption.Decrypt(tablePointer, hash, uintCount);
 			}
@@ -443,15 +459,15 @@ namespace CrystalMpq
 			// But anyway, if this ever happens in the future the overflow check should ensure us that the program will crash nicely.
 			int dataLengthInt32 = checked((int)dataLength);
 
-			reader.BaseStream.Seek(archiveDataOffset + tableOffset, SeekOrigin.Begin);
-			if (reader.Read(isCompressed ? compressedReadBuffer : buffer, 0, dataLengthInt32) != dataLengthInt32)
+			stream.Seek(archiveDataOffset + tableOffset, SeekOrigin.Begin);
+			if (stream.Read(isCompressed ? compressedReadBuffer : buffer, 0, dataLengthInt32) != dataLengthInt32)
 				throw new EndOfStreamException(); // Throw an exception if we are not able to read as many bytes as we were told we could read…
 
 			if (isCompressed)
 				if (Compression.DecompressBlock(compressedReadBuffer, dataLengthInt32, buffer, true) != realDataLength)
 					throw new InvalidDataException(); // Only allow the exact amount of bytes as a result
 
-			if (!BitConverter.IsLittleEndian) Utility.SwapBytes16(buffer);
+			if (!BitConverter.IsLittleEndian) CommonMethods.SwapBytes16(buffer);
 		}
 
 		private unsafe void ReadHashTable(byte[] buffer, long tableLength, long tableOffset, long dataLength, byte[] compressedReadBuffer)
@@ -508,12 +524,154 @@ namespace CrystalMpq
 			if (userDataLength > 0) return new MpqUserDataStream(this);
 			else
 			{
-				var file = FindFile("(user data)");
+				var file = FindFile(UserDataFileName);
 
 				if (file != null) return file.Open();
 			}
 
 			throw new InvalidOperationException();
+		}
+
+		/// <summary>Gets a value that indicate whether the current archive has a weak siganture.</summary>
+		/// <remarks>Some archives may be signed, which allows us to check archive integrity.</remarks>
+		/// <value><see langword="true"/> if the current archive has a weak siganture; otherwise, <see langword="false"/>.</value>
+		public bool HasWeakSignature { get { return FindFile("(signature)") != null; } }
+
+		public bool CheckBlizzardWeakSignature()
+		{
+			var publicKey = new RSACryptoServiceProvider();
+			
+			using (var stream = typeof(MpqArchive).Assembly.GetManifestResourceStream("CrystalMpq.Keys.Blizzard Weak.xml"))
+			using (var reader = new StreamReader(stream))
+				publicKey.FromXmlString(reader.ReadToEnd());
+
+			return CheckWeakSignature(publicKey);
+		}
+
+		public bool CheckWeakSignature(RSAParameters publicKey)
+		{
+			var rsa = RSA.Create();
+
+			rsa.ImportParameters(publicKey);
+
+			return CheckWeakSignature(rsa);
+		}
+
+		public bool CheckWeakSignature(RSA publicKey)
+		{
+			var file = FindFile(WeakSignatureFileName);
+
+			if (file == null) throw new InvalidOperationException();
+
+			// As of now, the signature file can only be 72 bytes long (8 unused bytes + 64 signature bytes)
+			if (file.Size != 72 || file.CompressedSize > file.Size) throw new InvalidDataException();
+
+			// Read the signature from the internal file
+			byte[] signature = new byte[64];
+
+			using (var stream = file.Open())
+			{
+				stream.Seek(8, SeekOrigin.Begin);
+
+				if (stream.Read(signature, 0, signature.Length) != signature.Length) throw new EndOfStreamException();
+			}
+
+			// Hash the whole archive with the MD5 algorithm
+			var md5 = CommonMethods.SharedMD5;
+
+			lock (syncRoot)
+			{
+				var buffer = new byte[4096];
+				long bytesToSignature = file.Offset;
+				long bytesRemaining = archiveDataLength;
+
+				stream.Seek(archiveDataOffset, SeekOrigin.Begin);
+
+				do
+				{
+					int count = stream.Read(buffer, 0, bytesRemaining > buffer.Length ? buffer.Length : (int)bytesRemaining);
+
+					// Null out the signature from the data (Note that the signature should normally not be compressed, but just in case, we use CompressedSize)
+					if (bytesToSignature < count && bytesToSignature + file.CompressedSize > 0)
+						Array.Clear(buffer, Math.Min((int)bytesToSignature, 0), (int)Math.Min(file.CompressedSize + bytesToSignature, count) + (bytesToSignature > 0 ? (int)bytesToSignature : 0));
+
+					bytesToSignature -= count;
+					bytesRemaining -= count;
+
+					if (bytesRemaining <= 0)
+					{
+						md5.TransformFinalBlock(buffer, 0, count);
+						break;
+					}
+					else md5.TransformBlock(buffer, 0, count, null, 0);
+				}
+				while (true);
+			}
+
+			return new RSAPKCS1SignatureDeformatter(publicKey).VerifySignature(md5, signature);
+		}
+
+		public bool HasStrongSignature { get { return hasStrongSignature; } }
+
+		public bool CheckBlizzardStrongSignature()
+		{
+			var publicKey = new RSACryptoServiceProvider();
+
+			using (var stream = typeof(MpqArchive).Assembly.GetManifestResourceStream("CrystalMpq.Keys.Blizzard Strong.xml"))
+			using (var reader = new StreamReader(stream))
+				publicKey.FromXmlString(reader.ReadToEnd());
+
+			return CheckStrongSignature(publicKey, null as byte[]);
+		}
+
+		public bool CheckStrongSignature(RSAParameters publicKey, string tail) { return CheckStrongSignature(publicKey, tail != null ? Encoding.ASCII.GetBytes(tail) : null); }
+
+		public bool CheckStrongSignature(RSAParameters publicKey, byte[] tail)
+		{
+			var rsa = RSA.Create();
+
+			rsa.ImportParameters(publicKey);
+
+			return CheckStrongSignature(rsa, tail);
+		}
+
+		public bool CheckStrongSignature(RSA publicKey, string tail) { return CheckStrongSignature(publicKey, tail != null ? Encoding.ASCII.GetBytes(tail) : null); }
+
+		public bool CheckStrongSignature(RSA publicKey, byte[] tail)
+		{
+			if (!hasStrongSignature) throw new InvalidOperationException();
+
+			// Hash the whole archive with the SHA1 algorithm
+			var sha1 = CommonMethods.SharedSHA1;
+			byte[] signature = new byte[2048];
+
+			lock (syncRoot)
+			{
+				var buffer = new byte[4096];
+				long bytesRemaining = archiveDataLength;
+
+				stream.Seek(archiveDataOffset, SeekOrigin.Begin);
+
+				do
+				{
+					int count = stream.Read(buffer, 0, bytesRemaining > buffer.Length ? buffer.Length : (int)bytesRemaining);
+
+					if ((bytesRemaining -= count) <= 0)
+					{
+						sha1.TransformFinalBlock(buffer, 0, count);
+						break;
+					}
+					else sha1.TransformBlock(buffer, 0, count, null, 0);
+				}
+				while (true);
+
+				// We should not need to seek to the end of the archive, since we should already be at the end
+				stream.Seek(sizeof(uint), SeekOrigin.Current); // Skip the strong signature header, as it has already been verified earlier
+
+				if (stream.Read(signature, 0, signature.Length) != signature.Length) throw new EndOfStreamException();
+			}
+
+			return new RSAPKCS1SignatureDeformatter(publicKey).VerifySignature(sha1, signature);
 		}
 
 		/// <summary>Gets a value that indicate whether the current archive has a listfile.</summary>
@@ -683,16 +841,18 @@ namespace CrystalMpq
 			else return null;
 		}
 
-		internal int ReadUserData(byte[] buffer, int index, long offset, int length) { return Read(buffer, index, userDataOffset + offset, length); }
+		protected object SyncRoot { get { return syncRoot; } }
 
-		internal int ReadArchiveData(byte[] buffer, int index, long offset, int length) { return Read(buffer, index, archiveDataOffset + offset, length); }
+		protected internal int ReadUserData(byte[] buffer, int index, long offset, int length) { return Read(buffer, index, userDataOffset + offset, length); }
 
-		internal int Read(byte[] buffer, int index, long absoluteOffset, int length)
+		protected internal int ReadArchiveData(byte[] buffer, int index, long offset, int length) { return Read(buffer, index, archiveDataOffset + offset, length); }
+
+		protected internal int Read(byte[] buffer, int index, long absoluteOffset, int length)
 		{
 			lock (syncRoot) // Allow multithreaded read access
 			{
-				reader.BaseStream.Seek(absoluteOffset, SeekOrigin.Begin);
-				return reader.Read(buffer, index, length);
+				stream.Seek(absoluteOffset, SeekOrigin.Begin);
+				return stream.Read(buffer, index, length);
 			}
 		}
 
@@ -703,9 +863,20 @@ namespace CrystalMpq
 		public MpqFileCollection Files { get { return fileCollection; } }
 
 		/// <summary>Gets the size of the MPQ archive.</summary>
-		public long FileSize { get { return archiveDataLength; } }
+		protected long UserDataOffset { get { return userDataOffset; } }
+
+		/// <summary>Gets the size of the MPQ archive.</summary>
+		public long UserDataLength { get { return userDataLength; } }
+
+		/// <summary>Gets the size of the MPQ archive.</summary>
+		protected long ArchiveDataOffset { get { return archiveDataOffset; } }
+
+		/// <summary>Gets the size of the MPQ archive.</summary>
+		public long ArchiveDataLength { get { return archiveDataLength; } }
 
 		/// <summary>Gets a flag indicating the format of the archive.</summary>
 		public MpqFormat Format { get { return archiveFormat; } }
+
+
 	}
 }

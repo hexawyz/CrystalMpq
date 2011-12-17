@@ -25,7 +25,7 @@ namespace CrystalMpq.Utility
 			set { languagePackPickerForm.WoWInstallation = value; }
 		}
 
-		public LanguagePack LanguagePack
+		public WoWLanguagePack LanguagePack
 		{
 			get { return languagePackPickerForm.SelectedLanguagePack; }
 			set { languagePackPickerForm.SelectedLanguagePack = value; }

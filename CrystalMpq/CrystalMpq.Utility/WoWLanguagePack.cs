@@ -19,7 +19,7 @@ using IOPath = System.IO.Path;
 namespace CrystalMpq.Utility
 {
 	/// <summary>Represents a language pack in a <see cref="WoWInstallation"/>.</summary>
-	public sealed class LanguagePack
+	public sealed class WoWLanguagePack
 	{
 		private static readonly string[] expectedArchiveNamesOld = new string[]
 		{
@@ -80,7 +80,7 @@ namespace CrystalMpq.Utility
 		private ReadOnlyCollection<WoWArchiveInformation> archiveCollection;
 		private int localeFieldIndex;
 
-		internal LanguagePack(WoWInstallation wowInstallation, CultureInfo culture)
+		internal WoWLanguagePack(WoWInstallation wowInstallation, CultureInfo culture)
 		{
 			this.wowInstallation = wowInstallation;
 			this.culture = culture;
@@ -89,7 +89,7 @@ namespace CrystalMpq.Utility
 				this.localeFieldIndex = -1;
 			this.dataPath = IOPath.Combine(wowInstallation.DataPath, wowCultureId);
 
-			archiveArray = wowInstallation.InstallationKind == InstallationKind.Cataclysmic ?
+			archiveArray = wowInstallation.InstallationKind == WoWInstallationKind.Cataclysmic ?
 				FindArchives(this.dataPath, this.wowCultureId) :
 				FindArchivesOld(this.dataPath, this.wowCultureId);
 			archiveCollection = new ReadOnlyCollection<WoWArchiveInformation>(archiveArray);

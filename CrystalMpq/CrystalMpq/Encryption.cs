@@ -14,16 +14,15 @@ namespace CrystalMpq
 {
 	internal sealed class Encryption
 	{
-		internal static uint[] precalc;
-		private static byte[] unpackBuffer;
+		private static uint[] encryptionTable = BuildEncryptionTable();
 
-		static Encryption()
+		private static uint[] BuildEncryptionTable()
 		{
 			int q, r = 0x100001;
 			uint seed;
 
-			precalc = new uint[0x500];
-			unpackBuffer = new byte[0x2000];
+			uint[] encryptionTable = new uint[0x500];
+
 			for (int i = 0; i < 0x100; i++)
 				for (int j = 0; j < 5; j++)
 				{
@@ -33,9 +32,11 @@ namespace CrystalMpq
 						seed = (uint)(r & 0xFFFF) << 16;
 						q = Math.DivRem(r * 125 + 3, 0x2AAAAB, out r);
 						seed |= (uint)(r & 0xFFFF);
-						precalc[0x100 * j + i] = seed;
+						encryptionTable[0x100 * j + i] = seed;
 					}
 				}
+
+			return encryptionTable;
 		}
 
 		public static uint Hash(string text, uint hashOffset)
@@ -54,7 +55,7 @@ namespace CrystalMpq
 					b = (byte)c;
 					if (b > 0x60 && b < 0x7B)
 						b -= 0x20;
-					hash = precalc[hashOffset + b] ^ (hash + seed);
+					hash = encryptionTable[hashOffset + b] ^ (hash + seed);
 					seed += hash + (seed << 5) + b + 3;
 				}
 			return hash;
@@ -93,7 +94,7 @@ namespace CrystalMpq
 			for (int i = length; i-- != 0; )
 				unchecked
 				{
-					seed += precalc[0x400 + hash & 0xFF];
+					seed += encryptionTable[0x400 + hash & 0xFF];
 					buffer = *data;
 					seed += buffer + (seed << 5) + 3;
 					*data++ = buffer ^ (seed + hash);
@@ -129,7 +130,7 @@ namespace CrystalMpq
 			for (int i = length; i-- != 0; )
 				unchecked
 				{
-					temp += precalc[0x400 + (hash & 0xFF)];
+					temp += encryptionTable[0x400 + (hash & 0xFF)];
 					buffer = *data ^ (temp + hash);
 					temp += buffer + (temp << 5) + 3;
 					*data++ = buffer;
@@ -144,10 +145,10 @@ namespace CrystalMpq
 			for (int i = length; i-- != 0; )
 				unchecked
 				{
-					temp += precalc[0x400 + (hash & 0xFF)];
-					buffer = Utility.SwapBytes(*data) ^ (temp + hash);
+					temp += encryptionTable[0x400 + (hash & 0xFF)];
+					buffer = CommonMethods.SwapBytes(*data) ^ (temp + hash);
 					temp += buffer + (temp << 5) + 3;
-					*data++ = Utility.SwapBytes(buffer);
+					*data++ = CommonMethods.SwapBytes(buffer);
 					hash = (hash >> 11) | (0x11111111 + ((hash ^ 0x7FF) << 21));
 				}
 		}
