@@ -5,7 +5,7 @@ using System.Text;
 namespace CrystalMpq.Utility
 {
 	/// <summary>Represents the kind of installation.</summary>
-	public enum InstallationKind
+	public enum WoWInstallationKind
 	{
 		/// <summary>The installation is a classic World of Warcraft installation.</summary>
 		Classic = 0,

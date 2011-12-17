@@ -42,9 +42,9 @@ namespace CrystalMpq.Utility
 					languageComboBox.Items.Clear();
 					if (wowInstallation != null)
 					{
-						LanguagePack selectedLanguagePack = null;
+						WoWLanguagePack selectedLanguagePack = null;
 
-						foreach (LanguagePack languagePack in wowInstallation.LanguagePacks)
+						foreach (WoWLanguagePack languagePack in wowInstallation.LanguagePacks)
 						{
 							if (languagePack.Culture.TwoLetterISOLanguageName == CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)
 								selectedLanguagePack = languagePack;
@@ -58,11 +58,11 @@ namespace CrystalMpq.Utility
 			}
 		}
 
-		public LanguagePack SelectedLanguagePack
+		public WoWLanguagePack SelectedLanguagePack
 		{
 			get
 			{
-				return languageComboBox.SelectedItem as LanguagePack;
+				return languageComboBox.SelectedItem as WoWLanguagePack;
 			}
 			set
 			{

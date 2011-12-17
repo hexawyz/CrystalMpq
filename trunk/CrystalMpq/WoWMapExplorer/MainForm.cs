@@ -129,7 +129,7 @@ namespace WoWMapExplorer
 		private const int databaseLocaleFieldCount = 16;
 		// MPQ Archives
 		private WoWInstallation wowInstallation;
-		private LanguagePack languagePack;
+		private WoWLanguagePack languagePack;
 		private WoWMpqFileSystem wowFileSystem;
 		// Font for displaying zone information
 		private PrivateFontCollection wowFontCollection;
@@ -164,7 +164,7 @@ namespace WoWMapExplorer
 
 		#region Constructor & Destructor
 
-		public MainForm(WoWInstallation wowInstallation, LanguagePack languagePack)
+		public MainForm(WoWInstallation wowInstallation, WoWLanguagePack languagePack)
 		{
 			InitializeComponent();
 			// Initialize WoW file system

@@ -26,7 +26,7 @@ namespace WoWMapExplorer
 		static void Main()
 		{
 			WoWInstallation wowInstallation;
-			LanguagePack languagePack;
+			WoWLanguagePack languagePack;
 
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
@@ -65,14 +65,14 @@ namespace WoWMapExplorer
 			return wowInstallation;
 		}
 
-		static LanguagePack ChooseLanguagePack(WoWInstallation wowInstallation)
+		static WoWLanguagePack ChooseLanguagePack(WoWInstallation wowInstallation)
 		{
 			CultureInfo desiredCulture = Properties.Settings.Default.LanguagePackCulture;
 
 			if (wowInstallation.LanguagePacks.Count == 1)
 				return wowInstallation.LanguagePacks[0];
 
-			foreach (LanguagePack languagePack in wowInstallation.LanguagePacks)
+			foreach (WoWLanguagePack languagePack in wowInstallation.LanguagePacks)
 				if (languagePack.Culture == desiredCulture)
 					return languagePack;
 

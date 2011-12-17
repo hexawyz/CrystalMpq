@@ -20,7 +20,7 @@ namespace CrystalMpq
 			: base(string.Format(ErrorMessages.GetString("CompressionNotSupported_Byte"), methodId)) { }
 
 		internal MpqCompressionNotSupportedException(byte methodId, string methodName)
-			: base(string.Format(ErrorMessages.GetString("CompressionNotSupported_Name"), methodId)) { }
+			: base(string.Format(ErrorMessages.GetString("CompressionNotSupported_Name"), methodName)) { }
 
 		private MpqCompressionNotSupportedException(string errorMessageName, byte methodId, string methodName)
 			: base(string.Format(ErrorMessages.GetString(errorMessageName), methodId))
