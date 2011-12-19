@@ -72,5 +72,24 @@ namespace CrystalMpq
 			public override void Write(byte[] buffer, int offset, int count) { throw new NotSupportedException(); }
 			public override void SetLength(long value) { throw new NotSupportedException(); }
 		}
+
+		/// <summary>Gets a value indicating whether the current archive contains user data.</summary>
+		/// <value><see langword="true"/> if the current archive contains user data; otherwise, <see langword="false"/>.</value>
+		public bool HasUserData { get { return userDataLength > 0 || FindFile("(user data)") != null; } }
+
+		/// <summary>Gets the user data stream.</summary>
+		/// <returns>A <see cref="Stream"/> to be used for accessing user data.</returns>
+		public Stream GetUserDataStream()
+		{
+			if (userDataLength > 0) return new MpqUserDataStream(this);
+			else
+			{
+				var file = FindFile(UserDataFileName);
+
+				if (file != null) return file.Open();
+			}
+
+			throw new InvalidOperationException();
+		}
 	}
 }

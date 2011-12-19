@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 
 namespace CrystalMpq
 {
-	internal static class CommonMethods
+	internal static partial class CommonMethods
 	{
 		[ThreadStatic]
 		private static byte[] sharedBuffer;

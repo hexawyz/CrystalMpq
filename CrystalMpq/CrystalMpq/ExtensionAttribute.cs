@@ -16,12 +16,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+#if NET_FX_2 // Declare the ExtensionAttribute for versions of the BCL ≤ 3.0
+
 using System;
 
 namespace System.Runtime.CompilerServices
 {
-#if NET_FX_2
 	[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Assembly)]
 	internal sealed class ExtensionAttribute : Attribute { }
-#endif
 }
+
+#endif

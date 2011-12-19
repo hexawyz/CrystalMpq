@@ -19,7 +19,7 @@ using LZMA = SevenZip.Compression.LZMA;
 
 namespace CrystalMpq
 {
-	internal static class Compression
+	partial class CommonMethods
 	{
 #if USE_SHARPZIPLIB
 		[ThreadStatic]

@@ -73,9 +73,9 @@ namespace CrystalMpq
 		public int[] FindMulti(string filename)
 		{
 			var matches = new List<int>();
-			uint hash = Encryption.Hash(filename, 0);
-			uint hashA = Encryption.Hash(filename, 0x100);
-			uint hashB = Encryption.Hash(filename, 0x200);
+			uint hash = CommonMethods.Hash(filename, 0);
+			uint hashA = CommonMethods.Hash(filename, 0x100);
+			uint hashB = CommonMethods.Hash(filename, 0x200);
 			uint capacity = checked((uint)entries.LongLength);
 			uint start = hash % capacity;
 			uint index = start;
@@ -103,9 +103,9 @@ namespace CrystalMpq
 			uint? neutralEntryIndex = null;
 			uint? firstEntryIndex = null;
 
-			uint hash = Encryption.Hash(filename, 0);
-			uint hashA = Encryption.Hash(filename, 0x100);
-			uint hashB = Encryption.Hash(filename, 0x200);
+			uint hash = CommonMethods.Hash(filename, 0);
+			uint hashA = CommonMethods.Hash(filename, 0x100);
+			uint hashB = CommonMethods.Hash(filename, 0x200);
 			uint capacity = checked((uint)entries.LongLength);
 			uint start = hash % capacity;
 			uint index = start;

@@ -224,7 +224,7 @@ namespace CrystalMpq
 			if (!BitConverter.IsLittleEndian) CommonMethods.SwapBytes(offsets);
 
 			// If hash is valid, decode the header
-			if (hash != 0) unchecked { Encryption.Decrypt(offsets, hash - 1); }
+			if (hash != 0) unchecked { CommonMethods.Decrypt(offsets, hash - 1); }
 
 			return offsets;
 		}
@@ -380,9 +380,7 @@ namespace CrystalMpq
 
 		private unsafe byte[] UnpackRle()
 		{
-			uint length;
-
-			if (Read((byte*)&length, 4) != 4) throw new EndOfStreamException();
+			uint length = this.ReadUInt32();
 
 			var decompressionBuffer = new byte[length];
 
@@ -442,6 +440,11 @@ namespace CrystalMpq
 			return blockBuffer[readBufferOffset++];
 		}
 
+		/// <summary>Reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.</summary>
+		/// <param name="buffer">An array of bytes. When this method returns, the buffer contains the specified byte array with the values between <paramref name="offset"/> and (<paramref name="offset"/> + <paramref name="count"/> - 1) replaced by the bytes read from the current source.</param>
+		/// <param name="offset">The zero-based byte offset in <paramref name="buffer"/> at which to begin storing the data read from the current stream.</param>
+		/// <param name="count">The maximum number of bytes to be read from the current stream.</param>
+		/// <returns>The total number of bytes read into the buffer. This can be less than the number of bytes requested if that many bytes are not currently available, or zero (0) if the end of the stream has been reached.</returns>
 		public unsafe sealed override int Read(byte[] buffer, int offset, int count)
 		{
 			if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException("offset");
@@ -535,7 +538,7 @@ namespace CrystalMpq
 			{
 				// If last bytes don't fit in an uint, then they won't be encrypted/decrypted
 				// Therefore we just leave "length" here as a parameter and bits 0..1 will be cut
-				Encryption.Decrypt(buffer, seed + (uint)block, length);
+				CommonMethods.Decrypt(buffer, seed + (uint)block, length);
 			}
 
 			if (compressed)
@@ -544,9 +547,9 @@ namespace CrystalMpq
 
 				// Check the advanced compression scheme first, as it is the only used in modern games.
 				if ((file.Flags & MpqFileFlags.MultiCompressed) != 0)
-					byteCount = Compression.DecompressBlock(compressedBuffer, length, blockBuffer, true);
+					byteCount = CommonMethods.DecompressBlock(compressedBuffer, length, blockBuffer, true);
 				else /*if ((file.Flags & MpqFileFlags.DclCompressed) != 0)*/
-					byteCount = Compression.DecompressBlock(compressedBuffer, length, blockBuffer, false);
+					byteCount = CommonMethods.DecompressBlock(compressedBuffer, length, blockBuffer, false);
 
 				if (byteCount != (last ? lastBlockLength : (uint)blockBuffer.Length)) throw new InvalidDataException();
 			}
