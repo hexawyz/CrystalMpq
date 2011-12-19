@@ -118,25 +118,26 @@
     <Compile Include="ErrorMessages.cs" />
     <Compile Include="ExtensionAttribute.cs" />
     <Compile Include="IMpqFileSystem.cs" />
+    <Compile Include="MpqArchive.Signature.cs" />
     <Compile Include="MpqBlockEntry.cs" />
     <Compile Include="MpqBlockTable.cs" />
     <Compile Include="MpqFileSystem.cs" />
     <Compile Include="MpqNameCache.cs" />
     <Compile Include="MpqHashEntry.cs" />
-    <Compile Include="MpqUserDataStream.cs" />
+    <Compile Include="MpqArchive.UserData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="BitBuffer.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Compression.cs">
+    <Compile Include="CommonMethods.Compression.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DclCompression.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Encryption.cs">
+    <Compile Include="CommonMethods.Encryption.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MpqVersionNotSupportedException.cs" />

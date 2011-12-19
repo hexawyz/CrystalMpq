@@ -60,7 +60,7 @@ namespace CrystalMpq
 			// I really don't know why but it worked with the full path for a lot of files…
 			// But now it's fixed at least
 			int index = filename.LastIndexOf('\\');
-			return Encryption.Hash(index >= 0 ? filename.Substring(index + 1) : filename, 0x300);
+			return CommonMethods.Hash(index >= 0 ? filename.Substring(index + 1) : filename, 0x300);
 		}
 	}
 }

@@ -12,7 +12,7 @@ using System;
 
 namespace CrystalMpq
 {
-	internal sealed class Encryption
+	partial class CommonMethods
 	{
 		private static uint[] encryptionTable = BuildEncryptionTable();
 

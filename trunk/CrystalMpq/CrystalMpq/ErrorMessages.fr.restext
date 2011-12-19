@@ -1,4 +1,5 @@
-﻿SeekableStreamRequired=Les archives MPQ peuvent uniquement être lues à partir de flux qui permettent la recherche.
+﻿NotEnoughData=Le flux ne contient pas suffisamment de données pour former une archive MPQ valide.
+SeekableStreamRequired=Les archives MPQ peuvent uniquement être lues à partir de flux qui permettent la recherche.
 SeekingBeforeBegin=Impossible de se placer avant le début du flux.
 InvalidArchive=Les données dans le flux ne correspondent pas à une archive MPQ valide.
 InvalidArchiveHeader=L'archive MPQ possède une en-tête invalide.
