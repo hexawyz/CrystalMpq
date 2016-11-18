@@ -133,9 +133,11 @@ namespace CrystalMpq
 		private MpqHashTable hashTable;
 		internal MpqBlockTable blockTable;
 		private MpqFile[] files;
-		private MpqFileCollection fileCollection;
+		private readonly MpqFileCollection fileCollection;
 		private MpqFile listFile;
+		private MpqFile attribFile;
 		private bool listFileParsed;
+		private bool attribFileParsed;
 		private bool hasStrongSignature;
 		private readonly ResolveStreamEventArgs resolveStreamEventArgs;
 		private readonly object syncRoot;
@@ -156,6 +158,7 @@ namespace CrystalMpq
 			this.resolveStreamEventArgs = new ResolveStreamEventArgs();
 			this.fileCollection = new MpqFileCollection(this);
 			this.listFileParsed = false;
+			this.attribFileParsed = false;
 		}
 
 		/// <summary>Initializes a new instance of the <see cref="MpqArchive"/> class.</summary>
@@ -394,8 +397,15 @@ namespace CrystalMpq
 
 			// When possible, find and parse the listfile…
 			listFile = FindFile(ListFileName);
-			if (listFile == null) return;
-			if (shouldParseListFile) ParseListFile();
+			if (listFile != null) {
+				if (shouldParseListFile)
+					ParseListFile();
+			}
+
+			// When possible, find and parse the attributes.
+			attribFile = FindFile(AttributesFileName);
+			if (attribFile == null) return;
+			ParseAttributeFile();
 		}
 
 		private bool CheckOffset(long offset) { return offset >= 0 && offset < archiveDataLength; }
@@ -538,6 +548,60 @@ namespace CrystalMpq
 				while ((line = listFileReader.ReadLine()) != null)
 					TryFilename(line, true);
 				listFileParsed = true;
+			}
+		}
+
+		/// <summary>Parses the (attributes) if it has not already been done.</summary>
+		public void ParseAttributeFile()
+		{
+			const int MPQ_ATTRIBUTE_CRC32 = 0x1;
+			const int MPQ_ATTRIBUTE_FILETIME = 0x2;
+			const int MPQ_ATTRIBUTE_MD5 = 0x4;
+			const int MPQ_ATTRIBUTE_PATCH_BIT = 0x8;
+
+			if (attribFileParsed) return;
+
+			int numEntries = blockTable.Entries.Length;
+
+			using (var reader = new BinaryReader(attribFile.Open())) 
+			{
+				var version = reader.ReadInt32();
+				if (version != 100)
+					return;
+
+				var flags = reader.ReadInt32();
+
+				if ((flags & MPQ_ATTRIBUTE_CRC32) != 0) 
+				{
+					for (int i = 0; i < numEntries; ++i) 
+					{
+						blockTable.Entries[i].CRC32 = reader.ReadInt32();
+					}
+				}
+				
+				if ((flags & MPQ_ATTRIBUTE_FILETIME) != 0) 
+				{
+					for (int i = 0; i < numEntries; ++i) 
+					{
+						blockTable.Entries[i].FileTime = reader.ReadInt64();
+					}
+				}
+
+				if ((flags & MPQ_ATTRIBUTE_MD5) != 0)
+				{
+					for (int i = 0; i < numEntries; ++i) 
+					{
+						byte[] bytes = reader.ReadBytes(16);
+						blockTable.Entries[i].MD5 = BitConverter.ToString(bytes).Replace("-", "").ToLower();
+					}
+				}
+
+				if ((flags & MPQ_ATTRIBUTE_PATCH_BIT) != 0)
+				{
+					// ignore for now.
+				}
+
+				attribFileParsed = true;
 			}
 		}
 

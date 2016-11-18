@@ -25,6 +25,10 @@ namespace CrystalMpq
 		public uint Seed;
 		public bool Listed;
 
+		public int CRC32;
+		public long FileTime;
+		public string MD5;
+
 		internal MpqBlockEntry(long offset, uint compressedSize, uint uncompressedSize, uint flags, ref uint fileIndex)
 		{
 			this.Offset = offset;
@@ -35,6 +39,9 @@ namespace CrystalMpq
 			this.FileIndex = (this.Flags & MpqFileFlags.Exists) != 0 ? fileIndex++ : 0;
 			this.Seed = 0;
 			this.Listed = false;
+			this.CRC32 = 0;
+			this.FileTime = 0;
+			this.MD5 = null;
 		}
 
 		/// <summary>Called internally when the name has been detected.</summary>
