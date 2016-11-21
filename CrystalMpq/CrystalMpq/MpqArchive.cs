@@ -397,15 +397,18 @@ namespace CrystalMpq
 
 			// When possible, find and parse the listfile…
 			listFile = FindFile(ListFileName);
-			if (listFile != null) {
+			if (listFile != null)
+			{
 				if (shouldParseListFile)
 					ParseListFile();
 			}
 
 			// When possible, find and parse the attributes.
 			attribFile = FindFile(AttributesFileName);
-			if (attribFile == null) return;
-			ParseAttributeFile();
+			if (attribFile != null)
+			{
+				ParseAttributeFile();
+			}
 		}
 
 		private bool CheckOffset(long offset) { return offset >= 0 && offset < archiveDataLength; }
@@ -575,7 +578,7 @@ namespace CrystalMpq
 				{
 					for (int i = 0; i < numEntries; ++i) 
 					{
-						blockTable.Entries[i].CRC32 = reader.ReadInt32();
+						blockTable.Entries[i].Crc32 = reader.ReadInt32();
 					}
 				}
 				
@@ -592,7 +595,7 @@ namespace CrystalMpq
 					for (int i = 0; i < numEntries; ++i) 
 					{
 						byte[] bytes = reader.ReadBytes(16);
-						blockTable.Entries[i].MD5 = BitConverter.ToString(bytes).Replace("-", "").ToLower();
+						blockTable.Entries[i].Md5 = new MpqMd5(bytes);
 					}
 				}
 
