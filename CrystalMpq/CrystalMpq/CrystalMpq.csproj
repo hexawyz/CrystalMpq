@@ -118,6 +118,7 @@
     <Compile Include="ErrorMessages.cs" />
     <Compile Include="ExtensionAttribute.cs" />
     <Compile Include="IMpqFileSystem.cs" />
+    <Compile Include="MpqMd5.cs" />
     <Compile Include="MpqArchive.Signature.cs" />
     <Compile Include="MpqBlockEntry.cs" />
     <Compile Include="MpqBlockTable.cs" />

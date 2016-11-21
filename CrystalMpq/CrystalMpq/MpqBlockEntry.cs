@@ -8,9 +8,6 @@
 // or at this URL: http://www.microsoft.com/opensource/licenses.mspx#Ms-RL
 #endregion
 
-using System;
-using System.Runtime.InteropServices;
-
 namespace CrystalMpq
 {
 	//[StructLayout(LayoutKind.Auto)]
@@ -25,6 +22,10 @@ namespace CrystalMpq
 		public uint Seed;
 		public bool Listed;
 
+		public int Crc32;
+		public long FileTime;
+		public MpqMd5 Md5;
+
 		internal MpqBlockEntry(long offset, uint compressedSize, uint uncompressedSize, uint flags, ref uint fileIndex)
 		{
 			this.Offset = offset;
@@ -35,6 +36,9 @@ namespace CrystalMpq
 			this.FileIndex = (this.Flags & MpqFileFlags.Exists) != 0 ? fileIndex++ : 0;
 			this.Seed = 0;
 			this.Listed = false;
+			this.Crc32 = 0;
+			this.FileTime = 0;
+			this.Md5 = default(MpqMd5);
 		}
 
 		/// <summary>Called internally when the name has been detected.</summary>

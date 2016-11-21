@@ -69,6 +69,12 @@ namespace CrystalMpq
 		///// <summary>Gets the LCID associated with this file.</summary>
 		//public int Lcid { get { return hashEntry.Locale; } }
 
+		/// <summary>Gets the CRC32 of this file.</summary>
+		public int Crc32 { get { return archive.blockTable.Entries[blockIndex].Crc32; } }
+
+		/// <summary>Gets the MD5 of this file.</summary>
+		public MpqMd5 Md5 { get { return archive.blockTable.Entries[blockIndex].Md5; } }
+
 		/// <summary>Gets the index of the file in the block table.</summary>
 		/// <remarks>This property is for internal use only.</remarks>
 		internal uint BlockIndex { get { return blockIndex; } }
