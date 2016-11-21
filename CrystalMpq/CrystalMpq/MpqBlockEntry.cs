@@ -8,10 +8,6 @@
 // or at this URL: http://www.microsoft.com/opensource/licenses.mspx#Ms-RL
 #endregion
 
-using System.IO;
-using System.Runtime.InteropServices;
-using SevenZip;
-
 namespace CrystalMpq
 {
 	//[StructLayout(LayoutKind.Auto)]
